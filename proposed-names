@@ -1,0 +1,138 @@
+# The proposed names I have for obfuscated classes, fields and methods
+# Of course others are free to change, add or remove them
+# This file is currently unused other than for comforts sake, but might be used as a stepping stone for obfhelpers and cross-version API in the future
+
+# Classes
+a.b - Artifact
+
+ax - Empire
+bs - EmpireTrait
+ck - JobProvider
+cj - EmpireState
+cl - EmployerType
+cy - Fleet
+ey - JobCategory
+ez - Job
+f  - Alliance 
+fz - MeritingAttribute
+gw - GalimulatorConfiguration
+ke - GalimulatorPreferences
+md - StarlanePopulationOptions
+nd - Star
+
+# Fields
+ax.ab - actors
+ax.c  - uid
+ax.d  - name
+ax.l  - foundationYear
+ax.m  - color
+ax.E  - alliance
+ax.F  - government
+ax.G  - religion
+ax.U  - collapseYear
+ax.W  - techLevel
+ax.Y  - state
+
+cj.a - EXPANDING
+cj.b - FORTIFYING
+cj.c - DEGENERATING
+cj.d - TRANSCENDING
+cj.e - ALL_WILL_BE_ASHES
+cj.f - RIOTING
+cj.g - CRUSADING
+cj.h - BLOOD_PURGE
+cj.i - description
+
+cy.d - members
+cy.f - maxSpeed
+
+ey.a - MILLITARICAL
+ey.b - POLITICAL
+ey.c - MISC
+
+ez.a - EMPEROR
+ez.b - MILITARY_MINISTER
+ez.c - INTERNAL_MINISTER
+ez.d - ARCH_PRIEST
+ez.e - IMPERIAL_GUARD
+ez.f - FLIGHT_TRAINER
+ez.g - ADMINISTATOR
+ez.h - COURTISAN
+ez.i - CURATOR
+ez.j - STELLAR_GOVERNOR
+ez.k - REGIONAL_OFFICIAL
+ez.l - LOCAL_BUREAUCRAT
+ez.m - FACTION_LEADER
+ez.n - ESTABLISHING
+ez.o - DILEMA
+ez.p - RESOLVING
+ez.q - REDEMPTION_ARC
+ez.r - FALL_FROM_GRACE
+ez.s - FLEET_COMMANDER
+ez.t - CAPTAIN
+ez.u - SHIP_OFFICER
+ez.v - FIGHTER_PILOT
+ez.w - RESERVE_PILOT
+ez.x - name
+ez.y - description
+# Could even be the stars that are displayed - should double check
+ez.z - weight
+ez.C - category
+ez.D - onMap
+
+f.a  - id
+f.b  - name
+f.c  - members
+
+fz.i - index
+fz.j - name
+fz.k - abbreviation
+
+le.P - currentYear
+
+# Methods
+a.b#a(nd, ax) - createInstance
+a.b#b(void)   - getRandomArtifact
+
+ax#a(ax)         - getRelationString
+ax#a(Religion)   - setReligion
+ax#a(StateActor) - addActor
+ax#a(Government) - setGovernment
+ax#ah(void)      - getYearsAlive
+ax#aJ(void)      - getReligion
+ax#b(ax)         - hasContacted
+ax#b(StateActor) - removeActor
+ax#e(ax)         - isAtPeace
+ax#f(ax)         - isAllied
+ax#i(void)       - getFlagship
+ax#w(void)       - getGovernment
+ax#J(void)       - doCycle
+ax#K(void)       - getStarCount
+ax#Q(void)       - getCollapseYear
+ax#R(void)       - isNotDegenerating
+
+cj#a(void) - getDescription
+
+cy#a(Actor)      - chaseActor
+cy#a(StateActor) - addActor
+cy#b(nd)         - moveToAndOrbit
+cy#b(StateActor) - removeActor
+cy#d(void)       - recalculateMaximumSpeed
+
+f#a(ax)   - addMember
+f#b(ax)   - removeMember
+f#b(ax)   - hasMember
+f#a(void) - getTotalStarCount
+f#e(void) - getBiggestMemberStarCount
+f#f(void) - getName
+f#g(void) - getColor
+f#h(void) - getMembers
+f#k(void) - getColoredName
+
+ke#a(void) - setupPreferences
+
+le#b(ax)   - trancendEmpire
+le#d(ax)   - addEmpire
+le#f(ax)   - killEmpire
+le#n(void) - getTrancendedEmpiresAmount
+le#C(void) - getCurrentYear

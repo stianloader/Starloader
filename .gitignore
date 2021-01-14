@@ -1,0 +1,8 @@
+# Ignore Gradle build output directory
+build/
+
+# Ignore the galimulator jar - which we are not allowed to distribute
+galimulator-desktop.jar
+
+#Ignore hidden folders and files, they usually are for settings and other temporary stuff, so they are not needed
+.*

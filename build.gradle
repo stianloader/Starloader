@@ -1,0 +1,68 @@
+plugins {
+    // Apply the java-library plugin to add support for Java Library
+    id 'java-library'
+    id 'maven-publish'
+    id "com.github.johnrengelman.shadow" version "6.1.0"
+}
+
+group 'de.geolykt'
+version '0.0.1-SNAPSHOT'
+
+// Our classloader require Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
+
+repositories {
+    mavenCentral()
+    maven {
+        name 'sponge'
+        url 'https://repo.spongepowered.org/maven'
+    }
+}
+
+dependencies {
+    api files("galimulator-desktop.jar") // Galimulator itself
+
+    // https://mvnrepository.com/artifact/org.jetbrains/annotations
+    api group: 'org.jetbrains', name: 'annotations', version: '20.1.0'
+
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson
+    api 'com.google.code.gson:gson:2.8.6'
+
+    // Required for mixins
+    api 'com.google.guava:guava:21.0'
+
+    // Code modification
+    api "org.ow2.asm:asm:9.0"
+    api "org.ow2.asm:asm-tree:9.0"
+    api "org.ow2.asm:asm-analysis:9.0"
+    api "org.ow2.asm:asm-util:9.0"
+    api "org.ow2.asm:asm-commons:9.0"
+    api "org.spongepowered:mixin:0.8.1"
+
+    // Logging
+    api 'org.apache.logging.log4j:log4j-core:2.14.0'
+    // SLF4J is the base logger for most libraries, therefore we can hook it into log4j2.
+    api 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'de.geolykt.starloader.StarloaderPreloader'
+    }
+}
+
+shadowJar {
+    mergeServiceFiles()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId 'de.geolykt'
+            artifactId 'starloader'
+            version '0.0.1-SNAPSHOT'
+
+            from components.java
+        }
+    }
+}

@@ -1,0 +1,39 @@
+# OBFINFO - Early obfuscation info file
+# The obfinfo file is currently very new, so a lot is uncertain or undocumented.
+# Take everything with a grain of salt
+
+# CLASSES
+a.a - Abstract class for all artifacts
+a.b - Enum representation of the artifacts
+ax - Star-related class, likely 
+ck - Interface for everything that can be owned by a empire
+f  - Alliance-related class
+gw - Place where global configurations are held within
+
+# Fields
+# Enums
+a.b.a - Representation to a.c
+a.b.b - Representation to a.d
+a.b.c - Representation to a.e
+a.b.d - Representation to a.f
+a.b.e - Representation to a.i
+a.b.f - Representation to a.k
+a.b.g - Representation to a.l
+a.b.h - Representation to a.m
+a.b.i - Representation to a.n
+a.b.j - Representation to a.o
+a.b.k - Representation to a.j
+a.b.l - Representation to a.r
+a.b.m - Representation to a.s
+# Proper fields
+a.b.n - The class the enum is representing
+
+f.c - Used for the alive method, probably the starsystems the alliance owns
+
+# Methods
+a.b#a(nd, ax) - Creates an instance of the class the enum is representing
+a.b#a(String) - Enum#ValueOf with an sysout in case it isn't found
+a.b#a(void)   - Enum#values but the result is converted into a vector
+a.b#b(void)   - Returns a random artifact enum
+
+le#b(ax) - This only increases a counter used within le#n(void)
