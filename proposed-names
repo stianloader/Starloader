@@ -6,17 +6,20 @@
 a.b - Artifact
 
 ax - Empire
+bh - EmpireNameReference
 bs - EmpireTrait
 ck - JobProvider
 cj - EmpireState
 cl - EmployerType
 cy - Fleet
+ee - GalimulatorApplicationListener
 ey - JobCategory
 ez - Job
 f  - Alliance 
 fz - MeritingAttribute
 gw - GalimulatorConfiguration
 ke - GalimulatorPreferences
+le - Galimulator
 md - StarlanePopulationOptions
 nd - Star
 
@@ -24,14 +27,29 @@ nd - Star
 ax.ab - actors
 ax.c  - uid
 ax.d  - name
+ax.e  - identifierName
 ax.l  - foundationYear
 ax.m  - color
+ax.p  - parentUID
+ax.C  - flagship
 ax.E  - alliance
 ax.F  - government
 ax.G  - religion
+ax.H  - empireTotalWealth
+ax.I  - empireAverageWealth
+ax.K  - ships
+ax.M  - nameReference
+ax.T  - motto
 ax.U  - collapseYear
+ax.V  - starCount
 ax.W  - techLevel
 ax.Y  - state
+
+bh.a - uid
+bh.c - collapseYear
+bh.d - name
+bh.e - identifierName
+bh.f - color
 
 cj.a - EXPANDING
 cj.b - FORTIFYING
@@ -45,6 +63,8 @@ cj.i - description
 
 cy.d - members
 cy.f - maxSpeed
+
+ee.f - cyclesPerFrame
 
 ey.a - MILLITARICAL
 ey.b - POLITICAL
@@ -88,26 +108,47 @@ fz.i - index
 fz.j - name
 fz.k - abbreviation
 
+le.w - neutralEmpire
+le.x - ticks
+le.C - TICK_THREAD_SEMAPHONE
 le.P - currentYear
+le.Q - paused
+le.T - halvedSimulationSpeed
 
 # Methods
 a.b#a(nd, ax) - createInstance
 a.b#b(void)   - getRandomArtifact
 
+bh#a(void) - hasCollapsed
+bh#b(void) - getColoredName
+bh#c(void) - getName
+bh#d(void) - getIdentifierName
+bh#e(void) - getColor
+bh#f(void) - getUID
+bh#h(void) - getCollapseYear
+
 ax#a(ax)         - getRelationString
 ax#a(Religion)   - setReligion
 ax#a(StateActor) - addActor
+ax#a(String)     - setName
 ax#a(Government) - setGovernment
 ax#ah(void)      - getYearsAlive
+ax#aI(void)      - getParentUID
 ax#aJ(void)      - getReligion
 ax#b(ax)         - hasContacted
 ax#b(StateActor) - removeActor
+ax#b(String)     - setIdentfierName
+ax#c(String)     - setMotto
 ax#e(ax)         - isAtPeace
 ax#f(ax)         - isAllied
 ax#i(void)       - getFlagship
+ax#t(void)       - getEmpireNameReference
 ax#w(void)       - getGovernment
+ax#H(void)       - getMotto
+ax#I(void)       - getRandomNumber
 ax#J(void)       - doCycle
 ax#K(void)       - getStarCount
+ax#O(void)       - getIdentifierName
 ax#Q(void)       - getCollapseYear
 ax#R(void)       - isNotDegenerating
 
@@ -118,6 +159,9 @@ cy#a(StateActor) - addActor
 cy#b(nd)         - moveToAndOrbit
 cy#b(StateActor) - removeActor
 cy#d(void)       - recalculateMaximumSpeed
+
+ee#a(void) - getTicksPerFrame
+ee#a(int)  - setTicksPerFrame
 
 f#a(ax)   - addMember
 f#b(ax)   - removeMember
@@ -131,8 +175,14 @@ f#k(void) - getColoredName
 
 ke#a(void) - setupPreferences
 
-le#b(ax)   - trancendEmpire
-le#d(ax)   - addEmpire
-le#f(ax)   - killEmpire
-le#n(void) - getTrancendedEmpiresAmount
-le#C(void) - getCurrentYear
+le#ae(void) - isPaused
+le#b(ax)    - trancendEmpire
+le#b(void)  - setSlowmotionState
+le#c(void)  - setPauseState
+le#d(ax)    - addEmpire
+le#f(ax)    - killEmpire
+le#n(void)  - getTranscendedEmpiresAmount
+le#o(void)  - isInSlowmotionState
+le#v(void)  - pausedTick
+le#z(void)  - tick
+le#C(void)  - getCurrentYear

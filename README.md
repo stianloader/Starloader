@@ -16,7 +16,7 @@ to be present at the project root under `galimulator-desktop.jar`.
 
 To compile most other extensions (inclding the API) you additionally need to use
 
-    ./gradlew publicToMavenLocal
+    ./gradlew publishToMavenLocal
 
 There is a workaround by linking against minestom instead, but that is discouraged
 
