@@ -10,6 +10,7 @@ to avoid conflicts, simpler extensions however don't need Starloader-API built.
 ## Building
 
 The project can be built via gradle and a JDK 11 or higher.
+I recommend JDK 17 once it comes out in fall 2021.
 This can be easily done via `./gradlew shadowJar` on most systems,
 although the JDK needs to be installed manually and the galimulator jar needs 
 to be present at the project root under `galimulator-desktop.jar`.
@@ -19,6 +20,9 @@ To compile most other extensions (inclding the API) you additionally need to use
     ./gradlew publishToMavenLocal
 
 There is a workaround by linking against minestom instead, but that is discouraged
+
+I additionally recommend to remap the galimulator jar with the StarMap mappings
+once the project is released to the public in march.
 
 ## Running
 
@@ -41,5 +45,5 @@ All code is licensed under the Apache 2.0 license, allowing you to redistribute
 the source. You MAY NOT redistribute the built shadowjar as it contains
 code written by people that have not opted into a license that allows that.
 
-Additionally the net.minestom.server package was 
-written by contributors of the Minestom project, licensed under the Apache 2.0 project.
+Additionally the net.minestom.server package was written by contributors of
+the Minestom project, also licensed under the Apache 2.0 project.
