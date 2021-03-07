@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'de.geolykt'
-version '0.0.1-SNAPSHOT'
+version '1.0.0-SNAPSHOT'
 
 // Our classloader require Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
@@ -20,7 +20,6 @@ repositories {
 }
 
 dependencies {
-    api files("galimulator-desktop.jar") // Galimulator itself
 
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     api group: 'org.jetbrains', name: 'annotations', version: '20.1.0'
@@ -47,7 +46,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'de.geolykt.starloader.StarloaderPreloader'
+        attributes 'Main-Class': 'de.geolykt.starloader.launcher.StarloaderLauncher'
     }
 }
 
@@ -60,7 +59,7 @@ publishing {
         maven(MavenPublication) {
             groupId 'de.geolykt'
             artifactId 'starloader'
-            version '0.0.1-SNAPSHOT'
+            version '1.0.0-SNAPSHOT'
 
             from components.java
         }
