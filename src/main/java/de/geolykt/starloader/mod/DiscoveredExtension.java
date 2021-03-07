@@ -1,4 +1,4 @@
-package net.minestom.server.extensions;
+package de.geolykt.starloader.mod;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

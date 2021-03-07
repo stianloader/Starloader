@@ -1,4 +1,4 @@
-package net.minestom.server.extensions;
+package de.geolykt.starloader.mod;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -20,24 +20,47 @@ public abstract class Extension {
 
     }
 
-    public abstract void initialize();
+    public void initialize() {
+
+    }
 
     public void postInitialize() {
 
     }
 
+    /**
+     * WARNING: The implementation of this method should be coded very carefully.
+     * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
+     * For more info, see {@link Runtime#addShutdownHook(Thread)}.
+     */
     public void preTerminate() {
 
     }
 
-    public abstract void terminate();
+    /**
+     * WARNING: The implementation of this method should be coded very carefully.
+     * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
+     * For more info, see {@link Runtime#addShutdownHook(Thread)}.
+     */
+    public void terminate() {
 
+    }
+
+    /**
+     * WARNING: The implementation of this method should be coded very carefully.
+     * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
+     * For more info, see {@link Runtime#addShutdownHook(Thread)}.
+     */
     public void postTerminate() {
 
     }
 
     /**
      * Called after postTerminate when reloading an extension
+     *
+     * WARNING: The implementation of this method should be coded very carefully.
+     * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
+     * For more info, see {@link Runtime#addShutdownHook(Thread)}.
      */
     public void unload() {
 
@@ -49,7 +72,7 @@ public abstract class Extension {
     }
 
     @NotNull
-    protected Logger getLogger() {
+    public Logger getLogger() {
         return logger;
     }
 

@@ -1,4 +1,4 @@
-package net.minestom.server.extensions;
+package de.geolykt.starloader.mod;
 
 import com.google.gson.Gson;
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;

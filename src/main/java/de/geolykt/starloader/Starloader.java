@@ -3,8 +3,8 @@ package de.geolykt.starloader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.minestom.server.extensions.Extension;
-import net.minestom.server.extensions.ExtensionManager;
+import de.geolykt.starloader.mod.Extension;
+import de.geolykt.starloader.mod.ExtensionManager;
 
 public final class Starloader {
 
@@ -25,9 +25,22 @@ public final class Starloader {
         extensions = new ExtensionManager();
         extensions.loadExtensions();
         long start = System.currentTimeMillis();
+        LOGGER.info("Initializing extension: preinit");
         extensions.getExtensions().forEach(Extension::preInitialize);
-        extensions.getExtensions().forEach(Extension::initialize);
+        LOGGER.info("Initializing extension: init");
+        extensions.getExtensions().forEach(extension -> {
+            extension.initialize();
+            LOGGER.info("Initialized extension {}.", extension.getDescription().getName());
+        });
+        LOGGER.info("Initializing extension: postinit");
         extensions.getExtensions().forEach(Extension::postInitialize);
         LOGGER.info("All Extensions initialized within {}ms", (System.currentTimeMillis() - start));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {// FIXME don't use shutdown hooks and/or have them deadlock-proof.
+            extensions.shutdown();
+        }, "ExtensionsShutdownThread"));
+    }
+    
+    public static ExtensionManager getExtensionManager() {
+        return extensions;
     }
 }
