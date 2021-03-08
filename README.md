@@ -7,35 +7,34 @@ to loader secondary jars (extensions) as well as providing mixins, a bytecode
 manipulation framework. As such most extensions should make use of Starloader-API
 to avoid conflicts, simpler extensions however don't need Starloader-API built.
 
+## IRC Chat
+
+We do have an IRC channel for anyone that is interested in modding the game in
+general, although the main purpose of the channel will be to discuss Starloader.
+Feel free to take a look at it at #galimulator-modding @ irc.esper.net
+
 ## Building
 
 The project can be built via gradle and a JDK 11 or higher.
 I recommend JDK 17 once it comes out in fall 2021.
-This can be easily done via `./gradlew shadowJar` on most systems,
-although the JDK needs to be installed manually and the galimulator jar needs 
-to be present at the project root under `galimulator-desktop.jar`.
+This can be easily done via `./gradlew shadowJar` on most systems.
+The built jar is located in the build/libs folder, and should have a "-all"
+suffix, if that isn't the case you might have not built that shadowjar, which
+will not run as it is missing vital dependencies.
 
 To compile most other extensions (inclding the API) you additionally need to use
 
     ./gradlew publishToMavenLocal
 
-There is a workaround by linking against minestom instead, but that is discouraged
-
-I additionally recommend to remap the galimulator jar with the StarMap mappings
-once the project is released to the public in march.
-
 ## Running
 
-The built jar is located in the build/libs folder, and should have a "-all"
-suffix, if that isn't the case you might have not built that shadowjar, which
-will not run as it is missing vital dependencies. The jar can be moved to replace
-the original galimulator jar in your runtime folder 
-(home/.steam/steam/steamapps/common/Galimulator/jar in my case)
-The jar can then be executed via
+The jar then needs to be placed at the Galimulator folder 
+(home/.steam/steam/steamapps/common/Galimulator in my case)
+and can then be executed via
 
-    java -jar jar/Galimulator-Starloader-0.0.1-SNAPSHOT-all.jar
+    java -jar Galimulator-Starloader-1.0.0-SNAPSHOT-all.jar
 
-or similar. However Java 11 (higher might also work) needs to be used
+or similar. However Java 11 (higher also works) needs to be used
 but OpenJDK 11 as offered by some major linux distro vendors is known to NOT work,
 so if there is an obscure error with ld.so you should be using AdoptOpenJDK or similar
 
@@ -45,5 +44,6 @@ All code is licensed under the Apache 2.0 license, allowing you to redistribute
 the source. You MAY NOT redistribute the built shadowjar as it contains
 code written by people that have not opted into a license that allows that.
 
-Additionally the net.minestom.server package was written by contributors of
+Additionally the net.minestom.server (our classloading system) package
+and the extention system was originally written by contributors of
 the Minestom project, also licensed under the Apache 2.0 project.
