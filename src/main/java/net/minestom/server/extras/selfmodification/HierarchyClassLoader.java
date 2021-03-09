@@ -38,4 +38,10 @@ public abstract class HierarchyClassLoader extends URLClassLoader {
         children.remove(child);
         children.forEach(c -> c.removeChildInHierarchy(child));
     }
+
+    @Override
+    public String findLibrary(String libname) {
+        // We are increasing the visibility of this method knowingly to suppress an issue with LWJGL running code it shouldn't run.
+        return super.findLibrary(libname);
+    }
 }

@@ -1,5 +1,6 @@
 # Ignore Gradle build output directory
 build/
+bin/
 
 # Ignore the galimulator jar - which we are not allowed to distribute
 galimulator-desktop.jar
