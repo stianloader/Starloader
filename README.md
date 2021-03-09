@@ -22,10 +22,6 @@ The built jar is located in the build/libs folder, and should have a "-all"
 suffix, if that isn't the case you might have not built that shadowjar, which
 will not run as it is missing vital dependencies.
 
-To compile most other extensions (inclding the API) you additionally need to use
-
-    ./gradlew publishToMavenLocal
-
 ## Running
 
 The jar then needs to be placed at the Galimulator folder 
@@ -34,16 +30,14 @@ and can then be executed via
 
     java -jar Galimulator-Starloader-1.0.0-SNAPSHOT-all.jar
 
-or similar. However Java 11 (higher also works) needs to be used
-but OpenJDK 11 as offered by some major linux distro vendors is known to NOT work,
-so if there is an obscure error with ld.so you should be using AdoptOpenJDK or similar
+or similar. However Java 11+ needs to be used
 
+If you are a linux (or any in fact) user, then you should use AdoptopenJDK
 ## Licensing and redistributing
 
 All code is licensed under the Apache 2.0 license, allowing you to redistribute
-the source. You MAY NOT redistribute the built shadowjar as it contains
-code written by people that have not opted into a license that allows that.
+the source.
 
-Additionally the net.minestom.server (our classloading system) package
-and the extention system was originally written by contributors of
-the Minestom project, also licensed under the Apache 2.0 project.
+Additionally a few portions of our code (i. e. the whole selfmodification and extension system)
+was largely written by Minestom contributors, who have contributed their code under
+the Apache 2.0 license
