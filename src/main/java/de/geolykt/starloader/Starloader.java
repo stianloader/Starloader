@@ -5,6 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import de.geolykt.starloader.mod.Extension;
 import de.geolykt.starloader.mod.ExtensionManager;
+import net.fabricmc.accesswidener.AccessWidener;
+import net.fabricmc.accesswidener.AccessWidenerReader;
+import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 public final class Starloader {
 
@@ -24,6 +27,7 @@ public final class Starloader {
         instance = new Starloader();
         extensions = new ExtensionManager();
         extensions.loadExtensions();
+        MinestomRootClassLoader.getInstance().widener = extensions.getAccessWidener();
         long start = System.currentTimeMillis();
         LOGGER.info("Initializing extension: preinit");
         extensions.getExtensions().forEach(Extension::preInitialize);
@@ -39,7 +43,7 @@ public final class Starloader {
             extensions.shutdown();
         }, "ExtensionsShutdownThread"));
     }
-    
+
     public static ExtensionManager getExtensionManager() {
         return extensions;
     }

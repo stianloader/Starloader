@@ -1,6 +1,9 @@
 package de.geolykt.starloader.mod;
 
 import com.google.gson.Gson;
+
+import net.fabricmc.accesswidener.AccessWidener;
+import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +18,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -32,6 +37,7 @@ public class ExtensionManager {
     private final Map<String, Extension> extensions = new HashMap<>();
     private final File extensionFolder = new File("extensions");
     private final File dependenciesFolder = new File(extensionFolder, ".libs");
+    private final AccessWidener accessWidener = new AccessWidener();
     private boolean loaded;
 
     private final List<Extension> extensionList = new CopyOnWriteArrayList<>();
@@ -424,13 +430,28 @@ public class ExtensionManager {
         return new HashMap<>(extensionLoaders);
     }
 
+    private void setupAccessWideners(List<DiscoveredExtension> extensionsToLoad) {
+        AccessWidenerReader accessReader = new AccessWidenerReader(accessWidener);
+        for (DiscoveredExtension extension : extensionsToLoad) {
+            Path modPath = extension.getOriginalJar().toPath().getParent();
+            Path path = modPath.resolve(extension.getAccessWidener().replace("/", modPath.getFileSystem().getSeparator()));
+
+            try {
+                accessReader.read(Files.newBufferedReader(path));
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOGGER.warn("Failed to set up an access widener!");
+            }
+        }
+    }
+
     /**
      * Extensions are allowed to apply Mixin transformers, the magic happens here.
      */
     private void setupCodeModifiers(@NotNull List<DiscoveredExtension> extensions) {
         final ClassLoader cl = getClass().getClassLoader();
         if (!(cl instanceof MinestomRootClassLoader)) {
-            LOGGER.warn("Current class loader is not a MinestomOverwriteClassLoader, but {}. This disables code modifiers (Mixin support is therefore disabled)", cl);
+            LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This disables code modifiers (Mixin support is therefore disabled)", cl);
             return;
         }
         @SuppressWarnings("resource")
@@ -561,6 +582,7 @@ public class ExtensionManager {
             setupClassLoader(toReload);
         }
 
+        setupAccessWideners(extensionsToLoad);
         // setup code modifiers for these extensions
         // TODO: it is possible the new modifiers cannot be applied (because the targeted classes are already loaded), should we issue a warning?
         setupCodeModifiers(extensionsToLoad);
@@ -613,5 +635,10 @@ public class ExtensionManager {
      */
     public void shutdown() {
         this.extensionList.forEach(this::unload);
+    }
+
+    @NotNull
+    public AccessWidener getAccessWidener() {
+            return accessWidener;
     }
 }

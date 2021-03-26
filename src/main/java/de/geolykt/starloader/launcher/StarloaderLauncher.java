@@ -20,6 +20,7 @@ public class StarloaderLauncher {
     public static final HashMap<String, String> VERSIONS = new HashMap<>();
     protected static JFrame preloaderFrame;
     private static JLabel galVerLabel;
+    public static String galVersion = "UNKNOWN";
 
     public static boolean isJava9() {
         try {
@@ -65,7 +66,8 @@ public class StarloaderLauncher {
         boolean mixinSupport = isJava9();
         showGUI(infoNotice, mixinSupport);
         System.out.println("Computing checksum version. This process takes a few seconds. Please wait...");
-        galVerLabel.setText("Detected galimulator version: " + VERSIONS.getOrDefault(getChecksum(), "UNKNOWN"));
+        galVersion = VERSIONS.getOrDefault(getChecksum(), "UNKNOWN");
+        galVerLabel.setText("Detected galimulator version: " + galVersion);
         if (preloaderFrame != null) {
             preloaderFrame.pack();
         }
@@ -101,7 +103,7 @@ public class StarloaderLauncher {
         VERSIONS.put("dbaff4dbb9d9289fc0424f7d538fe48fe87b6bb2ad50cbb52f443e1d7ef670ab", "4.8-beta.1-linux");
         // Beta 2 is the stable release
 //      VERSIONS.put("0618dae3a45d083da2a9f56ff67659c74d0547326588f37fc79d3a7febe25ccc", "4.8-beta.2-common");
-        // Galimulator 4.8 was accidentally released in a Platform-independent state, that means the same jar should run on all plattforms
-        VERSIONS.put("a09045718ca85933c7a53461cc313602dd803dbd773dfef2b72044ee8f57b156", "4.8-stable-common");
+        // Galimulator 4.8 was accidentally released in a somewhat Platform-independent state, that means the same jar should run on all plattforms
+        VERSIONS.put("a09045718ca85933c7a53461cc313602dd803dbd773dfef2b72044ee8f57b156", "4.8-stable-winux");
     }
 }

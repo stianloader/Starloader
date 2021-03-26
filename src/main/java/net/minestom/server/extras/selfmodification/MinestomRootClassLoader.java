@@ -2,10 +2,16 @@ package net.minestom.server.extras.selfmodification;
 
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.fabricmc.accesswidener.AccessWidener;
+import net.fabricmc.accesswidener.AccessWidenerReader;
+import net.fabricmc.accesswidener.AccessWidenerVisitor;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +33,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     public final static Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
 
     private static MinestomRootClassLoader INSTANCE;
+
+    public AccessWidener widener;
 
     /**
      * Classes that cannot be loaded/modified by this classloader.
@@ -207,9 +215,17 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     byte[] transformBytes(byte[] classBytecode, String name) {
         if (!isProtected(name)) {
             ClassReader reader = new ClassReader(classBytecode);
+            boolean modified = false;
+            if (widener != null && widener.getTargets().contains(name)) {
+                ClassWriter classWriter = new ClassWriter(0);
+                ClassVisitor visitor = classWriter;
+                visitor = AccessWidenerVisitor.createClassVisitor(Opcodes.ASM9, visitor, widener);
+                reader.accept(visitor, 0);
+                classBytecode = classWriter.toByteArray();
+                reader = new ClassReader(classBytecode);
+            }
             ClassNode node = new ClassNode();
             reader.accept(node, 0);
-            boolean modified = false;
             synchronized (modifiers) {
                 for (CodeModifier modifier : modifiers) {
                     boolean shouldModify = modifier.getNamespace() == null || name.startsWith(modifier.getNamespace());

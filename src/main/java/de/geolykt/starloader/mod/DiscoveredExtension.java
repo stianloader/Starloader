@@ -22,6 +22,7 @@ final class DiscoveredExtension {
     private String[] authors;
     private String[] codeModifiers;
     private String[] dependencies;
+    private String accessWidener;
     private ExternalDependencies externalDependencies;
     transient List<URL> files = new LinkedList<>();
     transient LoadStatus loadStatus = LoadStatus.LOAD_SUCCESS;
@@ -58,6 +59,11 @@ final class DiscoveredExtension {
             codeModifiers = new String[0];
         }
         return codeModifiers;
+    }
+
+    @NotNull
+    public String getAccessWidener() {
+        return accessWidener;
     }
 
     @NotNull
@@ -120,6 +126,9 @@ final class DiscoveredExtension {
         }
         if (extension.mixinConfig == null) {
             extension.mixinConfig = "";
+        }
+        if (extension.accessWidener == null) {
+            extension.accessWidener = "";
         }
         if (extension.authors == null) {
             extension.authors = new String[0];

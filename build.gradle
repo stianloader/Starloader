@@ -6,7 +6,7 @@ plugins {
 }
 
 group 'de.geolykt'
-version '1.0.0-SNAPSHOT'
+version '1.1.0-SNAPSHOT'
 
 // Our classloader require Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
@@ -16,6 +16,14 @@ repositories {
     maven {
         name 'sponge'
         url 'https://repo.spongepowered.org/maven'
+    }
+    maven {
+        name 'jitpack'
+        url 'https://jitpack.io'
+    }
+    maven {
+        name 'fabric'
+        url 'https://maven.fabricmc.net/'
     }
 }
 
@@ -37,11 +45,17 @@ dependencies {
     api "org.ow2.asm:asm-util:9.0"
     api "org.ow2.asm:asm-commons:9.0"
     api "org.spongepowered:mixin:0.8.1"
+    api "net.fabricmc:access-widener:1.0.0"
 
     // Logging
     api 'org.apache.logging.log4j:log4j-core:2.14.0'
     // SLF4J is the base logger for most libraries, therefore we can hook it into log4j2.
     api 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
+
+    api("com.github.heretere:hch:1.1.0") { // config handler
+        exclude group: 'com.google.code.gson' // We already import gson manually
+        exclude group: 'org.spigotmc' // Yeah, we do not need spigot here
+    }
 }
 
 jar {
