@@ -5,8 +5,6 @@ import org.slf4j.LoggerFactory;
 
 import de.geolykt.starloader.mod.Extension;
 import de.geolykt.starloader.mod.ExtensionManager;
-import net.fabricmc.accesswidener.AccessWidener;
-import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 public final class Starloader {

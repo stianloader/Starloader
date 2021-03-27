@@ -6,6 +6,7 @@ plugins {
 }
 
 group 'de.geolykt'
+def archivesBaseName = 'starloader'
 version '1.1.0-SNAPSHOT'
 
 // Our classloader require Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
@@ -68,14 +69,42 @@ shadowJar {
     mergeServiceFiles()
 }
 
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
 publishing {
     publications {
-        maven(MavenPublication) {
-            groupId 'de.geolykt'
-            artifactId 'starloader'
-            version '1.0.0-SNAPSHOT'
+        plugin(MavenPublication) { publication ->
+            groupId project.group
+            artifactId project.archivesBaseName
+            version '1.1.0'
 
-            from components.java
+            from components['java']
+
+            artifact sourcesJar
+            artifact javadocJar
         }
+
+        // Also publish a snapshot so people can use the latest version if they wish
+        snapshot(MavenPublication) { publication ->
+            groupId project.group
+            artifactId project.archivesBaseName
+            version '1.1.0-SNAPSHOT'
+
+            from components['java']
+
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
+    repositories {
+        mavenLocal()
     }
 }

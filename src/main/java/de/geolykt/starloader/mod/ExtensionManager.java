@@ -18,10 +18,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
@@ -54,7 +54,6 @@ public class ExtensionManager {
      * <p>
      * Default value is 'true'.
      *
-     * @return true if extensions are loaded in {@link net.minestom.server.MinecraftServer#start(String, int, ResponseDataConsumer)}
      */
     public boolean shouldLoadOnStartup() {
         return loadOnStartup;
@@ -110,6 +109,7 @@ public class ExtensionManager {
 
         // remove invalid extensions
         discoveredExtensions.removeIf(ext -> ext.loadStatus != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
+        setupAccessWideners(discoveredExtensions);
         setupCodeModifiers(discoveredExtensions);
 
         for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
@@ -433,14 +433,25 @@ public class ExtensionManager {
     private void setupAccessWideners(List<DiscoveredExtension> extensionsToLoad) {
         AccessWidenerReader accessReader = new AccessWidenerReader(accessWidener);
         for (DiscoveredExtension extension : extensionsToLoad) {
-            Path modPath = extension.getOriginalJar().toPath().getParent();
-            Path path = modPath.resolve(extension.getAccessWidener().replace("/", modPath.getFileSystem().getSeparator()));
+            if (extension.getAccessWidener().equals("")) {
+                continue;
+            }
 
             try {
-                accessReader.read(Files.newBufferedReader(path));
+                JarFile jar = new JarFile(extension.getOriginalJar(), false);
+                JarEntry entry = jar.getJarEntry(extension.getAccessWidener());
+                if (entry == null) {
+                    LOGGER.warn("Unable to find access widener for extension {}!", extension.getName());
+                    jar.close();
+                    continue;
+                }
+                Reader r = new InputStreamReader(jar.getInputStream(entry));
+                accessReader.read(new BufferedReader(r), null);
+                r.close();
+                jar.close();
             } catch (IOException e) {
                 e.printStackTrace();
-                LOGGER.warn("Failed to set up an access widener!");
+                LOGGER.warn("Failed to set up an access widener for {}!", extension.getName());
             }
         }
     }

@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.accesswidener.AccessWidener;
-import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.fabricmc.accesswidener.AccessWidenerVisitor;
 
 import java.io.File;
@@ -46,19 +45,21 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             add("net.minestom.server.extras.selfmodification.MinestomOverwriteClassLoader");
         }
     };
+
     public final Set<String> protectedPackages = new HashSet<>() {
         {
             add("com.google");
-            add("com.mojang");
             add("org.objectweb.asm");
             add("org.slf4j");
             add("org.apache");
             add("org.spongepowered");
-            add("net.minestom.server.extras.selfmodification");
+            add("net.minestom.server.extras.selfmodification"); // We do not want to load this package ourselves
             add("org.jboss.shrinkwrap.resolver");
             add("kotlin");
+            add("net.fabricmc.accesswidener"); // this package will throw a linkage error too when loaded otherwise
         }
     };
+
     /**
      * Used to let ASM find out common super types, without actually commiting to loading them
      * Otherwise ASM would accidentally load classes we might want to modify
@@ -73,7 +74,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     private final List<CodeModifier> modifiers = new LinkedList<>();
 
     private MinestomRootClassLoader(ClassLoader parent) {
-        super("Minestom Root ClassLoader", extractURLsFromClasspath(), parent);
+        super("Starloader Root ClassLoader", extractURLsFromClasspath(), parent);
         asmClassLoader = newChild(new URL[0]);
     }
 
