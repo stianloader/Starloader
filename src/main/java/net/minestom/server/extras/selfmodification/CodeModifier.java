@@ -1,5 +1,6 @@
 package net.minestom.server.extras.selfmodification;
 
+import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.tree.ClassNode;
 
 /**
@@ -18,5 +19,5 @@ public abstract class CodeModifier {
      * 'null' is allowed to transform any class, but not recommended
      * @return
      */
-    public abstract String getNamespace();
+    public abstract @Nullable String getNamespace();
 }

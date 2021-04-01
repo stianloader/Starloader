@@ -2,6 +2,7 @@ package de.geolykt.starloader.mod;
 
 import com.google.gson.Gson;
 
+import de.geolykt.starloader.transformers.EnumWidenerTransformer;
 import net.fabricmc.accesswidener.AccessWidener;
 import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
@@ -38,7 +39,9 @@ public class ExtensionManager {
     private final File extensionFolder = new File("extensions");
     private final File dependenciesFolder = new File(extensionFolder, ".libs");
     private final AccessWidener accessWidener = new AccessWidener();
+    private final ArrayList<String> enumWidener = new ArrayList<>();
     private boolean loaded;
+    private boolean loadedEnumWidener = false;
 
     private final List<Extension> extensionList = new CopyOnWriteArrayList<>();
     private final List<Extension> immutableExtensionListView = Collections.unmodifiableList(extensionList);
@@ -110,6 +113,7 @@ public class ExtensionManager {
         // remove invalid extensions
         discoveredExtensions.removeIf(ext -> ext.loadStatus != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
         setupAccessWideners(discoveredExtensions);
+        setupEnumWideners(discoveredExtensions); // Enum wideners come before mixins as mixins can mix up some things
         setupCodeModifiers(discoveredExtensions);
 
         for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
@@ -441,7 +445,7 @@ public class ExtensionManager {
                 JarFile jar = new JarFile(extension.getOriginalJar(), false);
                 JarEntry entry = jar.getJarEntry(extension.getAccessWidener());
                 if (entry == null) {
-                    LOGGER.warn("Unable to find access widener for extension {}!", extension.getName());
+                    LOGGER.warn("Unable to find the access widener file for extension {}!", extension.getName());
                     jar.close();
                     continue;
                 }
@@ -452,6 +456,48 @@ public class ExtensionManager {
             } catch (IOException e) {
                 e.printStackTrace();
                 LOGGER.warn("Failed to set up an access widener for {}!", extension.getName());
+            }
+        }
+    }
+
+    private void setupEnumWideners(List<DiscoveredExtension> extensionsToLoad) {
+        for (DiscoveredExtension extension : extensionsToLoad) {
+            if (extension.getEnumWidener().equals("")) {
+                continue;
+            }
+
+            try {
+                JarFile jar = new JarFile(extension.getOriginalJar(), false);
+                JarEntry entry = jar.getJarEntry(extension.getEnumWidener());
+                if (entry == null) {
+                    LOGGER.warn("Unable to find the enum widener file for extension {}!", extension.getName());
+                    jar.close();
+                    continue;
+                }
+                Reader r = new InputStreamReader(jar.getInputStream(entry));
+                try (BufferedReader br = new BufferedReader(r)) {
+                    String line = br.readLine();
+                    while (line != null) {
+                        String content = line.split("#")[0].trim();
+                        if (content.length() == 0) {
+                            return;
+                        }
+                        enumWidener.add(content);
+                        line = br.readLine();
+                    }
+                }
+                r.close();
+                jar.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOGGER.warn("Failed to set up an access widener for {}!", extension.getName());
+            }
+        }
+        if (!loadedEnumWidener && !enumWidener.isEmpty()) { // make sure it isn't registered when there is no need to or when the modifier is already added
+            loadedEnumWidener = true;
+            ClassLoader cl = getClass().getClassLoader();
+            if (cl instanceof MinestomRootClassLoader) {
+                ((MinestomRootClassLoader) cl).addCodeModifier(new EnumWidenerTransformer(enumWidener));
             }
         }
     }
@@ -651,5 +697,10 @@ public class ExtensionManager {
     @NotNull
     public AccessWidener getAccessWidener() {
             return accessWidener;
+    }
+
+    @NotNull
+    public ArrayList<String> getWidenedEnums() {
+            return enumWidener;
     }
 }

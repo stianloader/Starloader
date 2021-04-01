@@ -60,7 +60,7 @@ public final class SLMouseListener implements MouseListener {
             try {
                 if (launchWithMods) {
                     startMixin(args);
-                    MinestomRootClassLoader.getInstance().addCodeModifier(new MixinCodeModifier());
+                    cl.addCodeModifier(new MixinCodeModifier());
                     MixinServiceMinestom.gotoPreinitPhase();
                     // ensure extensions are loaded when starting the server
                     Class<?> serverClass = cl.loadClass("de.geolykt.starloader.Starloader");
