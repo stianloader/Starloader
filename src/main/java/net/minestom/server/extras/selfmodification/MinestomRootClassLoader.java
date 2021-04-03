@@ -57,6 +57,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             add("org.jboss.shrinkwrap.resolver");
             add("kotlin");
             add("net.fabricmc.accesswidener"); // this package will throw a linkage error too when loaded otherwise
+            add("de.geolykt.starloader.transformers");
         }
     };
 

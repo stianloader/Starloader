@@ -23,7 +23,6 @@ final class DiscoveredExtension {
     private String[] codeModifiers;
     private String[] dependencies;
     private String accessWidener;
-    private String enumWidener;
     private ExternalDependencies externalDependencies;
     transient List<URL> files = new LinkedList<>();
     transient LoadStatus loadStatus = LoadStatus.LOAD_SUCCESS;
@@ -62,11 +61,6 @@ final class DiscoveredExtension {
     @NotNull
     public String getAccessWidener() {
         return accessWidener;
-    }
-
-    @NotNull
-    public String getEnumWidener() {
-        return enumWidener;
     }
 
     @NotNull
@@ -132,9 +126,6 @@ final class DiscoveredExtension {
         }
         if (extension.accessWidener == null) {
             extension.accessWidener = "";
-        }
-        if (extension.enumWidener == null) {
-            extension.enumWidener = "";
         }
         if (extension.authors == null) {
             extension.authors = new String[0];

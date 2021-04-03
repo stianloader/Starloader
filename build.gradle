@@ -22,10 +22,6 @@ repositories {
         name = 'Geolykt'
         url = 'https://geolykt.de/maven/'
     }
-    maven {
-        name 'fabric'
-        url 'https://maven.fabricmc.net/'
-    }
 }
 
 dependencies {
@@ -40,18 +36,18 @@ dependencies {
     api 'com.google.guava:guava:21.0'
 
     // Code modification
-    api "org.ow2.asm:asm:9.0"
-    api "org.ow2.asm:asm-tree:9.0"
-    api "org.ow2.asm:asm-analysis:9.0"
-    api "org.ow2.asm:asm-util:9.0"
-    api "org.ow2.asm:asm-commons:9.0"
-    api "org.spongepowered:mixin:0.8.1"
-    api "net.fabricmc:access-widener:1.0.0"
+    api "org.ow2.asm:asm:9.1"
+    api "org.ow2.asm:asm-tree:9.1"
+    api "org.ow2.asm:asm-analysis:9.1"
+    api "org.ow2.asm:asm-util:9.1"
+    api "org.ow2.asm:asm-commons:9.1"
+    api "org.spongepowered:mixin:0.8.3-SNAPSHOT"
+    api "de.geolykt.starloader:access-widener:2.0.0"
 
     // Logging
-    api 'org.apache.logging.log4j:log4j-core:2.14.0'
-    // SLF4J is the base logger for most libraries, therefore we can hook it into log4j2.
-    api 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
+    // SLF4J is the base logger for most libraries, therefore we should hook it into log4j2.
+    api 'org.apache.logging.log4j:log4j-core:2.14.1'
+    api 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.1'
 
     api("com.heretere.hch:hch-json:1.0.0") { // config handler
         exclude group: 'com.google.code.gson' // We already import gson manually
