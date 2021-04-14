@@ -49,6 +49,7 @@ public class GlobalPropertyServiceMinestom implements IGlobalPropertyService {
         return keys.computeIfAbsent(name, BasicProperty::new);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T getProperty(IPropertyKey key) {
         return (T) values.get(key);
@@ -59,6 +60,7 @@ public class GlobalPropertyServiceMinestom implements IGlobalPropertyService {
         values.put(key, value);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T getProperty(IPropertyKey key, T defaultValue) {
         return (T) values.getOrDefault(key, defaultValue);

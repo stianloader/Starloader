@@ -124,6 +124,7 @@ public class ExtensionManager {
         }
     }
 
+    @SuppressWarnings("resource")
     private void setupClassLoader(@NotNull DiscoveredExtension discoveredExtension) {
         final String extensionName = discoveredExtension.getName();
 
@@ -133,6 +134,7 @@ public class ExtensionManager {
         extensionLoaders.put(extensionName.toLowerCase(), loader);
     }
 
+    @SuppressWarnings("resource")
     @Nullable
     private Extension attemptSingleLoad(@NotNull DiscoveredExtension discoveredExtension) {
         // Create ExtensionDescription (authors, version etc.)
@@ -311,12 +313,11 @@ public class ExtensionManager {
                             // attempt to see if it is not already loaded (happens with dynamic (re)loading)
                             if (extensions.containsKey(dependencyName.toLowerCase())) {
                                 return extensions.get(dependencyName.toLowerCase()).getDescription().getOrigin();
-                            } else {
-                                LOGGER.error("Extension {} requires an extension called {}.", discoveredExtension.getName(), dependencyName);
-                                LOGGER.error("However the extension {} could not be found.", dependencyName);
-                                LOGGER.error("Therefore {} will not be loaded.", discoveredExtension.getName());
-                                discoveredExtension.loadStatus = DiscoveredExtension.LoadStatus.MISSING_DEPENDENCIES;
                             }
+                            LOGGER.error("Extension {} requires an extension called {}.", discoveredExtension.getName(), dependencyName);
+                            LOGGER.error("However the extension {} could not be found.", dependencyName);
+                            LOGGER.error("Therefore {} will not be loaded.", discoveredExtension.getName());
+                            discoveredExtension.loadStatus = DiscoveredExtension.LoadStatus.MISSING_DEPENDENCIES;
                         }
                         // This will return null for an unknown-extension
                         return extensionMap.get(dependencyName.toLowerCase());
@@ -383,6 +384,7 @@ public class ExtensionManager {
      *
      * @param urls {@link URL} (usually a JAR) that should be loaded.
      */
+    @SuppressWarnings("resource")
     @NotNull
     public MinestomExtensionClassLoader newClassLoader(@NotNull DiscoveredExtension extension, @NotNull URL[] urls) {
         MinestomRootClassLoader root = MinestomRootClassLoader.getInstance();
@@ -490,6 +492,7 @@ public class ExtensionManager {
         LOGGER.info("Done loading code modifiers.");
     }
 
+    @SuppressWarnings("resource")
     private void unload(Extension ext) {
         ext.preTerminate();
         ext.terminate();

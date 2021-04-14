@@ -31,6 +31,7 @@ public final class SLMouseListener implements MouseListener {
     }
 
     private static void addToCPJ8 (File file) throws ReflectiveOperationException, SecurityException, IllegalArgumentException, MalformedURLException {
+        @SuppressWarnings("resource") // The system classloader should not be closed
         URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
         Method method = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
         method.invoke(sysloader, new Object[]{file.toURI().toURL()});
@@ -46,6 +47,7 @@ public final class SLMouseListener implements MouseListener {
         }
     }
 
+    @SuppressWarnings("resource") // we cannot close classloaders
     @Override
     public void mouseClicked(MouseEvent e) {
         StarloaderLauncher.preloaderFrame.setVisible(false);

@@ -79,6 +79,7 @@ public class MixinServiceMinestom extends MixinServiceAbstract {
     }
 
     @Override
+    @Deprecated
     public void wire(MixinEnvironment.Phase phase, IConsumer<MixinEnvironment.Phase> phaseConsumer) {
         super.wire(phase, phaseConsumer);
         this.phaseConsumer = phaseConsumer;

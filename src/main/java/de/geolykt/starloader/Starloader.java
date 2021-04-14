@@ -17,6 +17,7 @@ public final class Starloader {
 
     private Starloader() {}
 
+    @SuppressWarnings("resource")
     public static void init() {
         if (instance != null) {
             throw new IllegalStateException("Starloader initialized twice!");

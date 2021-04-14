@@ -40,6 +40,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * Will go through parent class loader
      */
     public final Set<String> protectedClasses = new HashSet<>() {
+        private static final long serialVersionUID = 1562431043013365680L;
+
         {
             add("net.minestom.server.extras.selfmodification.CodeModifier");
             add("net.minestom.server.extras.selfmodification.MinestomOverwriteClassLoader");
@@ -47,6 +49,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     };
 
     public final Set<String> protectedPackages = new HashSet<>() {
+        private static final long serialVersionUID = -4833006816182792038L;
+
         {
             add("com.google");
             add("org.objectweb.asm");
@@ -180,7 +184,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      *
      * @param name
      * @param transform
-     * @return
+     * @return The transformed bytes
      * @throws IOException
      * @throws ClassNotFoundException
      */
@@ -193,6 +197,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             throw new ClassNotFoundException("Could not find resource " + path);
         }
         byte[] originalBytes = input.readAllBytes();
+        input.close();
         if (transform) {
             return transformBytes(originalBytes, name);
         }
@@ -208,6 +213,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             throw new ClassNotFoundException("Could not find resource " + path);
         }
         byte[] originalBytes = input.readAllBytes();
+        input.close();
         if (transform) {
             return transformBytes(originalBytes, name);
         }
@@ -268,6 +274,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             for (int i = 0; i < originFiles.length; i++) {
                 urls[i] = originFiles[i].toURI().toURL();
             }
+            @SuppressWarnings("resource")
             URLClassLoader loader = newChild(urls);
             Class<?> modifierClass = loader.loadClass(codeModifierClass);
             if (CodeModifier.class.isAssignableFrom(modifierClass)) {

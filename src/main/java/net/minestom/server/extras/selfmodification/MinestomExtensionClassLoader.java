@@ -28,7 +28,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
     /**
      * Assumes the name is not null, nor it does represent a protected class
      * @param name
-     * @return
+     * @return The loaded class
      * @throws ClassNotFoundException if the class is not found inside this classloader
      */
     public Class<?> loadClassAsChild(String name, boolean resolve) throws ClassNotFoundException {
