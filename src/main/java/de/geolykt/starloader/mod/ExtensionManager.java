@@ -94,6 +94,7 @@ public class ExtensionManager {
         discoveredExtensions = generateLoadOrder(discoveredExtensions);
         loadDependencies(discoveredExtensions);
         // remove invalid extensions
+        assert discoveredExtensions != null;
         discoveredExtensions.removeIf(ext -> ext.loadStatus != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
 
         for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
@@ -464,7 +465,7 @@ public class ExtensionManager {
     private void setupCodeModifiers(@NotNull List<DiscoveredExtension> extensions) {
         final ClassLoader cl = getClass().getClassLoader();
         if (!(cl instanceof MinestomRootClassLoader)) {
-            LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This disables code modifiers (Mixin support is therefore disabled)", cl);
+            LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This disables code modifiers (Mixin (and as such modding) support is therefore disabled)", cl);
             return;
         }
         @SuppressWarnings("resource")
@@ -598,7 +599,8 @@ public class ExtensionManager {
 
         setupAccessWideners(extensionsToLoad);
         // setup code modifiers for these extensions
-        // TODO: it is possible the new modifiers cannot be applied (because the targeted classes are already loaded), should we issue a warning?
+        // TODO: it is possible that the new modifiers cannot be applied (because the targeted classes are already loaded), should we issue a warning?
+        // If so, how?
         setupCodeModifiers(extensionsToLoad);
 
         List<Extension> newExtensions = new LinkedList<>();

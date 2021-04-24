@@ -7,7 +7,7 @@ plugins {
 
 group 'de.geolykt'
 def archivesBaseName = 'starloader'
-version '1.1.0'
+version '2.0.0'
 
 // Our classloader require Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
@@ -25,6 +25,9 @@ repositories {
 }
 
 dependencies {
+
+    // I am very well aware that this is just a reference implementation, but it has served me well in the past; so I prefer it over any other implementation
+    api 'org.json:json:20210307'
 
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     api group: 'org.jetbrains', name: 'annotations', version: '20.1.0'
@@ -59,7 +62,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'de.geolykt.starloader.launcher.StarloaderLauncher'
+        attributes 'Main-Class': 'de.geolykt.starloader.launcher.Launcher'
     }
 }
 
