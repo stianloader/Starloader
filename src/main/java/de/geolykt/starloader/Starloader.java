@@ -38,7 +38,7 @@ public final class Starloader {
         LOGGER.info("Initializing extension: postinit");
         extensions.getExtensions().forEach(Extension::postInitialize);
         LOGGER.info("All Extensions initialized within {}ms", (System.currentTimeMillis() - start));
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {// FIXME don't use shutdown hooks and/or have them deadlock-proof.
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> { // FIXME don't use shutdown hooks and/or have them deadlock-proof.
             extensions.shutdown();
         }, "ExtensionsShutdownThread"));
     }

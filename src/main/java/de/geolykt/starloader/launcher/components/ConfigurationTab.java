@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -29,11 +30,19 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
     protected final JLabel fileChooserDesc;
     protected final JLabel filever;
     protected final JButton fileChooserButton;
+    protected final JCheckBox allowExtensions;
+    protected final JCheckBox allowPatches;
+    protected final JLabel patchesFolderDesc;
+    protected final JButton patchesFolderButton;
+    protected final JLabel extensionsFolderDesc;
+    protected final JButton extensionsFolderButton;
 
     protected final JFrame superparent;
     protected DigestCalculationRunnable digester;
 
-    protected JFileChooser fileChooser;
+    protected JFileChooser fileChooserGali;
+    protected JFileChooser fileChooserExtensions;
+    protected JFileChooser fileChooserPatches;
 
     private Timer versionTimer = null;
     public ConfigurationTab(LauncherConfiguration config, JFrame superparent) {
@@ -55,11 +64,25 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
         Launcher.MAIN_TASK_QUEUE.add(digester);
         fileChooserButton = new JButton("Choose");
         fileChooserButton.addMouseListener(new MouseClickListener(this::showJarFileChooser));
+        allowExtensions = new JCheckBox("Enable extension support", cfg.hasExtensionsEnabled());
+        allowPatches = new JCheckBox("Enable patch support", cfg.hasPatchesEnabled());
+        patchesFolderDesc = new JLabel("Patches folder: " + cfg.getPatchesFolder().getPath());
+        patchesFolderButton = new JButton("Change folder");
+        patchesFolderButton.addMouseListener(new MouseClickListener(this::showPatchesFC));
+        extensionsFolderDesc = new JLabel("Extensions folder: " + cfg.getExtensionsFolder().getPath());
+        extensionsFolderButton = new JButton("Change folder");
+        extensionsFolderButton.addMouseListener(new MouseClickListener(this::showExtensionsFC));
         add(headerLabel);
         add(headerSeperator);
         add(fileChooserDesc);
         add(filever);
         add(fileChooserButton);
+        add(allowExtensions);
+        add(allowPatches);
+        add(patchesFolderDesc);
+        add(patchesFolderButton);
+        add(extensionsFolderDesc);
+        add(extensionsFolderButton);
     }
 
     /**
@@ -73,15 +96,59 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
     }
 
     public void showJarFileChooser() {
-        if (fileChooser == null) {
-            fileChooser = new JFileChooser(Utils.getGameDir(Utils.STEAM_GALIMULATOR_APPNAME));
+        if (fileChooserGali == null) {
+            fileChooserGali = new JFileChooser(Utils.getGameDir(Utils.STEAM_GALIMULATOR_APPNAME));
             FileFilter filter = new FileNameExtensionFilter("Java Archives", "jar");
-            fileChooser.setFileFilter(filter);
-            fileChooser.addChoosableFileFilter(filter);
-            fileChooser.setVisible(true);
+            fileChooserGali.setFileFilter(filter);
+            fileChooserGali.addChoosableFileFilter(filter);
+            fileChooserGali.setVisible(true);
         }
-        if (fileChooser.showOpenDialog(getParent()) == JFileChooser.APPROVE_OPTION) {
+        if (fileChooserGali.showOpenDialog(getParent()) == JFileChooser.APPROVE_OPTION) {
             acceptJarFileChooser();
+        }
+    }
+
+    public void showPatchesFC() {
+        if (fileChooserPatches == null) {
+            fileChooserPatches = new JFileChooser(Utils.getCurrentDir());
+            fileChooserPatches.setFileFilter(FolderFileFilter.INSTANCE);
+            fileChooserPatches.addChoosableFileFilter(FolderFileFilter.INSTANCE);
+            fileChooserPatches.setVisible(true);
+        }
+        if (fileChooserPatches.showOpenDialog(getParent()) == JFileChooser.APPROVE_OPTION) {
+            File patchesFolder = fileChooserPatches.getSelectedFile();
+            if (!patchesFolder.isDirectory()) {
+                patchesFolder = fileChooserPatches.getCurrentDirectory();
+            }
+            cfg.setPatchesFolder(patchesFolder);
+            try {
+                cfg.save();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            patchesFolderDesc.setText("Patches folder: " + patchesFolder.getPath());
+        }
+    }
+
+    public void showExtensionsFC() {
+        if (fileChooserExtensions == null) {
+            fileChooserExtensions = new JFileChooser(Utils.getCurrentDir());
+            fileChooserExtensions.setFileFilter(FolderFileFilter.INSTANCE);
+            fileChooserExtensions.addChoosableFileFilter(FolderFileFilter.INSTANCE);
+            fileChooserExtensions.setVisible(true);
+        }
+        if (fileChooserExtensions.showOpenDialog(getParent()) == JFileChooser.APPROVE_OPTION) {
+            File extensionsFolder = fileChooserExtensions.getSelectedFile();
+            if (!extensionsFolder.isDirectory()) {
+                extensionsFolder = fileChooserExtensions.getCurrentDirectory();
+            }
+            cfg.setExtensionsFolder(extensionsFolder);
+            try {
+                cfg.save();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            extensionsFolderDesc.setText("Extensions folder: " + extensionsFolder.getPath());
         }
     }
 
@@ -90,7 +157,7 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
     }
 
     public void acceptJarFileChooser() {
-        File selected = fileChooser.getSelectedFile();
+        File selected = fileChooserGali.getSelectedFile();
         // TODO perform verification of the file
         cfg.setTargetJar(selected);
         fileChooserDesc.setText(String.format("Galimulator jar file (currently %s)", cfg.getTargetJar().getPath()));

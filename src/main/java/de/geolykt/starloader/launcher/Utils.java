@@ -1,5 +1,6 @@
 package de.geolykt.starloader.launcher;
 
+import java.awt.Dimension;
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -249,6 +250,10 @@ public final class Utils {
         Mixins.getConfigs().forEach(c -> MinestomRootClassLoader.getInstance().protectedPackages.add(c.getConfig().getMixinPackage()));
     }
 
+    public static final Dimension combineLargest(Dimension original, Dimension newer) {
+        return new Dimension(Math.max(original.width, newer.width), Math.max(original.height, newer.height));
+    }
+
     static {
         // TODO add more jars to this collection and check "pure guess" jars
         // It would also be interesting if steam/itch provides the checksums for this file, could we check or not?
@@ -260,6 +265,10 @@ public final class Utils {
         VERSIONS.put("b659d3fd10bf03d90bfa3142614e7c70793d9fc184e1cfcc39f1535e726d7d08", "4.7-stable-windows");
         VERSIONS.put("dbaff4dbb9d9289fc0424f7d538fe48fe87b6bb2ad50cbb52f443e1d7ef670ab", "4.8-beta-linux"); // There was only one beta release for 4.8 (the other was the stable release)
         // Galimulator 4.8 was accidentally released in a somewhat Platform-independent state, that means the same jar should run on all plattforms
-        VERSIONS.put("a09045718ca85933c7a53461cc313602dd803dbd773dfef2b72044ee8f57b156", "4.8-stable-winux");
+        VERSIONS.put("a09045718ca85933c7a53461cc313602dd803dbd773dfef2b72044ee8f57b156", "4.8-stable-linux (contains Windows natives)");
+    }
+
+    public static File getCurrentDir() {
+        return new File(".");
     }
 }

@@ -136,27 +136,27 @@ public class Launcher {
     }
 
     private void settings() {
-        System.out.println(currentTab.getClass().getName());
         currentTab.onClose(gui);
         gui.add(contentsConfig);
         currentTab = contentsConfig;
-        gui.pack();
+        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize()));
+        gui.paintComponents(gui.getGraphics());
     }
 
     private void extensions() {
-        System.out.println(currentTab.getClass().getName());
         currentTab.onClose(gui);
         gui.add(contentsExtension);
         currentTab = contentsExtension;
-        gui.pack();
+        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize()));
+        gui.paintComponents(gui.getGraphics());
     }
 
     private void patches() {
-        System.out.println(currentTab.getClass().getName());
         currentTab.onClose(gui);
         gui.add(contentsPatches);
         currentTab = contentsPatches;
-        gui.pack();
+        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize()));
+        gui.paintComponents(gui.getGraphics());
     }
 
     public String[] getArgs() {
