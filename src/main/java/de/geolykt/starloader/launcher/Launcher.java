@@ -80,7 +80,6 @@ public class Launcher {
         contentsExtension = new ExtensionsTab(configuration);
         contentsPatches = new PatchesTab(configuration);
 
-        contentsExtension.add(new JLabel("Coming soon!"));
         contentsPatches.add(new JLabel("Coming soon (TM)!"));
 
         currentTab = new StarloaderTab() {
@@ -119,6 +118,7 @@ public class Launcher {
     }
 
     private void play() {
+        currentTab.onClose(gui);
         gui.setVisible(false);
         // Memory deallocation - they are no longer used, so there is little reason on continuing to use it
         gui = null;
@@ -139,6 +139,7 @@ public class Launcher {
         currentTab.onClose(gui);
         gui.add(contentsConfig);
         currentTab = contentsConfig;
+        currentTab.onOpen(gui);
         gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize()));
         gui.paintComponents(gui.getGraphics());
     }
@@ -147,6 +148,7 @@ public class Launcher {
         currentTab.onClose(gui);
         gui.add(contentsExtension);
         currentTab = contentsExtension;
+        currentTab.onOpen(gui);
         gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize()));
         gui.paintComponents(gui.getGraphics());
     }
@@ -155,6 +157,7 @@ public class Launcher {
         currentTab.onClose(gui);
         gui.add(contentsPatches);
         currentTab = contentsPatches;
+        currentTab.onOpen(gui);
         gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize()));
         gui.paintComponents(gui.getGraphics());
     }

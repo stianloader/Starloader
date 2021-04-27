@@ -29,8 +29,8 @@ public class ExtensionManager {
 
     public final static Logger LOGGER = LoggerFactory.getLogger(ExtensionManager.class);
 
-    private final static String INDEV_CLASSES_FOLDER = "minestom.extension.indevfolder.classes";
-    private final static String INDEV_RESOURCES_FOLDER = "minestom.extension.indevfolder.resources";
+    final static String INDEV_CLASSES_FOLDER = "minestom.extension.indevfolder.classes";
+    final static String INDEV_RESOURCES_FOLDER = "minestom.extension.indevfolder.resources";
     private final static Gson GSON = new Gson();
 
     private final Map<String, MinestomExtensionClassLoader> extensionLoaders = new HashMap<>();

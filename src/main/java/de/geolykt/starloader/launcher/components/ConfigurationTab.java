@@ -111,8 +111,7 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
     public void showPatchesFC() {
         if (fileChooserPatches == null) {
             fileChooserPatches = new JFileChooser(Utils.getCurrentDir());
-            fileChooserPatches.setFileFilter(FolderFileFilter.INSTANCE);
-            fileChooserPatches.addChoosableFileFilter(FolderFileFilter.INSTANCE);
+            fileChooserPatches.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooserPatches.setVisible(true);
         }
         if (fileChooserPatches.showOpenDialog(getParent()) == JFileChooser.APPROVE_OPTION) {
@@ -133,8 +132,7 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
     public void showExtensionsFC() {
         if (fileChooserExtensions == null) {
             fileChooserExtensions = new JFileChooser(Utils.getCurrentDir());
-            fileChooserExtensions.setFileFilter(FolderFileFilter.INSTANCE);
-            fileChooserExtensions.addChoosableFileFilter(FolderFileFilter.INSTANCE);
+            fileChooserExtensions.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooserExtensions.setVisible(true);
         }
         if (fileChooserExtensions.showOpenDialog(getParent()) == JFileChooser.APPROVE_OPTION) {

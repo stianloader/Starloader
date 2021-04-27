@@ -29,6 +29,12 @@ dependencies {
     // I am very well aware that this is just a reference implementation, but it has served me well in the past; so I prefer it over any other implementation
     api 'org.json:json:20210307'
 
+    // Let's use a library that's over 2 and a half decades old because why not?
+    // However it is pretty much unmaintained by now
+    // so I may need to change it out with something a bit more conventional to use with Java 11
+    // https://mvnrepository.com/artifact/tablelayout/TableLayout
+    api group: 'tablelayout', name: 'TableLayout', version: '20050920'
+
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     api group: 'org.jetbrains', name: 'annotations', version: '20.1.0'
 
