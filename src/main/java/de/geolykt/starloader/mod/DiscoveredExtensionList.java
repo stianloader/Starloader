@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -21,10 +23,12 @@ public class DiscoveredExtensionList {
 
     private final File extensionFolder;
     private final List<ExtensionPrototype> extensions;
+    private final Map<String, List<ExtensionPrototype>> extensionsByName;
 
     public DiscoveredExtensionList(File sourceFolder) {
         extensionFolder = sourceFolder;
         extensions = new ArrayList<>();
+        extensionsByName = new HashMap<>();
         for (File jarFile : extensionFolder.listFiles(JarFilter.INSTANCE)) {
             try {
                 JarFile jar = new JarFile(jarFile);
@@ -35,7 +39,15 @@ public class DiscoveredExtensionList {
                 }
                 InputStream is = jar.getInputStream(entry);
                 JSONObject jsonObj = new JSONObject(new String(is.readAllBytes(), StandardCharsets.UTF_8));
-                extensions.add(new ExtensionPrototype(jarFile, jsonObj.getString("name"), jsonObj.optString("version", "unkown")));
+                ExtensionPrototype prototype = new ExtensionPrototype(jarFile, jsonObj.getString("name"), jsonObj.optString("version", "unkown"));
+                extensions.add(prototype);
+                if (extensionsByName.containsKey(prototype.name)) {
+                    extensionsByName.get(prototype.name).add(prototype);
+                } else {
+                    List<ExtensionPrototype> l = new ArrayList<>();
+                    l.add(prototype);
+                    extensionsByName.put(prototype.name, l);
+                }
                 is.close();
                 jar.close();
             } catch (IOException e) {
@@ -52,6 +64,14 @@ public class DiscoveredExtensionList {
      */
     public List<ExtensionPrototype> getPrototypes() {
         return extensions;
+    }
+
+    public List<ExtensionPrototype> getPrototypes(String s) {
+        List<ExtensionPrototype> l = extensionsByName.get(s);
+        if (l == null) {
+            return new ArrayList<>();
+        }
+        return l;
     }
 
     public File getFolder() {

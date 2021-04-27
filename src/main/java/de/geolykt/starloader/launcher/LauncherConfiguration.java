@@ -5,8 +5,13 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import de.geolykt.starloader.mod.DiscoveredExtensionList;
+import de.geolykt.starloader.mod.ExtensionPrototype;
 
 /**
  * Object that stores the configuration of the launcher.
@@ -19,6 +24,8 @@ public final class LauncherConfiguration {
     private boolean patchSupport;
     private File extensionsFolder;
     private File patchesFolder;
+    private DiscoveredExtensionList extensions;
+    private JSONObject extensionsObject;
 
     LauncherConfiguration(File configLoc) throws IOException {
         storageLoc = configLoc;
@@ -48,9 +55,12 @@ public final class LauncherConfiguration {
             // Set defaults
             galimulatorFile = "./jar/galimulator-desktop.jar";
             extensionSupport = true;
-            patchSupport = false; // TODO make "true" the default
+            patchSupport = false; // TODO make "true" the default, when it is a useable setting
             extensionsFolder = new File("extensions/");
             patchesFolder = new File("patches/");
+            extensions = new DiscoveredExtensionList(extensionsFolder);
+            extensionsObject = new JSONObject();
+            extensionsObject.put("enabled", new JSONArray());
             return;
         }
         try (FileInputStream fis = new FileInputStream(storageLoc)) {
@@ -61,6 +71,19 @@ public final class LauncherConfiguration {
             patchSupport = jsonObj.getBoolean("do-patches");
             extensionsFolder = new File(jsonObj.getString("folder-extensions"));
             patchesFolder = new File(jsonObj.getString("folder-patches"));
+            extensionsObject = jsonObj.getJSONObject("extensions");
+            extensions = new DiscoveredExtensionList(extensionsFolder);
+            JSONArray arr = extensionsObject.getJSONArray("enabled");
+            for (Object enabledExtension : arr) {
+                String[] entry = enabledExtension.toString().split("@");
+                if (entry.length == 2) {
+                    for (ExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
+                        if (prototype.version.equals(entry[1])) {
+                            prototype.enabled = true;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -71,6 +94,21 @@ public final class LauncherConfiguration {
         object.put("do-patches", patchSupport);
         object.put("folder-extensions", extensionsFolder.getAbsolutePath());
         object.put("folder-patches", patchesFolder.getAbsolutePath());
+
+        JSONArray arr = extensionsObject.getJSONArray("enabled");
+        HashSet<String> s = new HashSet<>();
+        arr.forEach(e -> s.add(e.toString()));
+        for (ExtensionPrototype prototype : extensions.getPrototypes()) {
+            if (prototype.enabled) {
+                s.add(String.format("%s@%s", prototype.name, prototype.version));
+            } else {
+                s.remove(String.format("%s@%s", prototype.name, prototype.version));
+            }
+        }
+        JSONArray nArr = new JSONArray();
+        s.forEach(nArr::put);
+        extensionsObject.put("enabled", nArr);
+        object.put("extensions", extensionsObject);
 
         try (FileOutputStream fos = new FileOutputStream(storageLoc)) {
             fos.write(object.toString(4).getBytes(StandardCharsets.UTF_8));
@@ -126,5 +164,28 @@ public final class LauncherConfiguration {
 
     public File getExtensionsFolder() {
         return extensionsFolder;
+    }
+
+    public void setExtensionList(DiscoveredExtensionList extList) {
+        extensions = extList;
+    }
+
+    public DiscoveredExtensionList getExtensionList() {
+        if (extensions != null && extensions.getFolder().equals(getExtensionsFolder())) {
+            return extensions; // List does not need updating
+        }
+        extensions = new DiscoveredExtensionList(extensionsFolder);
+        JSONArray arr = extensionsObject.getJSONArray("enabled");
+        for (Object enabledExtension : arr) {
+            String[] entry = enabledExtension.toString().split("@");
+            if (entry.length == 2) {
+                for (ExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
+                    if (prototype.version.equals(entry[1])) {
+                        prototype.enabled = true;
+                    }
+                }
+            }
+        }
+        return extensions;
     }
 }

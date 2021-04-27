@@ -173,6 +173,8 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
     @Override
     public void onClose(JFrame parent) {
         parent.remove(this);
+        cfg.setExtensionsEnabled(allowExtensions.getModel().isSelected());
+        cfg.setPatchesEnabled(allowPatches.getModel().isSelected());
         try {
             cfg.save();
         } catch (IOException e) {

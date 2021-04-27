@@ -36,6 +36,12 @@ public class ExtensionsTab extends JPanel implements StarloaderTab {
 
     @Override
     public void onClose(JFrame parent) {
+        for (int i = 1; i < right.size(); i++) {
+            Component comp = right.get(i);
+            if (comp instanceof JCheckBox) {
+                extList.getPrototypes().get(i - 1).enabled = ((JCheckBox) comp).getModel().isSelected();
+            }
+        }
         parent.remove(this);
         try {
             cfg.save();
@@ -68,7 +74,7 @@ public class ExtensionsTab extends JPanel implements StarloaderTab {
         add(center.get(0), new TableLayoutConstraints(1, 0, 1, 0, TableLayoutConstraints.LEFT, TableLayoutConstraints.CENTER));
         left.add(new JLabel("Version"));
         add(left.get(0), new TableLayoutConstraints(2, 0, 2, 0, TableLayoutConstraints.LEFT, TableLayoutConstraints.CENTER));
-        extList = new DiscoveredExtensionList(cfg.getExtensionsFolder());
+        extList = cfg.getExtensionList();
         int i = 1;
         for (ExtensionPrototype prototype : extList.getPrototypes()) {
             JCheckBox checkbox = new JCheckBox((String) null, prototype.enabled);
