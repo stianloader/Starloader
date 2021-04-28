@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.geolykt.starloader.launcher.Launcher;
-import de.geolykt.starloader.launcher.LauncherConfiguration;
 import de.geolykt.starloader.mod.Extension;
 import de.geolykt.starloader.mod.ExtensionManager;
 
