@@ -12,7 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import de.geolykt.starloader.launcher.LauncherConfiguration;
-import de.geolykt.starloader.mod.DiscoveredExtensionList;
+import de.geolykt.starloader.mod.ExtensionPrototypeList;
 import de.geolykt.starloader.mod.ExtensionPrototype;
 
 import info.clearthought.layout.TableLayout;
@@ -22,7 +22,7 @@ import info.clearthought.layout.TableLayoutConstraints;
 public class ExtensionsTab extends JPanel implements StarloaderTab {
 
     protected final LauncherConfiguration cfg;
-    protected DiscoveredExtensionList extList = null;
+    protected ExtensionPrototypeList extList = null;
     protected List<Component> right = null;
     protected List<Component> center = null;
     protected List<Component> left = null;

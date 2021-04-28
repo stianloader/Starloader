@@ -3,8 +3,11 @@ package de.geolykt.starloader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.geolykt.starloader.launcher.Launcher;
+import de.geolykt.starloader.launcher.LauncherConfiguration;
 import de.geolykt.starloader.mod.Extension;
 import de.geolykt.starloader.mod.ExtensionManager;
+
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 public final class Starloader {
@@ -25,7 +28,9 @@ public final class Starloader {
         LOGGER.info("Java version: {}", System.getProperty("java.version"));
         instance = new Starloader();
         extensions = new ExtensionManager();
-        extensions.loadExtensions();
+        // TODO get configuration via dependency injection, not via the singleton pattern.
+        // I tried reflection, but for some odd reason it does not find the methods. Java is strange I guess
+        extensions.loadExtensions(Launcher.INSTANCE.configuration.getExtensionList());
         MinestomRootClassLoader.getInstance().widener = extensions.getAccessWidener();
         long start = System.currentTimeMillis();
         LOGGER.info("Initializing extension: preinit");

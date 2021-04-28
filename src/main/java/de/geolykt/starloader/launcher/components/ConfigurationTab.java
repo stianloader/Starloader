@@ -56,7 +56,7 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
         filever = new JLabel("Version: Calculating...");
         digester = new DigestCalculationRunnable(cfg.getTargetJar());
         versionTimer = new Timer(1, evt -> {
-            setVersion(digester.getDirectly());
+            setVersion(digester.getDirectly().toString());
             stopTimer(versionTimer);
             digester = null;
         });

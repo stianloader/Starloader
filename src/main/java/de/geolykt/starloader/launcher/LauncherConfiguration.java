@@ -10,7 +10,7 @@ import java.util.HashSet;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import de.geolykt.starloader.mod.DiscoveredExtensionList;
+import de.geolykt.starloader.mod.ExtensionPrototypeList;
 import de.geolykt.starloader.mod.ExtensionPrototype;
 
 /**
@@ -24,7 +24,7 @@ public final class LauncherConfiguration {
     private boolean patchSupport;
     private File extensionsFolder;
     private File patchesFolder;
-    private DiscoveredExtensionList extensions;
+    private ExtensionPrototypeList extensions;
     private JSONObject extensionsObject;
 
     LauncherConfiguration(File configLoc) throws IOException {
@@ -57,8 +57,9 @@ public final class LauncherConfiguration {
             extensionSupport = true;
             patchSupport = false; // TODO make "true" the default, when it is a useable setting
             extensionsFolder = new File("extensions/");
+            extensionsFolder.mkdirs();
             patchesFolder = new File("patches/");
-            extensions = new DiscoveredExtensionList(extensionsFolder);
+            extensions = new ExtensionPrototypeList(extensionsFolder);
             extensionsObject = new JSONObject();
             extensionsObject.put("enabled", new JSONArray());
             return;
@@ -72,7 +73,7 @@ public final class LauncherConfiguration {
             extensionsFolder = new File(jsonObj.getString("folder-extensions"));
             patchesFolder = new File(jsonObj.getString("folder-patches"));
             extensionsObject = jsonObj.getJSONObject("extensions");
-            extensions = new DiscoveredExtensionList(extensionsFolder);
+            extensions = new ExtensionPrototypeList(extensionsFolder);
             JSONArray arr = extensionsObject.getJSONArray("enabled");
             for (Object enabledExtension : arr) {
                 String[] entry = enabledExtension.toString().split("@");
@@ -166,15 +167,15 @@ public final class LauncherConfiguration {
         return extensionsFolder;
     }
 
-    public void setExtensionList(DiscoveredExtensionList extList) {
+    public void setExtensionList(ExtensionPrototypeList extList) {
         extensions = extList;
     }
 
-    public DiscoveredExtensionList getExtensionList() {
+    public ExtensionPrototypeList getExtensionList() {
         if (extensions != null && extensions.getFolder().equals(getExtensionsFolder())) {
             return extensions; // List does not need updating
         }
-        extensions = new DiscoveredExtensionList(extensionsFolder);
+        extensions = new ExtensionPrototypeList(extensionsFolder);
         JSONArray arr = extensionsObject.getJSONArray("enabled");
         for (Object enabledExtension : arr) {
             String[] entry = enabledExtension.toString().split("@");

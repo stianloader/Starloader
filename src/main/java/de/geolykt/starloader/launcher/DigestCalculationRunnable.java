@@ -8,15 +8,17 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.geolykt.starloader.UnlikelyEventException;
+import de.geolykt.starloader.util.Version;
+import de.geolykt.starloader.util.Version.Stabillity;
 
-public class DigestCalculationRunnable implements RunnableFuture<String> {
+public class DigestCalculationRunnable implements RunnableFuture<Version> {
 
     public DigestCalculationRunnable(File target) {
         fileSrc = target;
     }
 
     final File fileSrc;
-    private String hash;
+    private Version hash;
     private AtomicBoolean computing = new AtomicBoolean(false);
     private AtomicBoolean cancelled = new AtomicBoolean(false);
     private AtomicBoolean computed = new AtomicBoolean(false);
@@ -47,7 +49,7 @@ public class DigestCalculationRunnable implements RunnableFuture<String> {
     }
 
     @Override
-    public String get() throws InterruptedException {
+    public Version get() throws InterruptedException {
         if (isDone()) {
             return hash;
         }
@@ -63,7 +65,7 @@ public class DigestCalculationRunnable implements RunnableFuture<String> {
     }
 
     @Override
-    public String get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+    public Version get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
         if (isDone()) {
             return hash;
         }
@@ -91,9 +93,9 @@ public class DigestCalculationRunnable implements RunnableFuture<String> {
         computing.set(true);
         executor = Thread.currentThread();
         if (fileSrc.exists()) {
-            hash = Utils.VERSIONS.getOrDefault(Utils.getChecksum(fileSrc), "UNKNOWN");
+            hash = Utils.VERSIONS.getOrDefault(Utils.getChecksum(fileSrc), new Version(0, 0, 0, "error", "Unknown", Stabillity.SNAPSHOT));
         } else {
-            hash = "File not found!";
+            hash = new Version(0, 0, 0, "error", "File not found", Stabillity.SNAPSHOT);
         }
         computed.set(true);
         executor = null;
@@ -124,7 +126,7 @@ public class DigestCalculationRunnable implements RunnableFuture<String> {
      *
      * @return The return value, or null if it hasn't been computed yet (null can also represent a variable resolved to null!)
      */
-    public String getDirectly() {
+    public Version getDirectly() {
         return hash;
     }
 }

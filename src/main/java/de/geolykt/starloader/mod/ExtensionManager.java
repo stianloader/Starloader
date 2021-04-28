@@ -35,8 +35,6 @@ public class ExtensionManager {
 
     private final Map<String, MinestomExtensionClassLoader> extensionLoaders = new HashMap<>();
     private final Map<String, Extension> extensions = new HashMap<>();
-    private final File extensionFolder = new File("extensions");
-    private final File dependenciesFolder = new File(extensionFolder, ".libs");
     private final AccessWidener accessWidener = new AccessWidener();
     private boolean loaded;
 
@@ -70,27 +68,13 @@ public class ExtensionManager {
         this.loadOnStartup = loadOnStartup;
     }
 
-    public void loadExtensions() {
+    public void loadExtensions(ExtensionPrototypeList extensionCandidates) {
         if (loaded) {
             throw new IllegalStateException("Extensions are already loaded!");
         }
         this.loaded = true;
 
-        if (!extensionFolder.exists()) {
-            if (!extensionFolder.mkdirs()) {
-                LOGGER.error("Could not find or create the extension folder, extensions will not be loaded!");
-                return;
-            }
-        }
-
-        if (!dependenciesFolder.exists()) {
-            if (!dependenciesFolder.mkdirs()) {
-                LOGGER.error("Could not find nor create the extension dependencies folder, extensions will not be loaded!");
-                return;
-            }
-        }
-
-        List<DiscoveredExtension> discoveredExtensions = discoverExtensions();
+        List<DiscoveredExtension> discoveredExtensions = discoverExtensions(extensionCandidates);
         discoveredExtensions = generateLoadOrder(discoveredExtensions);
         loadDependencies(discoveredExtensions);
         // remove invalid extensions
@@ -240,18 +224,15 @@ public class ExtensionManager {
     }
 
     @NotNull
-    private List<DiscoveredExtension> discoverExtensions() {
+    private List<DiscoveredExtension> discoverExtensions(ExtensionPrototypeList extensionCandidates) {
         List<DiscoveredExtension> extensions = new LinkedList<>();
-        for (File file : extensionFolder.listFiles()) {
-            if (file.isDirectory()) {
-                continue;
-            }
-            if (!file.getName().endsWith(".jar")) {
-                continue;
-            }
-            DiscoveredExtension extension = discoverFromJar(file);
-            if (extension != null && extension.loadStatus == DiscoveredExtension.LoadStatus.LOAD_SUCCESS) {
-                extensions.add(extension);
+        for (ExtensionPrototype prototype : extensionCandidates.getPrototypes()) {
+            if (prototype.enabled) {
+                File file = prototype.origin;
+                DiscoveredExtension extension = discoverFromJar(file);
+                if (extension != null && extension.loadStatus == DiscoveredExtension.LoadStatus.LOAD_SUCCESS) {
+                    extensions.add(extension);
+                }
             }
         }
 
@@ -411,11 +392,6 @@ public class ExtensionManager {
             }
         }
         return loader;
-    }
-
-    @NotNull
-    public File getExtensionFolder() {
-        return extensionFolder;
     }
 
     @NotNull

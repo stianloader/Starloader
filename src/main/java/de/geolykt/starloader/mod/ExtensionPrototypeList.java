@@ -17,15 +17,15 @@ import org.slf4j.LoggerFactory;
 
 import de.geolykt.starloader.util.JarFilter;
 
-public class DiscoveredExtensionList {
+public class ExtensionPrototypeList {
 
-    public final static Logger LOGGER = LoggerFactory.getLogger(DiscoveredExtensionList.class);
+    public final static Logger LOGGER = LoggerFactory.getLogger(ExtensionPrototypeList.class);
 
     private final File extensionFolder;
     private final List<ExtensionPrototype> extensions;
     private final Map<String, List<ExtensionPrototype>> extensionsByName;
 
-    public DiscoveredExtensionList(File sourceFolder) {
+    public ExtensionPrototypeList(File sourceFolder) {
         extensionFolder = sourceFolder;
         extensions = new ArrayList<>();
         extensionsByName = new HashMap<>();

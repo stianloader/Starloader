@@ -20,6 +20,8 @@ import org.spongepowered.asm.launch.platform.CommandLineOptions;
 import org.spongepowered.asm.mixin.Mixins;
 
 import de.geolykt.starloader.UnlikelyEventException;
+import de.geolykt.starloader.util.Version;
+import de.geolykt.starloader.util.Version.Stabillity;
 
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 import net.minestom.server.extras.selfmodification.mixins.MixinCodeModifier;
@@ -36,6 +38,7 @@ public final class Utils {
      */
     private Utils() {
         // Do not construct classes for absolutely no reason at all
+        throw new RuntimeException("Didn't the javadoc tell you to NOT call the constructor of this class?");
     }
 
     public static final int STEAM_GALIMULATOR_APPID = 808100;
@@ -46,7 +49,7 @@ public final class Utils {
     public static final String STEAM_WINDOWS_REGISTRY_KEY = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Valve\\Steam";
     public static final String STEAM_WINDOWS_REGISTRY_INSTALL_DIR_KEY = "InstallPath";
 
-    public static final HashMap<String, String> VERSIONS = new HashMap<>();
+    public static final HashMap<String, Version> VERSIONS = new HashMap<>();
 
     /**
      * Stupid little hack.
@@ -214,7 +217,6 @@ public final class Utils {
                     MixinServiceMinestom.gotoInitPhase();
                     MixinServiceMinestom.gotoDefaultPhase();
                 }
-
                 startMain(cl.loadClass("com.example.Main"), args);
             } catch (Exception e1) {
                 throw new RuntimeException("Something went wrong while bootstrapping.", e1);
@@ -259,13 +261,13 @@ public final class Utils {
         // It would also be interesting if steam/itch provides the checksums for this file, could we check or not?
 
         // This is a pure guess based on the windows jar that I own and then 4.7 linux jar that I own
-        VERSIONS.put("f8ea33e66efbefda91a4c24f8f44b45700e27a0ad0765eeec049f77b6b7307cc", "4.5-stable-linux");
-        VERSIONS.put("25a7738ff8a137fc1d1e668535b4ca3464609aba4e45eaa276a698f364add666", "4.5-stable-windows");
-        VERSIONS.put("d0f0bc784e1596a38c61c007b077aebb366146b878f692fe15fec850504adb0f", "4.7-stable-linux");
-        VERSIONS.put("b659d3fd10bf03d90bfa3142614e7c70793d9fc184e1cfcc39f1535e726d7d08", "4.7-stable-windows");
-        VERSIONS.put("dbaff4dbb9d9289fc0424f7d538fe48fe87b6bb2ad50cbb52f443e1d7ef670ab", "4.8-beta-linux"); // There was only one beta release for 4.8 (the other was the stable release)
+        VERSIONS.put("f8ea33e66efbefda91a4c24f8f44b45700e27a0ad0765eeec049f77b6b7307cc", new Version(4, 5, 0, "linux", Stabillity.STABLE));
+        VERSIONS.put("25a7738ff8a137fc1d1e668535b4ca3464609aba4e45eaa276a698f364add666", new Version(4, 5, 0, "windows", Stabillity.STABLE));
+        VERSIONS.put("d0f0bc784e1596a38c61c007b077aebb366146b878f692fe15fec850504adb0f", new Version(4, 7, 0, "linux", Stabillity.STABLE));
+        VERSIONS.put("b659d3fd10bf03d90bfa3142614e7c70793d9fc184e1cfcc39f1535e726d7d08", new Version(4, 7, 0, "windows", Stabillity.STABLE));
+        VERSIONS.put("dbaff4dbb9d9289fc0424f7d538fe48fe87b6bb2ad50cbb52f443e1d7ef670ab", new Version(4, 8, 0, "linux", Stabillity.BETA));
         // Galimulator 4.8 was accidentally released in a somewhat Platform-independent state, that means the same jar should run on all plattforms
-        VERSIONS.put("a09045718ca85933c7a53461cc313602dd803dbd773dfef2b72044ee8f57b156", "4.8-stable-linux (contains Windows natives)");
+        VERSIONS.put("a09045718ca85933c7a53461cc313602dd803dbd773dfef2b72044ee8f57b156", new Version(4, 8, 0, "linux", "contains Windows natives", Stabillity.STABLE));
     }
 
     public static File getCurrentDir() {
