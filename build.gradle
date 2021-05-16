@@ -30,8 +30,7 @@ dependencies {
     api 'org.json:json:20210307'
 
     // Let's use a library that's over 2 and a half decades old because why not?
-    // However it is pretty much unmaintained by now
-    // so I may need to change it out with something a bit more conventional to use with Java 11
+    // The lack of maintainance hopefully is not too harming
     // https://mvnrepository.com/artifact/tablelayout/TableLayout
     api group: 'tablelayout', name: 'TableLayout', version: '20050920'
 
