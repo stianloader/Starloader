@@ -7,7 +7,7 @@ plugins {
 
 group 'de.geolykt'
 def archivesBaseName = 'starloader'
-version '2.0.0'
+version '2.1.0'
 
 // Our classloader require Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
@@ -90,19 +90,7 @@ publishing {
         plugin(MavenPublication) { publication ->
             groupId project.group
             artifactId project.archivesBaseName
-            version '1.1.0'
-
-            from components['java']
-
-            artifact sourcesJar
-            artifact javadocJar
-        }
-
-        // Also publish a snapshot so people can use the latest version if they wish
-        snapshot(MavenPublication) { publication ->
-            groupId project.group
-            artifactId project.archivesBaseName
-            version '1.1.0-SNAPSHOT'
+            version '2.1.0'
 
             from components['java']
 

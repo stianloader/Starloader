@@ -30,9 +30,9 @@ and can then be executed via
 
     java -jar Galimulator-Starloader-1.0.0-SNAPSHOT-all.jar
 
-or similar. However Java 11+ needs to be used
-
+or similar. However Java 11+ needs to be used.
 If you are a linux (or any in fact) user, then you should use AdoptopenJDK
+
 ## Licensing and redistributing
 
 All code is licensed under the Apache 2.0 license, allowing you to redistribute
