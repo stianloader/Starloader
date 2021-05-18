@@ -33,9 +33,9 @@ public class Version implements Comparable<Version> {
     @Override
     public String toString() {
         if (notes == null) {
-            return String.format("%d.%d.%d-%s-%s", major, minor, patch, stabillity.toString(), target);
+            return String.format("%d.%d-%s.%d-%s", major, minor, stabillity.toString(), patch , target);
         } else {
-            return String.format("%d.%d.%d-%s-%s (%s)", major, minor, patch, stabillity.toString(), target, notes);
+            return String.format("%d.%d-%s.%d-%s (%s)", major, minor, stabillity.toString(), patch , target, notes);
         }
     }
 

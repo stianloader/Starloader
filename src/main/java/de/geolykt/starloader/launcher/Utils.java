@@ -269,6 +269,8 @@ public final class Utils {
         // Galimulator 4.8 was accidentally released in a somewhat Platform-independent state, that means the same jar should run on all plattforms
         VERSIONS.put("a09045718ca85933c7a53461cc313602dd803dbd773dfef2b72044ee8f57b156", new Version(4, 8, 0, "linux", "contains Windows natives", Stabillity.STABLE));
         VERSIONS.put("6a8ffa84adafe1019a8359ca69dc9ee75f4a3a6ce1da916bf130976639f82fea", new Version(4, 9, 0, "linux", Stabillity.BETA));
+        VERSIONS.put("49c1e88149b6ee286772805b286529b20a5f77aa2310f386b77d7ec3110bab50", new Version(4, 9, 1, "linux", Stabillity.BETA));
+        VERSIONS.put("5b0dbb545b157b43e9fa1f85cfe5f6afa8203b61567fed6404d7172a242584d6", new Version(4, 9, 2, "linux", Stabillity.BETA));
     }
 
     public static File getCurrentDir() {
