@@ -271,6 +271,7 @@ public final class Utils {
         VERSIONS.put("6a8ffa84adafe1019a8359ca69dc9ee75f4a3a6ce1da916bf130976639f82fea", new Version(4, 9, 0, "linux", Stabillity.BETA));
         VERSIONS.put("49c1e88149b6ee286772805b286529b20a5f77aa2310f386b77d7ec3110bab50", new Version(4, 9, 1, "linux", Stabillity.BETA));
         VERSIONS.put("5b0dbb545b157b43e9fa1f85cfe5f6afa8203b61567fed6404d7172a242584d6", new Version(4, 9, 2, "linux", Stabillity.BETA));
+        VERSIONS.put("d41575068df6b7139115b1d216c5bf047d192c214b66b88d5eef00aeccf1367a", new Version(4, 9, 3, "linux", Stabillity.BETA));
     }
 
     public static File getCurrentDir() {

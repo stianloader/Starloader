@@ -409,7 +409,9 @@ public class ExtensionManager {
         return new HashMap<>(extensionLoaders);
     }
 
+    @SuppressWarnings("resource")
     private void setupAccessWideners(List<DiscoveredExtension> extensionsToLoad) {
+        MinestomRootClassLoader.getInstance().widener = accessWidener;
         AccessWidenerReader accessReader = new AccessWidenerReader(accessWidener);
         for (DiscoveredExtension extension : extensionsToLoad) {
             if (extension.getAccessWidener().equals("")) {
