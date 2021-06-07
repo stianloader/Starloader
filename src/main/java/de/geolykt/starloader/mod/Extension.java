@@ -29,39 +29,64 @@ public abstract class Extension {
     }
 
     /**
+     * @deprecated This method is a boilerplate solution, for more info see below
+     *
      * WARNING: The implementation of this method should be coded very carefully.
      * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
      * For more info, see {@link Runtime#addShutdownHook(Thread)}.
+     * Additionally due to the nature of how extensions unload, it is recommended that are more recommendable
+     * method for unloading is used, for example SLAPI offers the ApplicationStopEvent and SignalExtensionTerminationExtension.
+     * Other extension libraries might offer similar alternatives that are a lot more safer to use.
      */
+    @Deprecated(forRemoval = false)
     public void preTerminate() {
 
     }
 
     /**
+     * @deprecated This method is a boilerplate solution, for more info see below
+     *
      * WARNING: The implementation of this method should be coded very carefully.
      * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
      * For more info, see {@link Runtime#addShutdownHook(Thread)}.
+     * Additionally due to the nature of how extensions unload, it is recommended that are more recommendable
+     * method for unloading is used, for example SLAPI offers the ApplicationStopEvent and SignalExtensionTerminationExtension.
+     * Other extension libraries might offer similar alternatives that are a lot more safer to use.
      */
+    @Deprecated(forRemoval = false)
     public void terminate() {
 
     }
 
     /**
+     * @deprecated This method is a boilerplate solution, for more info see below
+     *
      * WARNING: The implementation of this method should be coded very carefully.
      * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
      * For more info, see {@link Runtime#addShutdownHook(Thread)}.
+     * Additionally due to the nature of how extensions unload, it is recommended that are more recommendable
+     * method for unloading is used, for example SLAPI offers the ApplicationStopEvent and SignalExtensionTerminationExtension.
+     * Other extension libraries might offer similar alternatives that are a lot more safer to use.
      */
+    @Deprecated(forRemoval = false)
     public void postTerminate() {
 
     }
 
     /**
-     * Called after postTerminate when reloading an extension
+     * @deprecated This method is a boilerplate solution, for more info see below
      *
      * WARNING: The implementation of this method should be coded very carefully.
      * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
      * For more info, see {@link Runtime#addShutdownHook(Thread)}.
+     * Additionally due to the nature of how extensions unload, it is recommended that are more recommendable
+     * method for unloading is used, for example SLAPI offers the ApplicationStopEvent and SignalExtensionTerminationExtension.
+     * Other extension libraries might offer similar alternatives that are a lot more safer to use.
+     *
+     * After calling this method, the entirety of the Extension is unloaded, which means classes provided by the extension
+     * become unusable.
      */
+    @Deprecated(forRemoval = false)
     public void unload() {
 
     }

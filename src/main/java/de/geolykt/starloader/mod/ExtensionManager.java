@@ -471,7 +471,7 @@ public class ExtensionManager {
         LOGGER.info("Done loading code modifiers.");
     }
 
-    @SuppressWarnings("resource")
+    @SuppressWarnings({ "resource", "deprecation" })
     private void unload(Extension ext) {
         ext.preTerminate();
         ext.terminate();

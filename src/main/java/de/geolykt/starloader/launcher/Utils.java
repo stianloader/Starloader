@@ -260,18 +260,22 @@ public final class Utils {
         // TODO add more jars to this collection and check "pure guess" jars
         // It would also be interesting if steam/itch provides the checksums for this file, could we check or not?
 
-        // This is a pure guess based on the windows jar that I own and then 4.7 linux jar that I own
+        // 4.5 Linux checksum is a pure guess, while all other windows checksums (except for 4.5) are also pure guesses
         VERSIONS.put("f8ea33e66efbefda91a4c24f8f44b45700e27a0ad0765eeec049f77b6b7307cc", new Version(4, 5, 0, "linux", Stabillity.STABLE));
         VERSIONS.put("25a7738ff8a137fc1d1e668535b4ca3464609aba4e45eaa276a698f364add666", new Version(4, 5, 0, "windows", Stabillity.STABLE));
         VERSIONS.put("d0f0bc784e1596a38c61c007b077aebb366146b878f692fe15fec850504adb0f", new Version(4, 7, 0, "linux", Stabillity.STABLE));
         VERSIONS.put("b659d3fd10bf03d90bfa3142614e7c70793d9fc184e1cfcc39f1535e726d7d08", new Version(4, 7, 0, "windows", Stabillity.STABLE));
         VERSIONS.put("dbaff4dbb9d9289fc0424f7d538fe48fe87b6bb2ad50cbb52f443e1d7ef670ab", new Version(4, 8, 0, "linux", Stabillity.BETA));
-        // Galimulator 4.8 was accidentally released in a somewhat Platform-independent state, that means the same jar should run on all plattforms
+        // 4.8 was accidentally released in a somewhat Platform-independent state, that means the same jar should run on all plattforms
         VERSIONS.put("a09045718ca85933c7a53461cc313602dd803dbd773dfef2b72044ee8f57b156", new Version(4, 8, 0, "linux", "contains Windows natives", Stabillity.STABLE));
         VERSIONS.put("6a8ffa84adafe1019a8359ca69dc9ee75f4a3a6ce1da916bf130976639f82fea", new Version(4, 9, 0, "linux", Stabillity.BETA));
         VERSIONS.put("49c1e88149b6ee286772805b286529b20a5f77aa2310f386b77d7ec3110bab50", new Version(4, 9, 1, "linux", Stabillity.BETA));
         VERSIONS.put("5b0dbb545b157b43e9fa1f85cfe5f6afa8203b61567fed6404d7172a242584d6", new Version(4, 9, 2, "linux", Stabillity.BETA));
         VERSIONS.put("d41575068df6b7139115b1d216c5bf047d192c214b66b88d5eef00aeccf1367a", new Version(4, 9, 3, "linux", Stabillity.BETA));
+        VERSIONS.put("addad321401c5e711b3267acbc4c89fee8e7767e2a9507ab13a98b9e2306a2d1", new Version(4, 9, 4, "linux", Stabillity.BETA));
+        VERSIONS.put("b252fb1587f622246dc46846113c2c023a04f7262e9c621aed7039bb85046146", new Version(4, 9, 5, "linux", Stabillity.BETA));
+        VERSIONS.put("2769105a9ee6b1519daf5d355598dcc49d08b09479ede7fb48011bd3dcd50435", new Version(4, 9, 6, "linux", Stabillity.BETA));
+        VERSIONS.put("e31a2a169bf63836007f55b3078d4c28d3196890ab3987cf1d9135a14e2903d1", new Version(4, 9, 7, "linux", Stabillity.BETA));
     }
 
     public static File getCurrentDir() {
