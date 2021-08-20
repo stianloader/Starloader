@@ -62,7 +62,7 @@ public final class Utils {
     public static final String readWindowsRegistry(String location, String key){
         try {
             // Run reg query, then read output with StreamReader (internal class)
-            Process process = Runtime.getRuntime().exec("reg query " + 
+            Process process = Runtime.getRuntime().exec("reg query " +
                     '"'+ location + "\" /v " + key);
 
             process.waitFor();
@@ -208,7 +208,7 @@ public final class Utils {
             try {
                 if (preferences.hasExtensionsEnabled()) {
                     startMixin(args);
-                    cl.addCodeModifier(new MixinCodeModifier());
+                    cl.addTransformer(new MixinCodeModifier());
                     MixinServiceMinestom.gotoPreinitPhase();
                     // ensure extensions are loaded when starting the server
                     Class<?> serverClass = cl.loadClass("de.geolykt.starloader.Starloader");

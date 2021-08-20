@@ -9,6 +9,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.geolykt.starloader.transformers.ASMTransformer;
 import net.fabricmc.accesswidener.AccessWidener;
 import net.fabricmc.accesswidener.AccessWidenerVisitor;
 
@@ -19,7 +20,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -76,7 +79,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     // TODO: that's an example, please don't modify standard library classes. And this classloader should not let you do it because it first asks the platform classloader
 
     // TODO: priorities?
-    private final List<CodeModifier> modifiers = new LinkedList<>();
+    private final List<ASMTransformer> modifiers = new LinkedList<>();
 
     private MinestomRootClassLoader(ClassLoader parent) {
         super("Starloader Root ClassLoader", extractURLsFromClasspath(), parent);
@@ -220,25 +223,27 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return originalBytes;
     }
 
-    byte[] transformBytes(byte[] classBytecode, String name) {
+    byte[] transformBytes(byte[] classBytecode, @NotNull String name) {
         if (!isProtected(name)) {
             ClassReader reader = new ClassReader(classBytecode);
+            ClassNode node = new ClassNode();
             boolean modified = false;
             if (widener != null && widener.getTargets().contains(name)) {
-                ClassWriter classWriter = new ClassWriter(0);
-                ClassVisitor visitor = classWriter;
-                visitor = AccessWidenerVisitor.createClassVisitor(Opcodes.ASM9, visitor, widener);
+                ClassVisitor visitor = AccessWidenerVisitor.createClassVisitor(Opcodes.ASM9, node, widener);
                 reader.accept(visitor, 0);
-                classBytecode = classWriter.toByteArray();
-                reader = new ClassReader(classBytecode);
+                modified = true;
+            } else {
+                reader.accept(node, 0);
             }
-            ClassNode node = new ClassNode();
-            reader.accept(node, 0);
             synchronized (modifiers) {
-                for (CodeModifier modifier : modifiers) {
-                    boolean shouldModify = modifier.getNamespace() == null || name.startsWith(modifier.getNamespace());
-                    if (shouldModify) {
-                        modified |= modifier.transform(node);
+                Iterator<ASMTransformer> transformers = modifiers.iterator();
+                while (transformers.hasNext()) {
+                    ASMTransformer transformer = transformers.next();
+                    if (transformer.isValidTraget(name) && transformer.accept(node)) {
+                        if (!transformer.isValid()) {
+                            transformers.remove();
+                        }
+                        modified = true;
                     }
                 }
             }
@@ -277,11 +282,11 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             @SuppressWarnings("resource")
             URLClassLoader loader = newChild(urls);
             Class<?> modifierClass = loader.loadClass(codeModifierClass);
-            if (CodeModifier.class.isAssignableFrom(modifierClass)) {
-                CodeModifier modifier = (CodeModifier) modifierClass.getDeclaredConstructor().newInstance();
+            if (ASMTransformer.class.isAssignableFrom(modifierClass)) {
+                ASMTransformer modifier = (ASMTransformer) modifierClass.getDeclaredConstructor().newInstance();
                 synchronized (modifiers) {
-                    LOGGER.warn("Added Code modifier: {}", modifier);
-                    addCodeModifier(modifier);
+                    LOGGER.warn("Added ASM Transformer: {}", modifier);
+                    addTransformer(modifier);
                 }
             }
         } catch (MalformedURLException | ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
@@ -289,10 +294,27 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         }
     }
 
-    public void addCodeModifier(CodeModifier modifier) {
+    /**
+     * Adds a transformer to the transformer pool
+     *
+     * @param transformer The transformer to add
+     * @since 2.1.0
+     */
+    public void addTransformer(ASMTransformer transformer) {
         synchronized (modifiers) {
-            modifiers.add(modifier);
+            modifiers.add(transformer);
         }
+    }
+
+    /**
+     * Adds a modifier to the modifier pool
+     *
+     * @param modifier The modifier to add
+     * @deprecated {@link CodeModifier} is getting phased out, use {@link ASMTransformer} instead. Replaced by {@link #addTransformer(ASMTransformer)}.
+     */
+    @Deprecated(forRemoval = true, since = "2.1.0")
+    public void addCodeModifier(CodeModifier modifier) {
+        this.addTransformer(modifier);
     }
 
     @Override
@@ -300,7 +322,25 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         super.addURL(url);
     }
 
+    /**
+     * Obtains the modifiers currently in use.
+     *
+     * @return the modifiers
+     * @deprecated While this method exposes the modifiers as {@link CodeModifier}, it internally uses {@link ASMTransformer}. This will lead to death and descruction later on.
+     */
+    @Deprecated(forRemoval = true, since = "2.1.0")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public List<CodeModifier> getModifiers() {
-        return modifiers;
+        return (List) modifiers;
+    }
+
+    /**
+     * Obtains a clone of the list of ASM Transformers currently in use.
+     *
+     * @return The ASM transformers in use.
+     * @since 2.1.0
+     */
+    public List<ASMTransformer> getTransformers() {
+        return new ArrayList<>(modifiers);
     }
 }
