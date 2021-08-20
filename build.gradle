@@ -67,7 +67,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'de.geolykt.starloader.launcher.Launcher'
+        attributes 'Main-Class': 'de.geolykt.starloader.launcher.Launcher', 'Multi-Release': true
     }
 }
 

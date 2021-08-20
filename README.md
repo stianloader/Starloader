@@ -3,9 +3,9 @@
 ## Starloader vs Starloader-API
 
 The starloader project on its own doesn't do much other than providing a way
-to loader secondary jars (extensions) as well as providing mixins, a bytecode
+to loader secondary jars (extensions) as well as providing mixins and a bytecode
 manipulation framework. As such most extensions should make use of Starloader-API
-to avoid conflicts, simpler extensions however don't need Starloader-API built.
+to avoid conflicts.
 
 ## IRC Chat
 
@@ -16,7 +16,6 @@ Feel free to take a look at it at #galimulator-modding @ irc.esper.net
 ## Building
 
 The project can be built via gradle and a JDK 11 or higher.
-I recommend JDK 17 once it comes out in fall 2021.
 This can be easily done via `./gradlew shadowJar` on most systems.
 The built jar is located in the build/libs folder, and should have a "-all"
 suffix, if that isn't the case you might have not built that shadowjar, which
@@ -32,6 +31,10 @@ and can then be executed via
 
 or similar. However Java 11+ needs to be used.
 If you are a linux (or any in fact) user, then you should use AdoptopenJDK
+
+over your vendor JDK. Many vendor JDKs are known to not work
+
+with libGDX, one of galimulator's main libraries.
 
 ## Licensing and redistributing
 

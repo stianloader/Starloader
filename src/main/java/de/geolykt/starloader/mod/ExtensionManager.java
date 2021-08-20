@@ -563,10 +563,13 @@ public class ExtensionManager {
         return loadExtensionList(extensionsToLoad);
     }
 
-    private boolean loadExtensionList(List<DiscoveredExtension> extensionsToLoad) {
+    private boolean loadExtensionList(@NotNull List<DiscoveredExtension> extensionsToLoad) {
         // ensure correct order of dependencies
         LOGGER.debug("Reorder extensions to ensure proper load order");
-        extensionsToLoad = generateLoadOrder(extensionsToLoad);
+        var temp = generateLoadOrder(extensionsToLoad);
+        if (temp == null) {
+            throw new AssertionError();
+        }
         loadDependencies(extensionsToLoad);
 
         // setup new classloaders for the extensions to reload

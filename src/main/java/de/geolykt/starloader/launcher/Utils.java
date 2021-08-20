@@ -141,8 +141,8 @@ public final class Utils {
     public static void addToCPJ8 (File file) throws ReflectiveOperationException, SecurityException, IllegalArgumentException, MalformedURLException {
         @SuppressWarnings("resource") // The system classloader should not be closed
         URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-        Method method = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
-        method.invoke(sysloader, new Object[]{file.toURI().toURL()});
+        Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+        method.invoke(sysloader, file.toURI().toURL());
     }
 
     public static String getChecksum(File file) {
