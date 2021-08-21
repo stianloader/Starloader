@@ -19,7 +19,7 @@ public abstract class ASMTransformer {
      * however it could also not be discarded. It is best to assume that
      * both are equally possible events.
      *
-     * @param source The source node
+     * @param node The node to transform
      * @return True if the node has been modified.
      * @since 2.1.0
      */
