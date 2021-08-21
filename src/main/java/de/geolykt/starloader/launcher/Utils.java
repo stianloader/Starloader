@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
@@ -138,13 +137,6 @@ public final class Utils {
         return new File(common, game);
     }
 
-    public static void addToCPJ8 (File file) throws ReflectiveOperationException, SecurityException, IllegalArgumentException, MalformedURLException {
-        @SuppressWarnings("resource") // The system classloader should not be closed
-        URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-        Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-        method.invoke(sysloader, file.toURI().toURL());
-    }
-
     public static String getChecksum(File file) {
         MessageDigest digest;
         try {
@@ -223,15 +215,9 @@ public final class Utils {
             }
         } else {
             try {
-                addToCPJ8(preferences.getTargetJar());
-            } catch (SecurityException | IllegalArgumentException | MalformedURLException
-                    | ReflectiveOperationException e1) {
+                throw new UnsupportedOperationException("Java 8 is not supported.");
+            } catch (SecurityException | IllegalArgumentException e1) {
                 throw new RuntimeException("Something went wrong while adding the target jar to the Classpath", e1);
-            }
-            try {
-                startMain(Class.forName("com.example.Main"), args);
-            } catch (ClassNotFoundException e1) {
-                throw new RuntimeException("Unable to locate Main class!", e1);
             }
         }
     }
