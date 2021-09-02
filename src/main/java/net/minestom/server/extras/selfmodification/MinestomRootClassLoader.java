@@ -223,12 +223,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return originalBytes;
     }
 
-    byte[] transformBytes(byte[] classBytecode, @NotNull String name) {
-        if (!isProtected(name)) {
+    byte[] transformBytes(byte[] classBytecode, @NotNull String qualifiedName) {
+        if (!isProtected(qualifiedName)) {
             ClassReader reader = new ClassReader(classBytecode);
             ClassNode node = new ClassNode();
             boolean modified = false;
-            if (widener != null && widener.getTargets().contains(name)) {
+            if (widener != null && widener.getTargets().contains(qualifiedName)) {
                 ClassVisitor visitor = AccessWidenerVisitor.createClassVisitor(Opcodes.ASM9, node, widener);
                 reader.accept(visitor, 0);
                 modified = true;
@@ -239,7 +239,11 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                 Iterator<ASMTransformer> transformers = modifiers.iterator();
                 while (transformers.hasNext()) {
                     ASMTransformer transformer = transformers.next();
-                    if (transformer.isValidTraget(name) && transformer.accept(node)) {
+                    String internalName = node.name;
+                    if (internalName == null) {
+                        throw new NullPointerException();
+                    }
+                    if (transformer.isValidTraget(internalName) && transformer.accept(node)) {
                         if (!transformer.isValid()) {
                             transformers.remove();
                         }
@@ -256,7 +260,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                 };
                 node.accept(writer);
                 classBytecode = writer.toByteArray();
-                LOGGER.trace("Modified {}", name);
+                LOGGER.trace("Modified {}", qualifiedName);
             }
         }
         return classBytecode;

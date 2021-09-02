@@ -43,6 +43,6 @@ public abstract class CodeModifier extends ASMTransformer {
     @Override
     public boolean isValidTraget(@NotNull String internalName) {
         String namespace = getNamespace();
-        return namespace == null || internalName.startsWith(namespace);
+        return namespace == null || internalName.replace('/', '.').startsWith(namespace);
     }
 }
