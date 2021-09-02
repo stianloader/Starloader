@@ -14,6 +14,7 @@ import net.fabricmc.accesswidener.AccessWidener;
 import net.fabricmc.accesswidener.AccessWidenerVisitor;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -235,21 +236,27 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             } else {
                 reader.accept(node, 0);
             }
-            synchronized (modifiers) {
-                Iterator<ASMTransformer> transformers = modifiers.iterator();
-                while (transformers.hasNext()) {
-                    ASMTransformer transformer = transformers.next();
-                    String internalName = node.name;
-                    if (internalName == null) {
-                        throw new NullPointerException();
-                    }
-                    if (transformer.isValidTraget(internalName) && transformer.accept(node)) {
-                        if (!transformer.isValid()) {
-                            transformers.remove();
+            try {
+                synchronized (modifiers) {
+                    Iterator<ASMTransformer> transformers = modifiers.iterator();
+                    while (transformers.hasNext()) {
+                        ASMTransformer transformer = transformers.next();
+                        String internalName = node.name;
+                        if (internalName == null) {
+                            throw new NullPointerException();
                         }
-                        modified = true;
+                        if (transformer.isValidTraget(internalName) && transformer.accept(node)) {
+                            if (!transformer.isValid()) {
+                                transformers.remove();
+                            }
+                            modified = true;
+                        }
                     }
                 }
+            } catch (Throwable t) {
+                // Apparently errors would get absorbed otherwise.
+                LOGGER.error("Error within ASM transforming process. CLASS WILL NOT BE MODIFIED - THIS MAY BE LETHAL.", t);
+                throw new RuntimeException("Error within ASM transforming process.", t);
             }
             if (modified) {
                 ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
