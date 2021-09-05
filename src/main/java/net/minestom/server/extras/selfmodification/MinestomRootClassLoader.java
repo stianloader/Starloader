@@ -14,7 +14,6 @@ import net.fabricmc.accesswidener.AccessWidener;
 import net.fabricmc.accesswidener.AccessWidenerVisitor;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -138,8 +137,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                 }
 
                 return define(name, resolve);
-            } catch (Exception ex) {
-                LOGGER.trace("Fail to load class, resorting to parent loader: " + name, ex);
+            } catch (Throwable ex) {
+                LOGGER.trace("Failed to load class, resorting to parent loader: " + name, ex);
                 // fail to load class, let parent load
                 // this forbids code modification, but at least it will load
                 return super.loadClass(name, resolve);
@@ -258,16 +257,21 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                 LOGGER.error("Error within ASM transforming process. CLASS WILL NOT BE MODIFIED - THIS MAY BE LETHAL.", t);
                 throw new RuntimeException("Error within ASM transforming process.", t);
             }
-            if (modified) {
-                ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
-                    @Override
-                    protected ClassLoader getClassLoader() {
-                        return asmClassLoader;
-                    }
-                };
-                node.accept(writer);
-                classBytecode = writer.toByteArray();
-                LOGGER.trace("Modified {}", qualifiedName);
+            try {
+                if (modified) {
+                    ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
+                        @Override
+                        protected ClassLoader getClassLoader() {
+                            return asmClassLoader;
+                        }
+                    };
+                    node.accept(writer);
+                    classBytecode = writer.toByteArray();
+                    LOGGER.trace("Modified {}", qualifiedName);
+                }
+            } catch (Throwable t) {
+                LOGGER.error("Unable to write ASM Classnode to bytecode (bork transformer?)", t);
+                throw new RuntimeException("Unable to write ASM Classnode to bytecode", t);
             }
         }
         return classBytecode;

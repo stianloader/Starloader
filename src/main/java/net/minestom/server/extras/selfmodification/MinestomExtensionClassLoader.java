@@ -1,6 +1,5 @@
 package net.minestom.server.extras.selfmodification;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
@@ -52,7 +51,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
                     resolveClass(clazz);
                 }
                 return clazz;
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 throw new ClassNotFoundException("Could not load class " + name, e);
             }
         } catch (ClassNotFoundException e) {
@@ -62,6 +61,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
                     return loaded;
                 } catch (ClassNotFoundException e1) {
                     // move on to next child
+                    e.addSuppressed(e1);
                 }
             }
             throw e;
