@@ -109,7 +109,7 @@ public abstract class Extension {
         private final List<String> dependents = new ArrayList<>();
         private final DiscoveredExtension origin;
 
-        ExtensionDescription(@NotNull String name, @NotNull String version, @NotNull List<String> authors, @NotNull DiscoveredExtension origin) {
+        public ExtensionDescription(@NotNull String name, @NotNull String version, @NotNull List<String> authors, @NotNull DiscoveredExtension origin) {
             this.name = name;
             this.version = version;
             this.authors = authors;
@@ -137,7 +137,7 @@ public abstract class Extension {
         }
 
         @NotNull
-        DiscoveredExtension getOrigin() {
+        public DiscoveredExtension getOrigin() {
             return origin;
         }
     }

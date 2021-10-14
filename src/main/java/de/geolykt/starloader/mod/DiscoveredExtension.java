@@ -10,7 +10,7 @@ import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 
-final class DiscoveredExtension {
+public final class DiscoveredExtension {
 
     public final static Logger LOGGER = LoggerFactory.getLogger(DiscoveredExtension.class);
 
@@ -24,8 +24,8 @@ final class DiscoveredExtension {
     private String[] dependencies;
     private String accessWidener;
     private ExternalDependencies externalDependencies;
-    transient List<URL> files = new LinkedList<>();
-    transient LoadStatus loadStatus = LoadStatus.LOAD_SUCCESS;
+    public transient List<URL> files = new LinkedList<>();
+    public transient LoadStatus loadStatus = LoadStatus.LOAD_SUCCESS;
     transient private File originalJar;
 
     @NotNull
@@ -73,16 +73,16 @@ final class DiscoveredExtension {
         return externalDependencies;
     }
 
-    void setOriginalJar(@Nullable File file) {
+    public void setOriginalJar(@Nullable File file) {
         originalJar = file;
     }
 
     @Nullable
-    File getOriginalJar() {
+    public File getOriginalJar() {
         return originalJar;
     }
 
-    static void verifyIntegrity(@NotNull DiscoveredExtension extension) {
+    public static void verifyIntegrity(@NotNull DiscoveredExtension extension) {
         if (extension.name == null) {
             StringBuilder fileList = new StringBuilder();
             for (URL f : extension.files) {
@@ -144,7 +144,7 @@ final class DiscoveredExtension {
 
     }
 
-    enum LoadStatus {
+    public enum LoadStatus {
         LOAD_SUCCESS("Actually, it did not fail. This message should not have been printed."),
         MISSING_DEPENDENCIES("Missing dependencies, check your logs."),
         INVALID_NAME("Invalid name."),
@@ -165,7 +165,7 @@ final class DiscoveredExtension {
         }
     }
 
-    static final class ExternalDependencies {
+    public static final class ExternalDependencies {
         Repository[] repositories = new Repository[0];
         String[] artifacts = new String[0];
 

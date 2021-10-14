@@ -1,1 +1,1 @@
-net.minestom.server.extras.selfmodification.mixins.MixinServiceMinestom
+de.geolykt.starloader.launcher.service.SLMixinService

@@ -1,1 +1,1 @@
-net.minestom.server.extras.selfmodification.mixins.MixinServiceMinestomBootstrap
+de.geolykt.starloader.launcher.service.SLMixinBootstrap

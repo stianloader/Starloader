@@ -441,10 +441,17 @@ public class ExtensionManager {
      * Extensions are allowed to apply Mixin transformers, the magic happens here.
      */
     private void setupCodeModifiers(@NotNull List<DiscoveredExtension> extensions) {
-        final ClassLoader cl = getClass().getClassLoader();
+        ClassLoader cl = getClass().getClassLoader();
         if (!(cl instanceof MinestomRootClassLoader)) {
-            LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This disables code modifiers (Mixin (and as such modding) support is therefore disabled)", cl);
-            return;
+            LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This may render ASM Transformers useless.", cl);
+            if (cl.getClass().getModule() != null) {
+                // For a reason that is beyond me the MinestomRootClassloader is working as intended even in JPMS.
+                LOGGER.warn("Mods may not start up correctly. However since you are using JPMS it is likely that you will not see any grave issues.");
+                cl = MinestomRootClassLoader.getInstance();
+            } else {
+                LOGGER.warn("As you are not using JPMS we will abort right there.");
+                return;
+            }
         }
         @SuppressWarnings("resource")
         MinestomRootClassLoader modifiableClassLoader = (MinestomRootClassLoader) cl;

@@ -2,26 +2,29 @@ plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
     id 'maven-publish'
+    id "eclipse"
     id "com.github.johnrengelman.shadow" version "7.0.0"
+    id "org.beryx.jlink" version "2.24.2"
 }
 
 group 'de.geolykt'
 def archivesBaseName = 'starloader'
-version '2.1.1'
+version '3.0.0'
 
 // Our classloader require Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
 
 repositories {
     mavenCentral()
-    maven {
-        name 'sponge'
-        url 'https://repo.spongepowered.org/maven'
-    }
+    mavenLocal()
     maven {
         name = 'Geolykt'
         url = 'https://geolykt.de/maven/'
     }
+}
+
+java {
+    modularity.inferModulePath.set(true)
 }
 
 dependencies {
@@ -29,10 +32,7 @@ dependencies {
     // I am very well aware that this is just a reference implementation, but it has served me well in the past; so I prefer it over any other implementation
     api 'org.json:json:20210307'
 
-    // Let's use a library that's over 2 and a half decades old because why not?
-    // The lack of maintainance hopefully is not too harming
-    // https://mvnrepository.com/artifact/tablelayout/TableLayout
-    api group: 'tablelayout', name: 'TableLayout', version: '20050920'
+    implementation group: 'de.geolykt.starloader', name: 'tableLayout', version: '4.4.0'
 
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     api group: 'org.jetbrains', name: 'annotations', version: '22.0.0'
@@ -49,13 +49,20 @@ dependencies {
     api "org.ow2.asm:asm-analysis:9.2"
     api "org.ow2.asm:asm-util:9.2"
     api "org.ow2.asm:asm-commons:9.2"
-    api "org.spongepowered:mixin:0.8.4-SNAPSHOT"
-    api "de.geolykt.starloader:access-widener:2.0.0"
+    api "de.geolykt.starloader:mixin:0.8.4"
+    api "de.geolykt.starloader:access-widener:2.1.0"
 
     // Logging
-    // SLF4J is the base logger for most libraries, therefore we should hook it into log4j2.
-    api 'org.apache.logging.log4j:log4j-core:2.14.1'
-    api 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.1'
+    // SLF4J is the base logger for most libraries, therefore we should provide integration to it
+
+    // org.beryx.jlink breaks on this depend, so we had to mark it as compileOnly
+    // However we also have to include this depend as otherwise org.beryx.jlink will also break due to Mixin requireing it.
+    // compileOnly group: 'org.apache.logging.log4j', name: 'log4j-slf4j18-impl', version: '2.14.1'
+
+    // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+    // recaf's attach (which I use to inspect bytecode) breaks on slf4j-simple, so we are using logback in the meantime
+    api 'ch.qos.logback:logback-classic:1.3.0-alpha10'
+    // api 'org.slf4j:slf4j-simple:2.0.0-alpha5'
 }
 
 jar {
@@ -78,12 +85,17 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
+application {
+    mainClass = 'de.geolykt.starloader.launcher.Launcher'
+    mainModule = 'de.geolykt.starloader.launcher'
+}
+
 publishing {
     publications {
         plugin(MavenPublication) { publication ->
             groupId project.group
             artifactId project.archivesBaseName
-            version '2.1.1'
+            version project.version
 
             from components['java']
 
@@ -93,5 +105,50 @@ publishing {
     }
     repositories {
         mavenLocal()
+    }
+}
+
+jlink {
+    options = ['--compress', '2', '--no-header-files', '--no-man-pages', '--bind-services']
+    launcher {
+        name = 'StarloaderLauncher'
+    }
+    jpackage {
+        installerOptions = [
+            '--description', 'Easy to use launcher for modded galimulator. Beware that while this feature is present in official sources, it has significant drawbacks compared to the traditional SLC + SLL install.',
+            '--copyright', 'Copyrigth 2021-2021 Geolykt',
+            '--vendor', 'Starloader-project'
+        ]
+        installerType = project.findProperty('installerType') // Passed from the commandLine (example: -PinstallerType=msi)
+        if (installerType == 'msi') {
+            imageOptions += ['--icon', 'src/main/resources/icon.ico']
+            installerOptions += [
+                '--win-per-user-install', '--win-dir-chooser',
+                '--win-menu', '--win-shortcut'
+            ]
+        }
+        if (installerType in ['deb', 'rpm']) {
+            imageOptions += ['--icon', 'src/main/resources/icon.png']
+            installerOptions += [
+                '--linux-menu-group', 'Games',
+                '--linux-shortcut'
+            ]
+        }
+        if (installerType == 'deb') {
+            installerOptions += [
+                '--linux-deb-maintainer', 'admin@geolykt.de'
+            ]
+        }
+        if (installerType == 'rpm') {
+            installerOptions += [
+                '--linux-rpm-license-type', 'ASL 2.0' // aka Apache 2.0
+            ]
+        }
+    }
+}
+
+jpackage {
+    doFirst {
+        project.getProperty('installerType') // throws exception if its missing
     }
 }

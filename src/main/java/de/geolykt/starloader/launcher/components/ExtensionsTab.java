@@ -12,11 +12,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import de.geolykt.starloader.launcher.LauncherConfiguration;
-import de.geolykt.starloader.mod.ExtensionPrototypeList;
+import de.geolykt.starloader.layout.TableLayout;
+import de.geolykt.starloader.layout.TableLayoutConstraints;
 import de.geolykt.starloader.mod.ExtensionPrototype;
-
-import info.clearthought.layout.TableLayout;
-import info.clearthought.layout.TableLayoutConstraints;
+import de.geolykt.starloader.mod.ExtensionPrototypeList;
 
 @SuppressWarnings("serial") // Superclass not serializable across java versions
 public class ExtensionsTab extends JPanel implements StarloaderTab {

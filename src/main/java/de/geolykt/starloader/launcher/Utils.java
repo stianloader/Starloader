@@ -16,15 +16,15 @@ import java.util.Locale;
 
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.launch.platform.CommandLineOptions;
+import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
 import org.spongepowered.asm.mixin.Mixins;
 
 import de.geolykt.starloader.UnlikelyEventException;
+import de.geolykt.starloader.launcher.service.SLMixinService;
 import de.geolykt.starloader.util.Version;
 import de.geolykt.starloader.util.Version.Stabillity;
 
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
-import net.minestom.server.extras.selfmodification.mixins.MixinCodeModifier;
-import net.minestom.server.extras.selfmodification.mixins.MixinServiceMinestom;
 
 /**
  * Collection of static utility methods.
@@ -200,14 +200,14 @@ public final class Utils {
             try {
                 if (preferences.hasExtensionsEnabled()) {
                     startMixin(args);
-                    cl.addTransformer(new MixinCodeModifier());
-                    MixinServiceMinestom.gotoPreinitPhase();
+                    cl.addTransformer(new ASMMixinTransformer(SLMixinService.getInstance()));
+                    SLMixinService.getInstance().getPhaseConsumer().accept(Phase.PREINIT);
                     // ensure extensions are loaded when starting the server
                     Class<?> serverClass = cl.loadClass("de.geolykt.starloader.Starloader");
                     Method init = serverClass.getMethod("init");
                     init.invoke(null);
-                    MixinServiceMinestom.gotoInitPhase();
-                    MixinServiceMinestom.gotoDefaultPhase();
+                    SLMixinService.getInstance().getPhaseConsumer().accept(Phase.INIT);
+                    SLMixinService.getInstance().getPhaseConsumer().accept(Phase.DEFAULT);
                 }
                 startMain(cl.loadClass("com.example.Main"), args);
             } catch (Exception e1) {
@@ -223,17 +223,7 @@ public final class Utils {
     }
 
     protected static final void startMixin(String[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        // hacks required to pass custom arguments
-        Method start = MixinBootstrap.class.getDeclaredMethod("start");
-        start.setAccessible(true);
-        if (!((boolean)start.invoke(null))) {
-            return;
-        }
-
-        Method doInit = MixinBootstrap.class.getDeclaredMethod("doInit", CommandLineOptions.class);
-        doInit.setAccessible(true);
-        doInit.invoke(null, CommandLineOptions.ofArgs(Arrays.asList(args)));
-
+        MixinBootstrap.init(CommandLineOptions.ofArgs(Arrays.asList(args)));
         MixinBootstrap.getPlatform().inject();
         Mixins.getConfigs().forEach(c -> MinestomRootClassLoader.getInstance().protectedPackages.add(c.getConfig().getMixinPackage()));
     }
