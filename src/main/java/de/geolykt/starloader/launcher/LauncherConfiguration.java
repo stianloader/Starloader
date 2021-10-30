@@ -18,27 +18,50 @@ import de.geolykt.starloader.mod.ExtensionPrototype;
  */
 public final class LauncherConfiguration {
 
-    private File storageLoc;
-    private String galimulatorFile;
-    private boolean extensionSupport;
-    private boolean patchSupport;
-    private File extensionsFolder;
-    private File patchesFolder;
+    private File dataFolder;
     private ExtensionPrototypeList extensions;
+    private File extensionsFolder;
     private JSONObject extensionsObject;
+    private boolean extensionSupport;
+    private String galimulatorFile;
+    private File patchesFolder;
+    private boolean patchSupport;
+    private File storageLoc;
 
     LauncherConfiguration(File configLoc) throws IOException {
         storageLoc = configLoc;
         load();
     }
 
-    /**
-     * Sets the file where the configuration will be saved to.
-     *
-     * @param file The file to save the configuration to
-     */
-    public void setStorageFile(File file) {
-        storageLoc = file;
+    public File getDataFolder() {
+        return this.dataFolder;
+    }
+
+    public ExtensionPrototypeList getExtensionList() {
+        if (extensions != null && extensions.getFolder().equals(getExtensionsFolder())) {
+            return extensions; // List does not need updating
+        }
+        extensions = new ExtensionPrototypeList(extensionsFolder);
+        JSONArray arr = extensionsObject.getJSONArray("enabled");
+        for (Object enabledExtension : arr) {
+            String[] entry = enabledExtension.toString().split("@");
+            if (entry.length == 2) {
+                for (ExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
+                    if (prototype.version.equals(entry[1])) {
+                        prototype.enabled = true;
+                    }
+                }
+            }
+        }
+        return extensions;
+    }
+
+    public File getExtensionsFolder() {
+        return extensionsFolder;
+    }
+
+    public File getPatchesFolder() {
+        return patchesFolder;
     }
 
     /**
@@ -50,6 +73,18 @@ public final class LauncherConfiguration {
         return storageLoc;
     }
 
+    public File getTargetJar() {
+        return new File(galimulatorFile);
+    }
+
+    public boolean hasExtensionsEnabled() {
+        return extensionSupport;
+    }
+
+    public boolean hasPatchesEnabled() {
+        return patchSupport;
+    }
+
     public void load() throws IOException {
         if (!storageLoc.exists()) {
             // Set defaults
@@ -59,6 +94,7 @@ public final class LauncherConfiguration {
             extensionsFolder = new File("extensions/");
             extensionsFolder.mkdirs();
             patchesFolder = new File("patches/");
+            dataFolder = new File("data/");
             extensions = new ExtensionPrototypeList(extensionsFolder);
             extensionsObject = new JSONObject();
             extensionsObject.put("enabled", new JSONArray());
@@ -72,6 +108,7 @@ public final class LauncherConfiguration {
             patchSupport = jsonObj.getBoolean("do-patches");
             extensionsFolder = new File(jsonObj.getString("folder-extensions"));
             patchesFolder = new File(jsonObj.getString("folder-patches"));
+            dataFolder = new File(jsonObj.getString("folder-data"));
             extensionsObject = jsonObj.getJSONObject("extensions");
             extensions = new ExtensionPrototypeList(extensionsFolder);
             JSONArray arr = extensionsObject.getJSONArray("enabled");
@@ -95,6 +132,7 @@ public final class LauncherConfiguration {
         object.put("do-patches", patchSupport);
         object.put("folder-extensions", extensionsFolder.getAbsolutePath());
         object.put("folder-patches", patchesFolder.getAbsolutePath());
+        object.put("folder-data", dataFolder.getAbsolutePath());
 
         JSONArray arr = extensionsObject.getJSONArray("enabled");
         HashSet<String> s = new HashSet<>();
@@ -116,21 +154,12 @@ public final class LauncherConfiguration {
         }
     }
 
-    /**
-     * Sets the jar that should be loaded when the "Play" button is pressed
-     *
-     * @param selected The java archive file to load
-     */
-    public void setTargetJar(File selected) {
-        galimulatorFile = selected.getAbsolutePath();
+    public void setDataFolder(File dataFolder) {
+        this.dataFolder = dataFolder;
     }
 
-    public File getTargetJar() {
-        return new File(galimulatorFile);
-    }
-
-    public boolean hasExtensionsEnabled() {
-        return extensionSupport;
+    public void setExtensionList(ExtensionPrototypeList extList) {
+        extensions = extList;
     }
 
     /**
@@ -143,8 +172,8 @@ public final class LauncherConfiguration {
         extensionSupport = enabled;
     }
 
-    public boolean hasPatchesEnabled() {
-        return patchSupport;
+    public void setExtensionsFolder(File folder) {
+        extensionsFolder = folder;
     }
 
     public void setPatchesEnabled(boolean enabled) {
@@ -155,38 +184,21 @@ public final class LauncherConfiguration {
         patchesFolder = folder;
     }
 
-    public void setExtensionsFolder(File folder) {
-        extensionsFolder = folder;
+    /**
+     * Sets the file where the configuration will be saved to.
+     *
+     * @param file The file to save the configuration to
+     */
+    public void setStorageFile(File file) {
+        storageLoc = file;
     }
 
-    public File getPatchesFolder() {
-        return patchesFolder;
-    }
-
-    public File getExtensionsFolder() {
-        return extensionsFolder;
-    }
-
-    public void setExtensionList(ExtensionPrototypeList extList) {
-        extensions = extList;
-    }
-
-    public ExtensionPrototypeList getExtensionList() {
-        if (extensions != null && extensions.getFolder().equals(getExtensionsFolder())) {
-            return extensions; // List does not need updating
-        }
-        extensions = new ExtensionPrototypeList(extensionsFolder);
-        JSONArray arr = extensionsObject.getJSONArray("enabled");
-        for (Object enabledExtension : arr) {
-            String[] entry = enabledExtension.toString().split("@");
-            if (entry.length == 2) {
-                for (ExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
-                    if (prototype.version.equals(entry[1])) {
-                        prototype.enabled = true;
-                    }
-                }
-            }
-        }
-        return extensions;
+    /**
+     * Sets the jar that should be loaded when the "Play" button is pressed
+     *
+     * @param selected The java archive file to load
+     */
+    public void setTargetJar(File selected) {
+        galimulatorFile = selected.getAbsolutePath();
     }
 }

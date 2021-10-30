@@ -19,6 +19,7 @@ import de.geolykt.starloader.launcher.components.StarloaderTab;
 
 public class Launcher {
 
+    @Deprecated(forRemoval = true)
     public static final Launcher INSTANCE = new Launcher();
 
     public static final String GUI_TITLE = "Starloader Launcher";

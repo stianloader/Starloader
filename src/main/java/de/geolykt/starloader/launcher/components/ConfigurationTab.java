@@ -36,12 +36,15 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
     protected final JButton patchesFolderButton;
     protected final JLabel extensionsFolderDesc;
     protected final JButton extensionsFolderButton;
+    protected final JLabel dataFolderDesc;
+    protected final JButton dataFolderButton;
 
     protected final JFrame superparent;
     protected DigestCalculationRunnable digester;
 
     protected JFileChooser fileChooserGali;
     protected JFileChooser fileChooserExtensions;
+    protected JFileChooser fileChooserData;
     protected JFileChooser fileChooserPatches;
 
     private Timer versionTimer = null;
@@ -72,6 +75,9 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
         extensionsFolderDesc = new JLabel("Extensions folder: " + cfg.getExtensionsFolder().getPath());
         extensionsFolderButton = new JButton("Change folder");
         extensionsFolderButton.addMouseListener(new MouseClickListener(this::showExtensionsFC));
+        dataFolderDesc = new JLabel("Data folder: " + cfg.getDataFolder().getPath() + " (Note: requires extensions to work properly)");
+        dataFolderButton = new JButton("Change folder");
+        dataFolderButton.addMouseListener(new MouseClickListener(this::showDataFC));
         add(headerLabel);
         add(headerSeperator);
         add(fileChooserDesc);
@@ -83,6 +89,8 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
         add(patchesFolderButton);
         add(extensionsFolderDesc);
         add(extensionsFolderButton);
+        add(dataFolderDesc);
+        add(dataFolderButton);
     }
 
     /**
@@ -147,6 +155,27 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
                 e.printStackTrace();
             }
             extensionsFolderDesc.setText("Extensions folder: " + extensionsFolder.getPath());
+        }
+    }
+
+    public void showDataFC() {
+        if (fileChooserData == null) {
+            fileChooserData = new JFileChooser(Utils.getCurrentDir());
+            fileChooserData.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fileChooserData.setVisible(true);
+        }
+        if (fileChooserData.showOpenDialog(getParent()) == JFileChooser.APPROVE_OPTION) {
+            File dataFolder = fileChooserData.getSelectedFile();
+            if (!dataFolder.isDirectory()) {
+                dataFolder = fileChooserData.getCurrentDirectory();
+            }
+            cfg.setDataFolder(dataFolder);
+            try {
+                cfg.save();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            fileChooserDesc.setText("Data folder: " + cfg.getDataFolder().getPath() + " (Note: requires extensions to work properly)");
         }
     }
 

@@ -1,9 +1,11 @@
 package de.geolykt.starloader;
 
+import java.io.File;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.geolykt.starloader.launcher.Launcher;
+import de.geolykt.starloader.launcher.LauncherConfiguration;
 import de.geolykt.starloader.mod.Extension;
 import de.geolykt.starloader.mod.ExtensionManager;
 
@@ -13,20 +15,16 @@ public final class Starloader {
 
     private static Starloader instance;
 
-    private static ExtensionManager extensions;
+    private final ExtensionManager extensions;
+    private final LauncherConfiguration config;
 
-    private Starloader() {}
+    private Starloader(LauncherConfiguration config) {
+        this.config = config;
+        this.extensions = new ExtensionManager();
+    }
 
-    public static void init() {
-        if (instance != null) {
-            throw new IllegalStateException("Starloader initialized twice!");
-        }
-        LOGGER.info("Java version: {}", System.getProperty("java.version"));
-        instance = new Starloader();
-        extensions = new ExtensionManager();
-        // TODO get configuration via dependency injection, not via the singleton pattern.
-        // I tried reflection, but for some odd reason it does not find the methods. Java is strange I guess
-        extensions.loadExtensions(Launcher.INSTANCE.configuration.getExtensionList());
+    private void start() {
+        extensions.loadExtensions(config.getExtensionList());
         long start = System.currentTimeMillis();
         LOGGER.info("Initializing extension: preinit");
         extensions.getExtensions().forEach(Extension::preInitialize);
@@ -43,7 +41,28 @@ public final class Starloader {
         }, "ExtensionsShutdownThread"));
     }
 
+    public static void start(LauncherConfiguration config) {
+        if (instance != null) {
+            throw new IllegalStateException("Starloader initialized twice!");
+        }
+        LOGGER.info("Java version: {}", System.getProperty("java.version"));
+        instance = new Starloader(config);
+        instance.start();
+    }
+
     public static ExtensionManager getExtensionManager() {
-        return extensions;
+        return instance.extensions;
+    }
+
+    public static File getGalimulatorJar() {
+        return instance.config.getTargetJar();
+    }
+
+    public static File getExtensionDir() {
+        return instance.config.getExtensionsFolder();
+    }
+
+    public static File getDataDir() {
+        return instance.config.getDataFolder();
     }
 }

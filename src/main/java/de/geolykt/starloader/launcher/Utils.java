@@ -203,9 +203,9 @@ public final class Utils {
                     cl.addTransformer(new ASMMixinTransformer(SLMixinService.getInstance()));
                     SLMixinService.getInstance().getPhaseConsumer().accept(Phase.PREINIT);
                     // ensure extensions are loaded when starting the server
-                    Class<?> serverClass = cl.loadClass("de.geolykt.starloader.Starloader");
-                    Method init = serverClass.getMethod("init");
-                    init.invoke(null);
+                    Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
+                    Method init = slClass.getDeclaredMethod("start", LauncherConfiguration.class);
+                    init.invoke(null, preferences);
                     SLMixinService.getInstance().getPhaseConsumer().accept(Phase.INIT);
                     SLMixinService.getInstance().getPhaseConsumer().accept(Phase.DEFAULT);
                 }
