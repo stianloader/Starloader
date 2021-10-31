@@ -66,11 +66,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             add("net.fabricmc.accesswidener"); // this package will throw a linkage error too when loaded otherwise
             add("de.geolykt.starloader.transformers");
             add("de.geolykt.starloader.launcher");
+            add("de.geolykt.starloader.mod");
         }
     };
 
     /**
-     * Used to let ASM find out common super types, without actually commiting to loading them
+     * Used to let ASM find out common super types, without actually committing to loading them
      * Otherwise ASM would accidentally load classes we might want to modify
      */
     private final URLClassLoader asmClassLoader;

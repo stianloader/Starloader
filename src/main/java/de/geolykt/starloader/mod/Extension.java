@@ -8,8 +8,10 @@ import java.util.List;
 
 public abstract class Extension {
     // Set by reflection
+    // FIXME issue: null within the constructor
     private ExtensionDescription description;
     // Set by reflection
+    // FIXME issue: null within the constructor
     private Logger logger;
 
     protected Extension() {
@@ -92,12 +94,12 @@ public abstract class Extension {
     }
 
     @NotNull
-    public ExtensionDescription getDescription() {
+    public final ExtensionDescription getDescription() {
         return description;
     }
 
     @NotNull
-    public Logger getLogger() {
+    public final Logger getLogger() {
         return logger;
     }
 

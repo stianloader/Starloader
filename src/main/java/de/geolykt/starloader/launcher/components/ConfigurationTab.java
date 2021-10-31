@@ -175,7 +175,7 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            fileChooserDesc.setText("Data folder: " + cfg.getDataFolder().getPath() + " (Note: requires extensions to work properly)");
+            dataFolderDesc.setText("Data folder: " + cfg.getDataFolder().getPath() + " (Note: requires extensions to work properly)");
         }
     }
 
