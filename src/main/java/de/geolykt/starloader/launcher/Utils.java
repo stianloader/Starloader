@@ -3,10 +3,12 @@ package de.geolykt.starloader.launcher;
 import java.awt.Dimension;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -23,7 +25,6 @@ import de.geolykt.starloader.UnlikelyEventException;
 import de.geolykt.starloader.launcher.service.SLMixinService;
 import de.geolykt.starloader.util.Version;
 import de.geolykt.starloader.util.Version.Stabillity;
-
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 /**
@@ -65,17 +66,18 @@ public final class Utils {
                     '"'+ location + "\" /v " + key);
 
             process.waitFor();
-            @SuppressWarnings("resource")
-            String output = new String(process.getInputStream().readAllBytes());
+            InputStream is = process.getInputStream();
+            String output = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            is.close();
 
-            // Output has the following format:
-            // \n<Version information>\n\n<key>\t<registry type>\t<value>
-            if(!output.contains("\t")){
-                    return null;
+            if(!output.contains(location) ||!output.contains(key)){
+                return null;
             }
 
             // Parse out the value
-            String[] parsed = output.split("\t");
+            // For me this results in:
+            // [, HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Valve\Steam, InstallPath, REG_SZ, D:\Programmes\Steam]
+            String[] parsed = output.split("\\s+");
             return parsed[parsed.length-1];
         } catch (Exception e) {
             e.printStackTrace();
@@ -86,9 +88,11 @@ public final class Utils {
 
     public static final File getSteamExecutableDir() {
         if (OPERATING_SYSTEM.toLowerCase(Locale.ROOT).startsWith("win")) {
-            // TODO test
             String val = readWindowsRegistry(STEAM_WINDOWS_REGISTRY_KEY, STEAM_WINDOWS_REGISTRY_INSTALL_DIR_KEY);
             System.out.println(val);
+            if (val == null) {
+                return null;
+            }
             return new File(val);
         } else {
             // Assuming UNIX, though for real we should check other OSes
