@@ -160,7 +160,12 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
 
     public void showDataFC() {
         if (fileChooserData == null) {
-            fileChooserData = new JFileChooser(Utils.getCurrentDir());
+            if (new File(cfg.getDataFolder(), "version.txt").exists()) {
+                fileChooserData = new JFileChooser(cfg.getDataFolder().getParentFile());
+            } else {
+                // The target jar and the data folder are very likely closely connected.
+                fileChooserData = new JFileChooser(cfg.getTargetJar().getParentFile().getParentFile());
+            }
             fileChooserData.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fileChooserData.setVisible(true);
         }

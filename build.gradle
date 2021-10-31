@@ -115,11 +115,14 @@ jlink {
     }
     jpackage {
         installerOptions = [
-            '--description', 'Easy to use launcher for modded galimulator. Beware that while this feature is present in official sources, it has significant drawbacks compared to the traditional SLC + SLL install.',
-            '--copyright', 'Copyrigth 2021-2021 Geolykt',
-            '--vendor', 'Starloader-project'
+            '--description', 'Launcher for modded galimulator. Beware that while this feature is present in official sources, it has significant drawbacks compared to the traditional SLC + SLL install.',
+            '--copyright', 'Copyright 2021-2021 Geolykt',
+            '--vendor', 'Starloader-project',
+            '--license-file', 'LICENSE'
         ]
-        installerType = project.findProperty('installerType') // Passed from the commandLine (example: -PinstallerType=msi)
+        // Note: you need to have rpm-build installed if you wish to create RPM builds
+        // Creating .deb packages requires dpkg and fakeroot to be installed
+        installerType = project.findProperty('installerType') // Passed from the commandLine (example: -PinstallerType=rpm)
         if (installerType == 'msi') {
             imageOptions += ['--icon', 'src/main/resources/icon.ico']
             installerOptions += [
@@ -130,7 +133,8 @@ jlink {
         if (installerType in ['deb', 'rpm']) {
             imageOptions += ['--icon', 'src/main/resources/icon.png']
             installerOptions += [
-                '--linux-menu-group', 'Games',
+                '--linux-menu-group', 'Game;Simulation;Java;',
+                '--linux-app-category', 'games', // SLL also falls under 'java', not sure whether we can have multiple categories
                 '--linux-shortcut'
             ]
         }

@@ -28,46 +28,55 @@ public final class DiscoveredExtension {
     public transient LoadStatus loadStatus = LoadStatus.LOAD_SUCCESS;
     transient private File originalJar;
 
+    @SuppressWarnings("null")
     @NotNull
     public String getName() {
         return name;
     }
 
+    @SuppressWarnings("null")
     @NotNull
     public String getEntrypoint() {
         return entrypoint;
     }
 
+    @SuppressWarnings("null")
     @NotNull
     public String getVersion() {
         return version;
     }
 
+    @SuppressWarnings("null")
     @NotNull
     public String getMixinConfig() {
         return mixinConfig;
     }
 
+    @SuppressWarnings("null")
     @NotNull
     public String[] getAuthors() {
         return authors;
     }
 
+    @SuppressWarnings("null")
     @NotNull
     public String[] getCodeModifiers() {
         return codeModifiers;
     }
 
+    @SuppressWarnings("null")
     @NotNull
     public String getAccessWidener() {
         return accessWidener;
     }
 
+    @SuppressWarnings("null")
     @NotNull
     public String[] getDependencies() {
         return dependencies;
     }
 
+    @SuppressWarnings("null")
     @NotNull
     public ExternalDependencies getExternalDependencies() {
         return externalDependencies;
@@ -153,6 +162,7 @@ public final class DiscoveredExtension {
         LOAD_FAILED("Load failed. See logs for more information."),
         ;
 
+        @NotNull
         private final String message;
 
         LoadStatus(@NotNull String message) {

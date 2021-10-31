@@ -48,7 +48,7 @@ public class Launcher {
 
     public Launcher() {
         try {
-            configuration = new LauncherConfiguration(new File(".slconfig.json"));
+            configuration = new LauncherConfiguration(new File(Utils.getApplicationFolder(), "slconfig.json"));
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);

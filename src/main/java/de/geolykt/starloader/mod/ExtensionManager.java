@@ -29,16 +29,17 @@ public class ExtensionManager {
 
     public final static Logger LOGGER = LoggerFactory.getLogger(ExtensionManager.class);
 
-    final static String INDEV_CLASSES_FOLDER = "minestom.extension.indevfolder.classes";
-    final static String INDEV_RESOURCES_FOLDER = "minestom.extension.indevfolder.resources";
     private final static Gson GSON = new Gson();
 
     private final Map<String, MinestomExtensionClassLoader> extensionLoaders = new HashMap<>();
     private final Map<String, Extension> extensions = new HashMap<>();
-    private final AccessWidener accessWidener = new AccessWidener();
+    private final @NotNull AccessWidener accessWidener = new AccessWidener();
     private boolean loaded;
 
+    @NotNull
     private final List<Extension> extensionList = new CopyOnWriteArrayList<>();
+
+    @NotNull
     private final List<Extension> immutableExtensionListView = Collections.unmodifiableList(extensionList);
 
     // Option
@@ -82,6 +83,9 @@ public class ExtensionManager {
         discoveredExtensions.removeIf(ext -> ext.loadStatus != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
 
         for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
+            if (discoveredExtension == null) {
+                continue; // Error safety is better than having to deal with error recovered
+            }
             try {
                 setupClassLoader(discoveredExtension);
             } catch (Exception e) {
@@ -98,6 +102,9 @@ public class ExtensionManager {
         setupCodeModifiers(discoveredExtensions);
 
         for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
+            if (discoveredExtension == null) {
+                continue;
+            }
             try {
                 attemptSingleLoad(discoveredExtension);
             } catch (Exception e) {
@@ -233,27 +240,6 @@ public class ExtensionManager {
                 if (extension != null && extension.loadStatus == DiscoveredExtension.LoadStatus.LOAD_SUCCESS) {
                     extensions.add(extension);
                 }
-            }
-        }
-
-        // this allows developers to have their extension discovered while working on it, without having to build a jar and put in the extension folder
-        if (System.getProperty(INDEV_CLASSES_FOLDER) != null && System.getProperty(INDEV_RESOURCES_FOLDER) != null) {
-            LOGGER.info("Found indev folders for extension. Adding to list of discovered extensions.");
-            final String extensionClasses = System.getProperty(INDEV_CLASSES_FOLDER);
-            final String extensionResources = System.getProperty(INDEV_RESOURCES_FOLDER);
-            try (InputStreamReader reader = new InputStreamReader(new FileInputStream(new File(extensionResources, "extension.json")))) {
-                DiscoveredExtension extension = GSON.fromJson(reader, DiscoveredExtension.class);
-                extension.files.add(new File(extensionClasses).toURI().toURL());
-                extension.files.add(new File(extensionResources).toURI().toURL());
-
-                // Verify integrity and ensure defaults
-                DiscoveredExtension.verifyIntegrity(extension);
-
-                if (extension.loadStatus == DiscoveredExtension.LoadStatus.LOAD_SUCCESS) {
-                    extensions.add(extension);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
         return extensions;
@@ -643,6 +629,6 @@ public class ExtensionManager {
 
     @NotNull
     public AccessWidener getAccessWidener() {
-            return accessWidener;
+        return accessWidener;
     }
 }

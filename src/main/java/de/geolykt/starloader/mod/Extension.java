@@ -95,20 +95,38 @@ public abstract class Extension {
 
     @NotNull
     public final ExtensionDescription getDescription() {
+        ExtensionDescription description = this.description;
+        if (description == null) {
+            throw new IllegalStateException("You cannot call getDescription() in the constructor. Sorry.");
+        }
         return description;
     }
 
     @NotNull
     public final Logger getLogger() {
+        Logger logger = this.logger;
+        if (logger == null) {
+            throw new IllegalStateException("You cannot call getLogger() in the constructor. Sorry.");
+        }
         return logger;
     }
 
 
     public static class ExtensionDescription {
+
+        @NotNull
         private final String name;
+
+        @NotNull
         private final String version;
+
+        @NotNull
         private final List<String> authors;
+
+        @NotNull
         private final List<String> dependents = new ArrayList<>();
+
+        @NotNull
         private final DiscoveredExtension origin;
 
         public ExtensionDescription(@NotNull String name, @NotNull String version, @NotNull List<String> authors, @NotNull DiscoveredExtension origin) {

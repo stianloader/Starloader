@@ -232,6 +232,29 @@ public final class Utils {
         return new Dimension(Math.max(original.width, newer.width), Math.max(original.height, newer.height));
     }
 
+    public static final File getApplicationFolder() {
+        String appdataFolder = System.getenv("APPDATA");
+        if (appdataFolder != null) {
+            return new File(appdataFolder, "starloader");
+        } else {
+            String userhome = System.getProperty("user.home");
+            if (userhome == null) {
+                return getCurrentDir();
+            }
+            File f = new File(userhome, ".local");
+            if (!f.exists()) {
+                return getCurrentDir();
+            }
+            f = new File(f, "share");
+            if (!f.exists()) {
+                return getCurrentDir();
+            }
+            f = new File(f, "starloader");
+            f.mkdir();
+            return f;
+        }
+    }
+
     static {
         // TODO add more jars to this collection and check "pure guess" jars
         // It would also be interesting if steam/itch provides the checksums for this file, could we check or not?

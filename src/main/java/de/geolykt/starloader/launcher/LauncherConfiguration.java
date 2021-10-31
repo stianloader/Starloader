@@ -23,7 +23,7 @@ public final class LauncherConfiguration {
     private File extensionsFolder;
     private JSONObject extensionsObject;
     private boolean extensionSupport;
-    private String galimulatorFile;
+    private File galimulatorFile;
     private File patchesFolder;
     private boolean patchSupport;
     private File storageLoc;
@@ -74,7 +74,7 @@ public final class LauncherConfiguration {
     }
 
     public File getTargetJar() {
-        return new File(galimulatorFile);
+        return galimulatorFile;
     }
 
     public boolean hasExtensionsEnabled() {
@@ -88,13 +88,19 @@ public final class LauncherConfiguration {
     public void load() throws IOException {
         if (!storageLoc.exists()) {
             // Set defaults
-            galimulatorFile = "./jar/galimulator-desktop.jar";
+            File gameDir = Utils.getGameDir("galimulator");
+            galimulatorFile = new File(gameDir, "jar/galimulator-desktop.jar");
+            if (!galimulatorFile.exists()) {
+                galimulatorFile = new File("jar", "galimulator-desktop.jar");
+                dataFolder = new File("data"); // TODO which data folder should be used?
+            } else {
+                dataFolder = new File(gameDir, "data");
+            }
             extensionSupport = true;
-            patchSupport = false; // TODO make "true" the default, when it is a useable setting
-            extensionsFolder = new File("extensions/");
+            patchSupport = false; // TODO make "true" the default, when it is a usable setting
+            extensionsFolder = new File(Utils.getApplicationFolder(), "extensions");
             extensionsFolder.mkdirs();
-            patchesFolder = new File("patches/");
-            dataFolder = new File("data/");
+            patchesFolder = new File(Utils.getApplicationFolder(), "patches");
             extensions = new ExtensionPrototypeList(extensionsFolder);
             extensionsObject = new JSONObject();
             extensionsObject.put("enabled", new JSONArray());
@@ -103,7 +109,7 @@ public final class LauncherConfiguration {
         try (FileInputStream fis = new FileInputStream(storageLoc)) {
             String data = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
             JSONObject jsonObj = new JSONObject(data);
-            galimulatorFile = jsonObj.getString("target-jar");
+            galimulatorFile = new File(jsonObj.getString("target-jar"));
             extensionSupport = jsonObj.getBoolean("do-extensions");
             patchSupport = jsonObj.getBoolean("do-patches");
             extensionsFolder = new File(jsonObj.getString("folder-extensions"));
@@ -199,6 +205,6 @@ public final class LauncherConfiguration {
      * @param selected The java archive file to load
      */
     public void setTargetJar(File selected) {
-        galimulatorFile = selected.getAbsolutePath();
+        galimulatorFile = selected;
     }
 }
