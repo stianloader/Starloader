@@ -19,7 +19,7 @@ import de.geolykt.starloader.util.JarFilter;
 
 public class ExtensionPrototypeList {
 
-    public final static Logger LOGGER = LoggerFactory.getLogger(ExtensionPrototypeList.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExtensionPrototypeList.class);
 
     private final File extensionFolder;
     private final List<ExtensionPrototype> extensions;

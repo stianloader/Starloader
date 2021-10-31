@@ -7,14 +7,15 @@ import org.objectweb.asm.tree.ClassNode;
 import de.geolykt.starloader.transformers.ASMTransformer;
 
 /**
- * Will be called by {@link MinestomRootClassLoader} to transform classes at load-time
+ * Will be called by {@link MinestomRootClassLoader} to transform classes at load-time.
  *
  * @deprecated Replaced with {@link ASMTransformer}.
  */
 @Deprecated(forRemoval = true, since = "2.1.0")
 public abstract class CodeModifier extends ASMTransformer {
+
     /**
-     * Must return true iif the class node has been modified
+     * Must return true iif the class node has been modified.
      *
      * @param source The source node
      * @return True if the node has been modified.

@@ -65,7 +65,7 @@ public final class LauncherConfiguration {
     }
 
     /**
-     * Obtains the file where the configuration will be saved to
+     * Obtains the file where the configuration will be saved to.
      *
      * @return The file
      */
@@ -200,7 +200,7 @@ public final class LauncherConfiguration {
     }
 
     /**
-     * Sets the jar that should be loaded when the "Play" button is pressed
+     * Sets the jar that should be loaded when the "Play" button is pressed.
      *
      * @param selected The java archive file to load
      */

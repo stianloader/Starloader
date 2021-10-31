@@ -4,8 +4,9 @@ import java.io.InputStream;
 import java.net.URL;
 
 public class MinestomExtensionClassLoader extends HierarchyClassLoader {
+
     /**
-     * Root ClassLoader, everything goes through it before any attempt at loading is done inside this classloader
+     * Root ClassLoader, everything goes through it before any attempt at loading is done inside this classloader.
      */
     private final MinestomRootClassLoader root;
 
@@ -25,14 +26,15 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
     }
 
     /**
-     * Assumes the name is not null, nor it does represent a protected class
+     * Assumes the name is not null, nor it does represent a protected class.
+     *
      * @param name
      * @return The loaded class
      * @throws ClassNotFoundException if the class is not found inside this classloader
      */
     public Class<?> loadClassAsChild(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> loadedClass = findLoadedClass(name);
-        if(loadedClass != null) {
+        if (loadedClass != null) {
             return loadedClass;
         }
 
@@ -55,7 +57,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
                 throw new ClassNotFoundException("Could not load class " + name, e);
             }
         } catch (ClassNotFoundException e) {
-            for(MinestomExtensionClassLoader child : children) {
+            for (MinestomExtensionClassLoader child : children) {
                 try {
                     Class<?> loaded = child.loadClassAsChild(name, resolve);
                     return loaded;
@@ -72,6 +74,6 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
     @Deprecated(forRemoval = false, since = "9")
     protected void finalize() throws Throwable {
         super.finalize();
-        System.err.println("Class loader "+getName()+" finalized.");
+        System.err.println("Class loader " + getName() + " finalized.");
     }
 }

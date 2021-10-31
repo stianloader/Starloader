@@ -1,14 +1,14 @@
 package net.minestom.server.extras.selfmodification.mixins;
 
-import org.spongepowered.asm.service.IGlobalPropertyService;
-import org.spongepowered.asm.service.IPropertyKey;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import org.spongepowered.asm.service.IGlobalPropertyService;
+import org.spongepowered.asm.service.IPropertyKey;
+
 /**
- * Global properties service for Mixin
+ * Global properties service for Mixin.
  */
 public class GlobalPropertyServiceMinestom implements IGlobalPropertyService {
 
@@ -35,9 +35,7 @@ public class GlobalPropertyServiceMinestom implements IGlobalPropertyService {
 
         @Override
         public String toString() {
-            return "BasicProperty{" +
-                    "name='" + name + '\'' +
-                    '}';
+            return String.format("BasicProperty{name='%s'}", name);
         }
     }
 

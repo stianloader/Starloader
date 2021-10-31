@@ -1,10 +1,10 @@
 package de.geolykt.starloader.mod;
 
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 
 public abstract class Extension {
     // Set by reflection
@@ -14,21 +14,13 @@ public abstract class Extension {
     // FIXME issue: null within the constructor
     private Logger logger;
 
-    protected Extension() {
+    protected Extension() { }
 
-    }
+    public void preInitialize() { }
 
-    public void preInitialize() {
+    public void initialize() { }
 
-    }
-
-    public void initialize() {
-
-    }
-
-    public void postInitialize() {
-
-    }
+    public void postInitialize() { }
 
     /**
      * @deprecated This method is a boilerplate solution, for more info see below
@@ -41,9 +33,7 @@ public abstract class Extension {
      * Other extension libraries might offer similar alternatives that are a lot more safer to use.
      */
     @Deprecated(forRemoval = false)
-    public void preTerminate() {
-
-    }
+    public void preTerminate() { }
 
     /**
      * @deprecated This method is a boilerplate solution, for more info see below
@@ -56,9 +46,7 @@ public abstract class Extension {
      * Other extension libraries might offer similar alternatives that are a lot more safer to use.
      */
     @Deprecated(forRemoval = false)
-    public void terminate() {
-
-    }
+    public void terminate() { }
 
     /**
      * @deprecated This method is a boilerplate solution, for more info see below
@@ -71,9 +59,7 @@ public abstract class Extension {
      * Other extension libraries might offer similar alternatives that are a lot more safer to use.
      */
     @Deprecated(forRemoval = false)
-    public void postTerminate() {
-
-    }
+    public void postTerminate() { }
 
     /**
      * @deprecated This method is a boilerplate solution, for more info see below
@@ -89,9 +75,7 @@ public abstract class Extension {
      * become unusable.
      */
     @Deprecated(forRemoval = false)
-    public void unload() {
-
-    }
+    public void unload() { }
 
     @NotNull
     public final ExtensionDescription getDescription() {
@@ -110,7 +94,6 @@ public abstract class Extension {
         }
         return logger;
     }
-
 
     public static class ExtensionDescription {
 

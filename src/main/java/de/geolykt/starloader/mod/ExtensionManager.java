@@ -1,35 +1,46 @@
 package de.geolykt.starloader.mod;
 
-import com.google.gson.Gson;
-
-import net.fabricmc.accesswidener.AccessWidener;
-import net.fabricmc.accesswidener.AccessWidenerReader;
-import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
-import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.spongepowered.asm.mixin.Mixins;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spongepowered.asm.mixin.Mixins;
+
+import com.google.gson.Gson;
+
+import net.fabricmc.accesswidener.AccessWidener;
+import net.fabricmc.accesswidener.AccessWidenerReader;
+import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
+import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
+
 public class ExtensionManager {
 
-    public final static Logger LOGGER = LoggerFactory.getLogger(ExtensionManager.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ExtensionManager.class);
 
-    private final static Gson GSON = new Gson();
+    private static final Gson GSON = new Gson();
 
     private final Map<String, MinestomExtensionClassLoader> extensionLoaders = new HashMap<>();
     private final Map<String, Extension> extensions = new HashMap<>();
@@ -39,6 +50,7 @@ public class ExtensionManager {
     @NotNull
     private final List<Extension> extensionList = new CopyOnWriteArrayList<>();
 
+    @SuppressWarnings("null")
     @NotNull
     private final List<Extension> immutableExtensionListView = Collections.unmodifiableList(extensionList);
 
@@ -50,8 +62,8 @@ public class ExtensionManager {
 
     /**
      * Gets if the extensions should be loaded during startup.
-     * <p>
-     * Default value is 'true'.
+     *
+     * <p>Default value is 'true'.
      *
      */
     public boolean shouldLoadOnStartup() {
@@ -59,9 +71,9 @@ public class ExtensionManager {
     }
 
     /**
-     * Used to specify if you want extensions to be loaded and initialized during startup.
-     * <p>
-     * Only useful before the server start.
+     * Used to specify if you want extensions to be loaded and initialised during startup.
+     *
+     * <p>Only useful before the server start.
      *
      * @param loadOnStartup true to load extensions on startup, false to do nothing
      */
@@ -121,6 +133,7 @@ public class ExtensionManager {
         final String extensionName = discoveredExtension.getName();
 
         final URL[] urls = discoveredExtension.files.toArray(new URL[0]);
+        @SuppressWarnings("null")
         final MinestomExtensionClassLoader loader = newClassLoader(discoveredExtension, urls);
 
         extensionLoaders.put(extensionName.toLowerCase(), loader);
@@ -180,11 +193,7 @@ public class ExtensionManager {
         } catch (IllegalAccessException ignored) {
             // We made it accessible, should not occur
         } catch (InvocationTargetException e) {
-            LOGGER.error(
-                    "While instantiating the main class '{}' in '{}' an exception was thrown.",
-                    mainClass,
-                    extensionName,
-                    e.getTargetException()
+            LOGGER.error("While instantiating the main class '{}' in '{}' an exception was thrown.", mainClass, extensionName, e.getTargetException()
             );
             return null;
         }
@@ -246,17 +255,18 @@ public class ExtensionManager {
     }
 
     private DiscoveredExtension discoverFromJar(File file) {
-        try (ZipFile f = new ZipFile(file);
-             InputStreamReader reader = new InputStreamReader(f.getInputStream(f.getEntry("extension.json")))) {
+        try (ZipFile f = new ZipFile(file)) {
+            try (InputStreamReader reader = new InputStreamReader(f.getInputStream(f.getEntry("extension.json")))) {
+                @SuppressWarnings("null")
+                DiscoveredExtension extension = GSON.fromJson(reader, DiscoveredExtension.class);
+                extension.setOriginalJar(file);
+                extension.files.add(file.toURI().toURL());
 
-            DiscoveredExtension extension = GSON.fromJson(reader, DiscoveredExtension.class);
-            extension.setOriginalJar(file);
-            extension.files.add(file.toURI().toURL());
+                // Verify integrity and ensure defaults
+                DiscoveredExtension.verifyIntegrity(extension);
 
-            // Verify integrity and ensure defaults
-            DiscoveredExtension.verifyIntegrity(extension);
-
-            return extension;
+                return extension;
+            }
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -273,6 +283,7 @@ public class ExtensionManager {
         }
         for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
 
+            @SuppressWarnings("null")
             List<DiscoveredExtension> dependencies = Arrays.stream(discoveredExtension.getDependencies())
                     .map(dependencyName -> {
                         DiscoveredExtension dependencyExtension = extensionMap.get(dependencyName.toLowerCase());
@@ -306,10 +317,7 @@ public class ExtensionManager {
         // entries with empty lists
         List<Map.Entry<DiscoveredExtension, List<DiscoveredExtension>>> loadableExtensions;
         // While there are entries with no more elements (no more dependencies)
-        while (!(
-                loadableExtensions = dependencyMap.entrySet().stream().filter(entry -> areAllDependenciesLoaded(entry.getValue())).collect(Collectors.toList())
-        ).isEmpty()
-        ) {
+        while (!(loadableExtensions = dependencyMap.entrySet().stream().filter(entry -> areAllDependenciesLoaded(entry.getValue())).collect(Collectors.toList())).isEmpty()) {
             // Get all "loadable" (not actually being loaded!) extensions and put them in the sorted list.
             for (Map.Entry<DiscoveredExtension, List<DiscoveredExtension>> entry : loadableExtensions) {
                 // Add to sorted list.
@@ -331,13 +339,12 @@ public class ExtensionManager {
                         discoveredExtension.getName(),
                         entry.getValue().stream().map(DiscoveredExtension::getName).collect(Collectors.joining(", ")));
             }
-
         }
 
         return sortedList;
     }
 
-    private boolean areAllDependenciesLoaded(@NotNull List<DiscoveredExtension> dependencies) {
+    private boolean areAllDependenciesLoaded(List<DiscoveredExtension> dependencies) {
         return dependencies.isEmpty() || dependencies.stream().allMatch(ext -> extensions.containsKey(ext.getName().toLowerCase()));
     }
 
@@ -397,7 +404,7 @@ public class ExtensionManager {
 
     @SuppressWarnings("resource")
     private void setupAccessWideners(List<DiscoveredExtension> extensionsToLoad) {
-        MinestomRootClassLoader.getInstance().widener = accessWidener;
+        MinestomRootClassLoader.getInstance().setWidener(accessWidener, this);
         AccessWidenerReader accessReader = new AccessWidenerReader(accessWidener);
         for (DiscoveredExtension extension : extensionsToLoad) {
             if (extension.getAccessWidener().equals("")) {
@@ -454,8 +461,8 @@ public class ExtensionManager {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                LOGGER.error("Failed to load code modifier for extension in files: " +
-                        extension.files
+                LOGGER.error("Failed to load code modifier for extension in files: "
+                        + extension.files
                                 .stream()
                                 .map(URL::toExternalForm)
                                 .collect(Collectors.joining(", ")), e);
@@ -553,6 +560,9 @@ public class ExtensionManager {
         LOGGER.info("Discover dynamic extension from jar {}", jarFile.getAbsolutePath());
         DiscoveredExtension discoveredExtension = discoverFromJar(jarFile);
         List<DiscoveredExtension> extensionsToLoad = Collections.singletonList(discoveredExtension);
+        if (extensionsToLoad == null) {
+            throw new InternalError();
+        }
         return loadExtensionList(extensionsToLoad);
     }
 
@@ -625,10 +635,5 @@ public class ExtensionManager {
      */
     public void shutdown() {
         this.extensionList.forEach(this::unload);
-    }
-
-    @NotNull
-    public AccessWidener getAccessWidener() {
-        return accessWidener;
     }
 }

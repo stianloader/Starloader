@@ -1,18 +1,5 @@
 package net.minestom.server.extras.selfmodification;
 
-import org.jetbrains.annotations.NotNull;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import de.geolykt.starloader.transformers.ASMTransformer;
-import net.fabricmc.accesswidener.AccessWidener;
-import net.fabricmc.accesswidener.AccessWidenerVisitor;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,18 +12,34 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
+import org.jetbrains.annotations.NotNull;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import net.fabricmc.accesswidener.AccessWidener;
+import net.fabricmc.accesswidener.AccessWidenerVisitor;
+
+import de.geolykt.starloader.mod.ExtensionManager;
+import de.geolykt.starloader.transformers.ASMTransformer;
+
 /**
- * Class Loader that can modify class bytecode when they are loaded
+ * Class Loader that can modify class bytecode when they are loaded.
  */
 public class MinestomRootClassLoader extends HierarchyClassLoader {
 
-    public final static Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
 
     private static MinestomRootClassLoader INSTANCE;
 
-    public AccessWidener widener;
+    private AccessWidener widener;
 
     /**
      * Classes that cannot be loaded/modified by this classloader.
@@ -72,7 +75,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     /**
      * Used to let ASM find out common super types, without actually committing to loading them
-     * Otherwise ASM would accidentally load classes we might want to modify
+     * Otherwise ASM would accidentally load classes we might want to modify.
      */
     private final URLClassLoader asmClassLoader;
 
@@ -85,7 +88,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     private MinestomRootClassLoader(ClassLoader parent) {
         super("Starloader Root ClassLoader", extractURLsFromClasspath(), parent);
-        asmClassLoader = newChild(new URL[0]);
+        asmClassLoader = newChild();
     }
 
     public static MinestomRootClassLoader getInstance() {
@@ -123,8 +126,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> loadedClass = findLoadedClass(name);
-        if (loadedClass != null)
+        if (loadedClass != null) {
             return loadedClass;
+        }
 
         try {
             // we do not load system classes by ourselves
@@ -151,8 +155,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     private boolean isProtected(String name) {
         if (!protectedClasses.contains(name)) {
             for (String start : protectedPackages) {
-                if (name.startsWith(start))
+                if (name.startsWith(start)) {
                     return true;
+                }
             }
             return false;
         }
@@ -194,8 +199,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * @throws ClassNotFoundException
      */
     public byte[] loadBytes(String name, boolean transform) throws IOException, ClassNotFoundException {
-        if (name == null)
+        if (name == null) {
             throw new ClassNotFoundException();
+        }
         String path = name.replace(".", "/") + ".class";
         InputStream input = getResourceAsStream(path);
         if (input == null) {
@@ -210,8 +216,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     }
 
     public byte[] loadBytesWithChildren(String name, boolean transform) throws IOException, ClassNotFoundException {
-        if (name == null)
+        if (name == null) {
             throw new ClassNotFoundException();
+        }
         String path = name.replace(".", "/") + ".class";
         InputStream input = getResourceAsStreamWithChildren(path);
         if (input == null) {
@@ -286,15 +293,23 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     }
 
     @NotNull
-    public URLClassLoader newChild(@NotNull URL[] urls) {
-        return URLClassLoader.newInstance(urls, this);
+    public URLClassLoader newChild(@NotNull URL... urls) {
+        URLClassLoader instance = URLClassLoader.newInstance(urls, this);
+        if (instance == null) {
+            throw new IllegalStateException();
+        }
+        return instance;
     }
 
     public void loadModifier(File[] originFiles, String codeModifierClass) {
-        URL[] urls = new URL[originFiles.length];
+        @NotNull URL[] urls = new @NotNull URL[originFiles.length];
         try {
             for (int i = 0; i < originFiles.length; i++) {
-                urls[i] = originFiles[i].toURI().toURL();
+                URL url = originFiles[i].toURI().toURL();
+                if (url == null) {
+                    throw new InternalError();
+                }
+                urls[i] = url;
             }
             @SuppressWarnings("resource")
             URLClassLoader loader = newChild(urls);
@@ -312,7 +327,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     }
 
     /**
-     * Adds a transformer to the transformer pool
+     * Adds a transformer to the transformer pool.
      *
      * @param transformer The transformer to add
      * @since 2.1.0
@@ -324,7 +339,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     }
 
     /**
-     * Adds a modifier to the modifier pool
+     * Adds a modifier to the modifier pool.
      *
      * @param modifier The modifier to add
      * @deprecated {@link CodeModifier} is getting phased out, use {@link ASMTransformer} instead. Replaced by {@link #addTransformer(ASMTransformer)}.
@@ -359,5 +374,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      */
     public List<ASMTransformer> getTransformers() {
         return new ArrayList<>(modifiers);
+    }
+
+    public void setWidener(@SuppressWarnings("exports") @NotNull AccessWidener accessWidener, @NotNull ExtensionManager extensionManager) {
+        if (Objects.isNull(extensionManager)) {
+            throw new NullPointerException();
+        }
+        this.widener = accessWidener;
     }
 }

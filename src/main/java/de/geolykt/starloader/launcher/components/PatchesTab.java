@@ -28,5 +28,4 @@ public class PatchesTab extends JPanel implements StarloaderTab {
             e.printStackTrace();
         }
     }
-
 }

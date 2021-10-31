@@ -21,11 +21,12 @@ import org.spongepowered.asm.launch.platform.CommandLineOptions;
 import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
 import org.spongepowered.asm.mixin.Mixins;
 
+import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
+
 import de.geolykt.starloader.UnlikelyEventException;
 import de.geolykt.starloader.launcher.service.SLMixinService;
 import de.geolykt.starloader.util.Version;
 import de.geolykt.starloader.util.Version.Stabillity;
-import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 /**
  * Collection of static utility methods.
@@ -59,18 +60,17 @@ public final class Utils {
      * @return registry value or null if not found
      * @author Oleg Ryaboy, based on work by Miguel Enriquez; Made blocking by Geolykt
      */
-    public static final String readWindowsRegistry(String location, String key){
+    public static final String readWindowsRegistry(String location, String key) {
         try {
             // Run reg query, then read output with StreamReader (internal class)
-            Process process = Runtime.getRuntime().exec("reg query " +
-                    '"'+ location + "\" /v " + key);
+            Process process = Runtime.getRuntime().exec("reg query " + '"' + location + "\" /v " + key);
 
             process.waitFor();
             InputStream is = process.getInputStream();
             String output = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             is.close();
 
-            if(!output.contains(location) ||!output.contains(key)){
+            if (!output.contains(location) || !output.contains(key)) {
                 return null;
             }
 
@@ -83,7 +83,6 @@ public final class Utils {
             e.printStackTrace();
             return null;
         }
-
     }
 
     public static final File getSteamExecutableDir() {
@@ -117,8 +116,7 @@ public final class Utils {
         File steamExec = getSteamExecutableDir();
         if (steamExec == null || !steamExec.exists()) {
             if (OPERATING_SYSTEM.toLowerCase(Locale.ROOT).startsWith("win")) {
-                steamExec = getOneOfExistingFiles("C:\\Steam\\", "C:\\Program Files (x86)\\Steam\\",
-                        "C:\\Program Files\\Steam\\", "D:\\Steam\\", "C:\\Programmes\\Steam\\", "D:\\Programmes\\Steam\\");
+                steamExec = getOneOfExistingFiles("C:\\Steam\\", "C:\\Program Files (x86)\\Steam\\", "C:\\Program Files\\Steam\\", "D:\\Steam\\", "C:\\Programmes\\Steam\\", "D:\\Programmes\\Steam\\");
             } else {
                 // Assuming my install
                 String homeDir = System.getProperty("user.home");

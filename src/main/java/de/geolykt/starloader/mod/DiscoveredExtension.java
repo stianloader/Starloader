@@ -1,18 +1,18 @@
 package de.geolykt.starloader.mod;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public final class DiscoveredExtension {
 
-    public final static Logger LOGGER = LoggerFactory.getLogger(DiscoveredExtension.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveredExtension.class);
 
     public static final String NAME_REGEX = "[A-Za-z][_A-Za-z0-9]+";
     private String name;
@@ -26,7 +26,7 @@ public final class DiscoveredExtension {
     private ExternalDependencies externalDependencies;
     public transient List<URL> files = new LinkedList<>();
     public transient LoadStatus loadStatus = LoadStatus.LOAD_SUCCESS;
-    transient private File originalJar;
+    private transient File originalJar;
 
     @SuppressWarnings("null")
     @NotNull
@@ -150,7 +150,6 @@ public final class DiscoveredExtension {
         if (extension.externalDependencies == null) {
             extension.externalDependencies = new ExternalDependencies();
         }
-
     }
 
     public enum LoadStatus {
@@ -159,8 +158,7 @@ public final class DiscoveredExtension {
         INVALID_NAME("Invalid name."),
         NO_ENTRYPOINT("No entrypoint specified."),
         FAILED_TO_SETUP_CLASSLOADER("Extension classloader could not be setup."),
-        LOAD_FAILED("Load failed. See logs for more information."),
-        ;
+        LOAD_FAILED("Load failed. See logs for more information.");
 
         @NotNull
         private final String message;

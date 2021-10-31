@@ -7,7 +7,7 @@ public class JarFilter implements FileFilter {
 
     public static final JarFilter INSTANCE = new JarFilter();
 
-    private JarFilter() {}
+    private JarFilter() { }
 
     @Override
     public boolean accept(File pathname) {

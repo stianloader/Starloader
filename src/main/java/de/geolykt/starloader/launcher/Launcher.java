@@ -114,6 +114,7 @@ public class Launcher {
                     r.run();
                 }
             } catch (InterruptedException e) {
+                continue;
             } catch (Throwable e) {
                 e.printStackTrace();
                 System.exit(1);

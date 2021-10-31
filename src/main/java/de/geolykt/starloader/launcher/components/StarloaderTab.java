@@ -16,7 +16,5 @@ public interface StarloaderTab {
      *
      * @param parent The parent JFrame
      */
-    public default void onOpen(JFrame parent) {
-        
-    }
+    public default void onOpen(JFrame parent) { }
 }

@@ -1,15 +1,15 @@
 package net.minestom.server.extras.selfmodification;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
- * Classloader part of a hierarchy of classloader
+ * Classloader part of a hierarchy of classloader.
  */
 public abstract class HierarchyClassLoader extends URLClassLoader {
     protected final List<MinestomExtensionClassLoader> children = new LinkedList<>();
@@ -24,12 +24,15 @@ public abstract class HierarchyClassLoader extends URLClassLoader {
 
     public InputStream getResourceAsStreamWithChildren(String name) {
         InputStream in = getResourceAsStream(name);
-        if(in != null) return in;
+        if (in != null) {
+            return in;
+        }
 
-        for(MinestomExtensionClassLoader child : children) {
+        for (MinestomExtensionClassLoader child : children) {
             InputStream childInput = child.getResourceAsStreamWithChildren(name);
-            if(childInput != null)
+            if (childInput != null) {
                 return childInput;
+            }
         }
         return null;
     }
