@@ -11,6 +11,9 @@ import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
+import org.jetbrains.annotations.NotNull;
+
+import de.geolykt.starloader.launcher.components.BrowseExtensionsTab;
 import de.geolykt.starloader.launcher.components.ConfigurationTab;
 import de.geolykt.starloader.launcher.components.ExtensionsTab;
 import de.geolykt.starloader.launcher.components.MouseClickListener;
@@ -18,6 +21,8 @@ import de.geolykt.starloader.launcher.components.PatchesTab;
 import de.geolykt.starloader.launcher.components.StarloaderTab;
 
 public class Launcher {
+
+    // TODO move to CardLayout
 
     @Deprecated(forRemoval = true)
     public static final Launcher INSTANCE = new Launcher();
@@ -29,6 +34,7 @@ public class Launcher {
      */
     public static final LinkedBlockingDeque<Runnable> MAIN_TASK_QUEUE = new LinkedBlockingDeque<>();
 
+    @NotNull
     public final LauncherConfiguration configuration;
 
     private String[] args = new String[] {};
@@ -38,11 +44,13 @@ public class Launcher {
     private JButton extensions = null;
     private JButton patches = null;
     private JButton settings = null;
+    private JButton browseExtensions = null;
     private JPanel contentsStart = null;
 
     private ConfigurationTab contentsConfig = null;
     private ExtensionsTab contentsExtension = null;
     private PatchesTab contentsPatches = null;
+    private BrowseExtensionsTab contentsExtensionsBrowse = null;
 
     private StarloaderTab currentTab;
 
@@ -69,6 +77,9 @@ public class Launcher {
         extensions = new JButton("Extensions");
         extensions.addMouseListener(new MouseClickListener(this::extensions));
         menuBar.add(extensions);
+        browseExtensions = new JButton("Browse extensions");
+        browseExtensions.addMouseListener(new MouseClickListener(this::browseExtensions));
+        menuBar.add(browseExtensions);
         patches = new JButton("Patches");
         patches.addMouseListener(new MouseClickListener(this::patches));
         menuBar.add(patches);
@@ -80,6 +91,7 @@ public class Launcher {
         contentsConfig = new ConfigurationTab(configuration, gui);
         contentsExtension = new ExtensionsTab(configuration);
         contentsPatches = new PatchesTab(configuration);
+        contentsExtensionsBrowse = new BrowseExtensionsTab(configuration);
 
         contentsPatches.add(new JLabel("Coming soon (TM)!"));
 
@@ -145,7 +157,16 @@ public class Launcher {
         gui.add(contentsConfig);
         currentTab = contentsConfig;
         currentTab.onOpen(gui);
-        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize()));
+        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize(), gui.getToolkit().getScreenSize()));
+        gui.paintComponents(gui.getGraphics());
+    }
+
+    private void browseExtensions() {
+        currentTab.onClose(gui);
+        gui.add(contentsExtensionsBrowse);
+        currentTab = contentsExtensionsBrowse;
+        currentTab.onOpen(gui);
+        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize(), gui.getToolkit().getScreenSize()));
         gui.paintComponents(gui.getGraphics());
     }
 
@@ -154,7 +175,7 @@ public class Launcher {
         gui.add(contentsExtension);
         currentTab = contentsExtension;
         currentTab.onOpen(gui);
-        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize()));
+        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize(), gui.getToolkit().getScreenSize()));
         gui.paintComponents(gui.getGraphics());
     }
 
@@ -163,7 +184,7 @@ public class Launcher {
         gui.add(contentsPatches);
         currentTab = contentsPatches;
         currentTab.onOpen(gui);
-        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize()));
+        gui.setSize(Utils.combineLargest(gui.getSize(), gui.getPreferredSize(), gui.getToolkit().getScreenSize()));
         gui.paintComponents(gui.getGraphics());
     }
 

@@ -26,6 +26,7 @@ public final class LauncherConfiguration {
     private File galimulatorFile;
     private File patchesFolder;
     private boolean patchSupport;
+    private String sleadnAuthority;
     private File storageLoc;
 
     LauncherConfiguration(File configLoc) throws IOException {
@@ -54,6 +55,10 @@ public final class LauncherConfiguration {
             }
         }
         return extensions;
+    }
+
+    public String getExtensionRepository() {
+        return sleadnAuthority;
     }
 
     public File getExtensionsFolder() {
@@ -104,6 +109,7 @@ public final class LauncherConfiguration {
             extensions = new ExtensionPrototypeList(extensionsFolder);
             extensionsObject = new JSONObject();
             extensionsObject.put("enabled", new JSONArray());
+            sleadnAuthority = "https://localhost:26676/";
             return;
         }
         try (FileInputStream fis = new FileInputStream(storageLoc)) {
@@ -128,6 +134,7 @@ public final class LauncherConfiguration {
                     }
                 }
             }
+            sleadnAuthority = jsonObj.optString("sleadn-authority", "https://localhost:26676/");
         }
     }
 
@@ -154,6 +161,7 @@ public final class LauncherConfiguration {
         s.forEach(nArr::put);
         extensionsObject.put("enabled", nArr);
         object.put("extensions", extensionsObject);
+        object.put("sleadn-authority", sleadnAuthority);
 
         try (FileOutputStream fos = new FileOutputStream(storageLoc)) {
             fos.write(object.toString(4).getBytes(StandardCharsets.UTF_8));
@@ -166,6 +174,10 @@ public final class LauncherConfiguration {
 
     public void setExtensionList(ExtensionPrototypeList extList) {
         extensions = extList;
+    }
+
+    public void setExtensionRepository(String authority) {
+        this.sleadnAuthority = authority;
     }
 
     /**

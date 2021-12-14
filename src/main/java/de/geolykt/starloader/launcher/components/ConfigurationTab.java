@@ -3,13 +3,16 @@ package de.geolykt.starloader.launcher.components;
 import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.filechooser.FileFilter;
@@ -23,29 +26,30 @@ import de.geolykt.starloader.launcher.Utils;
 @SuppressWarnings("serial") // Superclass not serializable across java versions
 public class ConfigurationTab extends JPanel implements StarloaderTab {
 
-    protected final LauncherConfiguration cfg;
+    private final LauncherConfiguration cfg;
 
-    protected final JLabel headerLabel;
-    protected final JLabel headerSeperator = new JLabel();
-    protected final JLabel fileChooserDesc;
-    protected final JLabel filever;
-    protected final JButton fileChooserButton;
-    protected final JCheckBox allowExtensions;
-    protected final JCheckBox allowPatches;
-    protected final JLabel patchesFolderDesc;
-    protected final JButton patchesFolderButton;
-    protected final JLabel extensionsFolderDesc;
-    protected final JButton extensionsFolderButton;
-    protected final JLabel dataFolderDesc;
-    protected final JButton dataFolderButton;
+    private final JLabel headerLabel;
+    private final JLabel headerSeperator = new JLabel();
+    private final JLabel fileChooserDesc;
+    private final JLabel filever;
+    private final JButton fileChooserButton;
+    private final JCheckBox allowExtensions;
+    private final JCheckBox allowPatches;
+    private final JLabel patchesFolderDesc;
+    private final JButton patchesFolderButton;
+    private final JLabel extensionsFolderDesc;
+    private final JButton extensionsFolderButton;
+    private final JLabel dataFolderDesc;
+    private final JButton dataFolderButton;
+    private final JButton buttonSleadnAuthority;
 
-    protected final JFrame superparent;
-    protected DigestCalculationRunnable digester;
+    private final JFrame superparent;
+    private DigestCalculationRunnable digester;
 
-    protected JFileChooser fileChooserGali;
-    protected JFileChooser fileChooserExtensions;
-    protected JFileChooser fileChooserData;
-    protected JFileChooser fileChooserPatches;
+    private JFileChooser fileChooserGali;
+    private JFileChooser fileChooserExtensions;
+    private JFileChooser fileChooserData;
+    private JFileChooser fileChooserPatches;
 
     private Timer versionTimer = null;
     public ConfigurationTab(LauncherConfiguration config, JFrame superparent) {
@@ -78,19 +82,52 @@ public class ConfigurationTab extends JPanel implements StarloaderTab {
         dataFolderDesc = new JLabel("Data folder: " + cfg.getDataFolder().getPath() + " (Note: requires extensions to work properly)");
         dataFolderButton = new JButton("Change folder");
         dataFolderButton.addMouseListener(new MouseClickListener(this::showDataFC));
+        buttonSleadnAuthority = new JButton("Change extension repository, currently: " + config.getExtensionRepository());
+        buttonSleadnAuthority.addMouseListener(new MouseClickListener(this::changeAuthority));
         add(headerLabel);
         add(headerSeperator);
         add(fileChooserDesc);
         add(filever);
         add(fileChooserButton);
+        add(new JSeparator());
         add(allowExtensions);
         add(allowPatches);
+        add(new JSeparator());
         add(patchesFolderDesc);
         add(patchesFolderButton);
         add(extensionsFolderDesc);
         add(extensionsFolderButton);
         add(dataFolderDesc);
         add(dataFolderButton);
+        add(new JSeparator());
+        add(buttonSleadnAuthority);
+    }
+
+    private void changeAuthority() {
+        Launcher.MAIN_TASK_QUEUE.add(() -> {
+            String input = JOptionPane.showInputDialog("Set the new SlEADN repository path. Note: this may brick the \"browse extensions\" tab");
+            if (input != null && !input.isBlank()) {
+                try {
+                    URI.create(input);
+                    if (!input.startsWith("http")) {
+                        throw new IllegalArgumentException("SlEADN repositories operate on the http/https protocol; the protocol must be specified in the URI.");
+                    }
+                    if (!input.endsWith("/")) {
+                        input += "/";
+                    }
+                    cfg.setExtensionRepository(input);
+                    try {
+                        cfg.save();
+                    } catch (IOException e) {
+                        Utils.reportError(superparent, e);
+                        return;
+                    }
+                    buttonSleadnAuthority.setText("Change extension repository, currently: " + cfg.getExtensionRepository());
+                } catch (IllegalArgumentException e) {
+                    Utils.reportError(superparent, e);
+                }
+            }
+        });
     }
 
     /**

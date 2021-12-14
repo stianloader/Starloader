@@ -15,13 +15,14 @@ open module de.geolykt.starloader.launcher {
     requires transitive com.google.gson;
     requires transitive org.jetbrains.annotations;
     requires transitive org.slf4j;
+    requires transitive de.geolykt.starloader.accesswidener;
 
     // Stuff we use but don't expose to everyone
     requires de.geolykt.starloader.tablelayout;
     requires org.json;
-    requires de.geolykt.starloader.accesswidener;
     requires java.base;
     requires java.desktop;
+    requires java.net.http; // For the SlEADN client
 
     exports de.geolykt.starloader.mod;
     exports de.geolykt.starloader.transformers;

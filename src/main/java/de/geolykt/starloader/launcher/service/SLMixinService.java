@@ -53,7 +53,6 @@ public class SLMixinService extends MixinServiceAbstract {
         }
     };
 
-    // TODO documentation of that interface is nonsensical, complain
     private final IClassBytecodeProvider bytecodeProvider = new IClassBytecodeProvider() {
         @Override
         public ClassNode getClassNode(String name, boolean runTransformers) throws ClassNotFoundException, IOException {
