@@ -77,6 +77,7 @@ public final class Utils {
         VERSIONS.put("2769105a9ee6b1519daf5d355598dcc49d08b09479ede7fb48011bd3dcd50435", new Version(4, 9, 6, "linux", Stabillity.BETA));
         VERSIONS.put("e31a2a169bf63836007f55b3078d4c28d3196890ab3987cf1d9135a14e2903d1", new Version(4, 9, 7, "linux", Stabillity.BETA));
         VERSIONS.put("fac772c5b99e5cd7e1724eabe6d5ce9ff188c1db38d0516241d644f6b97e7768", new Version(4, 10, 0, "linux", Stabillity.ALPHA));
+        VERSIONS.put("9e40f7eb4d71205dc6a31b6765fa6f76678aceb64e0e55a72abe915a1d2c2664", new Version(4, 10, 1, "linux", Stabillity.ALPHA));
     }
 
     public static final Dimension combineLargest(Dimension original, Dimension newer, Dimension max) {
@@ -207,14 +208,32 @@ public final class Utils {
             String homeDir = System.getProperty("user.home");
             File usrHome = new File(homeDir);
             File steamHome = new File(usrHome, ".steam");
-            return new File(steamHome, "steam");
+            if (steamHome.exists()) {
+                // some installs have the steam directory located in ~/.steam/debian-installation
+                File debianInstall = new File(steamHome, "debian-installation");
+                if (debianInstall.exists()) {
+                    return debianInstall;
+                } else {
+                    return new File(steamHome, "steam");
+                }
+            }
+            // Steam folder not located in ~/.steam, checking in ~/.local/share
+            File local = new File(usrHome, ".local");
+            if (!local.exists()) {
+                return null; // Well, we tried...
+            }
+            File share = new File(local, "share");
+            if (!share.exists()) {
+                return null;
+            }
+            return new File(share, "Steam");
         }
     }
 
     public static final boolean isJava9() {
         try {
             URLClassLoader.getPlatformClassLoader(); // This should throw an error in Java 8 and below
-            // I am well aware that this will never throw an error due to Java versions, but it's stil a bit of futureproofing
+            // I am well aware that this will never throw an error due to Java versions, but it's still a bit of futureproofing
             return true;
         } catch (Throwable e) {
             return false;
@@ -231,7 +250,7 @@ public final class Utils {
      */
     public static final String readWindowsRegistry(String location, String key) {
         try {
-            // Run reg query, then read output with StreamReader (internal class)
+            // Run reg query, then read it's output
             Process process = Runtime.getRuntime().exec("reg query " + '"' + location + "\" /v " + key);
 
             process.waitFor();
