@@ -3,20 +3,25 @@ package de.geolykt.starloader.launcher;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -75,7 +80,8 @@ public final class Utils {
         VERSIONS.put("addad321401c5e711b3267acbc4c89fee8e7767e2a9507ab13a98b9e2306a2d1", new Version(4, 9, 4, "linux", Stabillity.BETA));
         VERSIONS.put("b252fb1587f622246dc46846113c2c023a04f7262e9c621aed7039bb85046146", new Version(4, 9, 5, "linux", Stabillity.BETA));
         VERSIONS.put("2769105a9ee6b1519daf5d355598dcc49d08b09479ede7fb48011bd3dcd50435", new Version(4, 9, 6, "linux", Stabillity.BETA));
-        VERSIONS.put("e31a2a169bf63836007f55b3078d4c28d3196890ab3987cf1d9135a14e2903d1", new Version(4, 9, 7, "linux", Stabillity.BETA));
+        VERSIONS.put("e31a2a169bf63836007f55b3078d4c28d3196890ab3987cf1d9135a14e2903d1", new Version(4, 9, 0, "linux", Stabillity.STABLE));
+        VERSIONS.put("9e40f7eb4d71205dc6a31b6765fa6f76678aceb64e0e55a72abe915a1d2c2664", new Version(4, 9, 0, "windows", Stabillity.STABLE));
         VERSIONS.put("fac772c5b99e5cd7e1724eabe6d5ce9ff188c1db38d0516241d644f6b97e7768", new Version(4, 10, 0, "linux", Stabillity.ALPHA));
         VERSIONS.put("9e40f7eb4d71205dc6a31b6765fa6f76678aceb64e0e55a72abe915a1d2c2664", new Version(4, 10, 1, "linux", Stabillity.ALPHA));
     }
@@ -312,7 +318,29 @@ public final class Utils {
                     SLMixinService.getInstance().getPhaseConsumer().accept(Phase.INIT);
                     SLMixinService.getInstance().getPhaseConsumer().accept(Phase.DEFAULT);
                 }
-                startMain(cl.loadClass("com.example.Main"), args);
+                Enumeration<URL> manifests = cl.getResources("META-INF/MANIFEST.MF");
+
+                URL manifest = null;
+                while (manifests.hasMoreElements()) {
+                    manifest = manifests.nextElement();
+                }
+                if (manifest == null) {
+                    throw new IllegalStateException("Unable to find jar manifest!");
+                }
+                String mainClass = null;
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(manifest.openStream(), StandardCharsets.UTF_8))) {
+                    for (String ln = br.readLine(); ln != null; ln = br.readLine()) {
+                        ln = ln.split("#", 2)[0];
+                        if (ln.startsWith("Main-Class:")) {
+                            mainClass = ln.split(":", 2)[1].trim();
+                            break;
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new IllegalStateException("Unable to find jar manifest!", e);
+                }
+
+                startMain(cl.loadClass(mainClass), args);
             } catch (Exception e1) {
                 throw new RuntimeException("Something went wrong while bootstrapping.", e1);
             }

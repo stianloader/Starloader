@@ -7,11 +7,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -166,8 +170,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     private Class<?> define(String name, boolean resolve) throws IOException, ClassNotFoundException {
         try {
-            byte[] bytes = loadBytes(name, true);
-            Class<?> defined = defineClass(name, bytes, 0, bytes.length);
+            Map.Entry<URL, byte[]> rawClass = loadClassBytes(name, true);
+            String path = rawClass.getKey().getPath();
+            URL jarURL = new URL(path.substring(0, path.lastIndexOf('!')));
+            Class<?> defined = defineClass(name, rawClass.getValue(), 0, rawClass.getValue().length, new CodeSource(jarURL, (CodeSigner[]) null));
             LOGGER.trace("Loaded with code modifiers: {}", name);
             if (resolve) {
                 resolveClass(defined);
@@ -194,10 +200,43 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      *
      * @param name
      * @param transform
+     * @return The transformed bytes attached with the URL the bytes were loaded from.
+     * @throws IOException
+     * @throws ClassNotFoundException
+     * @since 3.1.0
+     */
+    public Map.Entry<URL, byte[]> loadClassBytes(String name, boolean transform) throws IOException, ClassNotFoundException {
+        if (name == null) {
+            throw new ClassNotFoundException();
+        }
+        String path = name.replace(".", "/") + ".class";
+        URL url = findResource(path);
+        InputStream input = url.openStream();
+        if (input == null) {
+            throw new ClassNotFoundException("Could not find resource " + path);
+        }
+        byte[] originalBytes = input.readAllBytes();
+        input.close();
+        byte[] transformedBytes;
+        if (transform) {
+            transformedBytes = transformBytes(originalBytes, name);
+        }
+        transformedBytes = originalBytes;
+
+        return Map.entry(url, transformedBytes);
+    }
+
+    /**
+     * Loads and possibly transforms class bytecode corresponding to the given binary name.
+     *
+     * @param name
+     * @param transform
      * @return The transformed bytes
      * @throws IOException
      * @throws ClassNotFoundException
+     * @deprecated This method is a duplicate of {@link #loadClassBytes(String, boolean)}, which should be used over this one.
      */
+    @Deprecated(forRemoval = true, since = "3.1.0")
     public byte[] loadBytes(String name, boolean transform) throws IOException, ClassNotFoundException {
         if (name == null) {
             throw new ClassNotFoundException();
