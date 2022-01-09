@@ -7,6 +7,12 @@ to loader secondary jars (extensions) as well as providing mixins and a bytecode
 manipulation framework. As such most extensions should make use of Starloader-API
 to avoid conflicts.
 
+## Usage
+
+A german guide explaining how you can use Starloader with the Starloader-API can
+be found here [here](https://files.geolykt.de/starloader-guide_de.pdf).
+It might be ported to the english language later on.
+
 ## IRC Chat
 
 We do have an IRC channel for anyone that is interested in modding the game in
