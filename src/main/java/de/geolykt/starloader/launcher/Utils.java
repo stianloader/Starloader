@@ -33,6 +33,8 @@ import javax.swing.JPanel;
 import javax.swing.Popup;
 import javax.swing.PopupFactory;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.launch.platform.CommandLineOptions;
 import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
@@ -40,6 +42,7 @@ import org.spongepowered.asm.mixin.Mixins;
 
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
+import de.geolykt.starloader.Starloader;
 import de.geolykt.starloader.UnlikelyEventException;
 import de.geolykt.starloader.launcher.components.MouseClickListener;
 import de.geolykt.starloader.launcher.service.SLMixinService;
@@ -50,6 +53,8 @@ import de.geolykt.starloader.util.Version.Stabillity;
  * Collection of static utility methods.
  */
 public final class Utils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Starloader.class);
 
     public static final String OPERATING_SYSTEM = System.getProperty("os.name");
 
@@ -81,7 +86,6 @@ public final class Utils {
         VERSIONS.put("b252fb1587f622246dc46846113c2c023a04f7262e9c621aed7039bb85046146", new Version(4, 9, 5, "linux", Stabillity.BETA));
         VERSIONS.put("2769105a9ee6b1519daf5d355598dcc49d08b09479ede7fb48011bd3dcd50435", new Version(4, 9, 6, "linux", Stabillity.BETA));
         VERSIONS.put("e31a2a169bf63836007f55b3078d4c28d3196890ab3987cf1d9135a14e2903d1", new Version(4, 9, 0, "linux", Stabillity.STABLE));
-        VERSIONS.put("9e40f7eb4d71205dc6a31b6765fa6f76678aceb64e0e55a72abe915a1d2c2664", new Version(4, 9, 0, "windows", Stabillity.STABLE));
         VERSIONS.put("fac772c5b99e5cd7e1724eabe6d5ce9ff188c1db38d0516241d644f6b97e7768", new Version(4, 10, 0, "linux", Stabillity.ALPHA));
         VERSIONS.put("9e40f7eb4d71205dc6a31b6765fa6f76678aceb64e0e55a72abe915a1d2c2664", new Version(4, 10, 1, "linux", Stabillity.ALPHA));
     }
@@ -108,10 +112,29 @@ public final class Utils {
         return PopupFactory.getSharedInstance().getPopup(owner, contents, x, y);
     }
 
+    /**
+     * Obtains the directory where starloader puts it's logs into,
+     * where the configuration is located and where the extension directory
+     * is located.
+     *
+     * <p>It will first try to set the application folder to "%APPDATA%/starloader",
+     * then "${user.home}/.local/share/starloader" and if it still fails it will put it in
+     * the current working directory. It will however only create a single directory
+     * in order to accomplish this, so it won't always use the current working directory
+     * if less advanced users attempt to use the launcher.
+     *
+     * <p>The reason the current working directory is not used outright is that on
+     * JPackage'd distributions of the Starloader-launcher this working directory is
+     * the user home, which would create a lot of clutter. This is not intended.
+     *
+     * @return The main application folder for starloader.
+     */
     public static final File getApplicationFolder() {
         String appdataFolder = System.getenv("APPDATA");
         if (appdataFolder != null) {
-            return new File(appdataFolder, "starloader");
+            File f = new File(appdataFolder, "starloader");
+            f.mkdir();
+            return f;
         } else {
             String userhome = System.getProperty("user.home");
             if (userhome == null) {
@@ -340,6 +363,7 @@ public final class Utils {
                     throw new IllegalStateException("Unable to find jar manifest!", e);
                 }
 
+                LOGGER.info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
                 startMain(cl.loadClass(mainClass), args);
             } catch (Exception e1) {
                 throw new RuntimeException("Something went wrong while bootstrapping.", e1);

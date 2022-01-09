@@ -110,7 +110,7 @@ public class Launcher {
     }
 
     public static void main(String[] args) {
-        // Main entrypoint for debugging purposes
+        INSTANCE.setArgs(args);
         INSTANCE.show();
         while (true) {
             try {
@@ -126,7 +126,7 @@ public class Launcher {
                     r.run();
                 }
             } catch (InterruptedException e) {
-                continue;
+                break;
             } catch (Throwable e) {
                 e.printStackTrace();
                 System.exit(1);

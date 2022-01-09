@@ -25,6 +25,7 @@ public final class Starloader {
 
     private void start() {
         extensions.loadExtensions(config.getExtensionList());
+        LOGGER.info("From {} prototypes, {} extensions were loaded.", config.getExtensionList().getPrototypes().size(), extensions.getExtensions().size());
         long start = System.currentTimeMillis();
         LOGGER.info("Initializing extension: preinit");
         extensions.getExtensions().forEach(Extension::preInitialize);

@@ -9,13 +9,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSigner;
 import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -33,6 +31,7 @@ import net.fabricmc.accesswidener.AccessWidenerVisitor;
 
 import de.geolykt.starloader.mod.ExtensionManager;
 import de.geolykt.starloader.transformers.ASMTransformer;
+import de.geolykt.starloader.transformers.RawClassData;
 
 /**
  * Class Loader that can modify class bytecode when they are loaded.
@@ -67,13 +66,14 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             add("org.slf4j");
             add("org.apache");
             add("org.spongepowered");
+            add("org.json");
             add("net.minestom.server.extras.selfmodification"); // We do not want to load this package ourselves
-            add("org.jboss.shrinkwrap.resolver");
-            add("kotlin");
             add("net.fabricmc.accesswidener"); // this package will throw a linkage error too when loaded otherwise
             add("de.geolykt.starloader.transformers");
             add("de.geolykt.starloader.launcher");
             add("de.geolykt.starloader.mod");
+            add("de.geolykt.starloader.layout");
+            add("ch.qos.logback");
         }
     };
 
@@ -82,10 +82,6 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * Otherwise ASM would accidentally load classes we might want to modify.
      */
     private final URLClassLoader asmClassLoader;
-
-    // TODO: replace by tree to optimize lookup times. We can use the fact that package names are split with '.' to allow for fast lookup
-    // TODO: eg. Node("java", Node("lang"), Node("io")). Loading "java.nio.Channel" would apply modifiers from "java", but not "java.io" or "java.lang".
-    // TODO: that's an example, please don't modify standard library classes. And this classloader should not let you do it because it first asks the platform classloader
 
     // TODO: priorities?
     private final List<ASMTransformer> modifiers = new LinkedList<>();
@@ -148,7 +144,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
                 return define(name, resolve);
             } catch (Throwable ex) {
-                LOGGER.trace("Failed to load class, resorting to parent loader: " + name, ex);
+                // FIXME this state is always achieved if classes from extensions are loaded.
+                // While apparently this will not cause all too much issues, it might still be dangerous.
+                LOGGER.debug("Failed to load class \""+ name + "\", resorting to parent loader. Code modifications forbidden.", ex);
                 // fail to load class, let parent load
                 // this forbids code modification, but at least it will load
                 return super.loadClass(name, resolve);
@@ -170,10 +168,23 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     private Class<?> define(String name, boolean resolve) throws IOException, ClassNotFoundException {
         try {
-            Map.Entry<URL, byte[]> rawClass = loadClassBytes(name, true);
-            String path = rawClass.getKey().getPath();
-            URL jarURL = new URL(path.substring(0, path.lastIndexOf('!')));
-            Class<?> defined = defineClass(name, rawClass.getValue(), 0, rawClass.getValue().length, new CodeSource(jarURL, (CodeSigner[]) null));
+            RawClassData rawClass;
+            try {
+                rawClass = loadClassBytes(name, true);
+            } catch (Throwable t) {
+                throw new ClassNotFoundException("Unable to load bytes", t);
+            }
+            Class<?> defined;
+            byte[] bytes = rawClass.getBytes();
+
+            if (rawClass.getSource() == null) {
+                defined = defineClass(name, bytes, 0, bytes.length);
+            } else {
+                String path = rawClass.getSource().getPath();
+                URL jarURL = new URL(path.substring(0, path.lastIndexOf('!')));
+                defined = defineClass(name, bytes, 0, bytes.length, new CodeSource(jarURL, (CodeSigner[]) null));
+            }
+
             LOGGER.trace("Loaded with code modifiers: {}", name);
             if (resolve) {
                 resolveClass(defined);
@@ -205,13 +216,18 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * @throws ClassNotFoundException
      * @since 3.1.0
      */
-    public Map.Entry<URL, byte[]> loadClassBytes(String name, boolean transform) throws IOException, ClassNotFoundException {
+    public RawClassData loadClassBytes(String name, boolean transform) throws IOException, ClassNotFoundException {
         if (name == null) {
-            throw new ClassNotFoundException();
+            throw new ClassNotFoundException("Name may not be null.");
         }
         String path = name.replace(".", "/") + ".class";
         URL url = findResource(path);
-        InputStream input = url.openStream();
+        InputStream input;
+        if (url == null) {
+            input = getResourceAsStream(name);
+        } else {
+            input = url.openStream();
+        }
         if (input == null) {
             throw new ClassNotFoundException("Could not find resource " + path);
         }
@@ -220,10 +236,11 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         byte[] transformedBytes;
         if (transform) {
             transformedBytes = transformBytes(originalBytes, name);
+        } else {
+            transformedBytes = originalBytes;
         }
-        transformedBytes = originalBytes;
 
-        return Map.entry(url, transformedBytes);
+        return new RawClassData(url, transformedBytes);
     }
 
     /**
@@ -325,7 +342,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return classBytecode;
     }
 
-    // overriden to increase access (from protected to public)
+    // Overridden to increase access (from protected to public)
     @Override
     public Class<?> findClass(String name) throws ClassNotFoundException {
         return super.findClass(name);
@@ -397,7 +414,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * Obtains the modifiers currently in use.
      *
      * @return the modifiers
-     * @deprecated While this method exposes the modifiers as {@link CodeModifier}, it internally uses {@link ASMTransformer}. This will lead to death and descruction later on.
+     * @deprecated While this method exposes the modifiers as {@link CodeModifier}, it internally uses {@link ASMTransformer}. This will lead to death and destruction later on.
      */
     @Deprecated(forRemoval = true, since = "2.1.0")
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -412,7 +429,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * @since 2.1.0
      */
     public List<ASMTransformer> getTransformers() {
-        return new ArrayList<>(modifiers);
+        return Collections.unmodifiableList(this.modifiers);
     }
 
     public void setWidener(@SuppressWarnings("exports") @NotNull AccessWidener accessWidener, @NotNull ExtensionManager extensionManager) {

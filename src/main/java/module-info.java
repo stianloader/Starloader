@@ -23,6 +23,8 @@ open module de.geolykt.starloader.launcher {
     requires java.base;
     requires java.desktop;
     requires java.net.http; // For the SlEADN client
+    requires ch.qos.logback.classic;
+    requires ch.qos.logback.core;
 
     exports de.geolykt.starloader.mod;
     exports de.geolykt.starloader.transformers;

@@ -14,7 +14,7 @@ public final class DiscoveredExtension {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveredExtension.class);
 
-    public static final String NAME_REGEX = "[A-Za-z][_A-Za-z0-9]+";
+    public static final String NAME_REGEX = "[A-Za-z][_A-Za-z0-9\\-]+";
     private String name;
     private String entrypoint;
     private String version;
