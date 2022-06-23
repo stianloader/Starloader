@@ -16,7 +16,6 @@ sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = co
 
 repositories {
     mavenCentral()
-    mavenLocal()
     maven {
         name = 'Geolykt'
         url = 'https://geolykt.de/maven/'

@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -389,7 +388,7 @@ public final class Utils {
         }
     }
 
-    protected static final void startMixin(String[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    protected static final void startMixin(String[] args) {
         MixinBootstrap.init(CommandLineOptions.ofArgs(Arrays.asList(args)));
         MixinBootstrap.getPlatform().inject();
         Mixins.getConfigs().forEach(c -> MinestomRootClassLoader.getInstance().protectedPackages.add(c.getConfig().getMixinPackage()));

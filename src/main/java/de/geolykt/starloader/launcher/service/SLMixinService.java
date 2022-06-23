@@ -39,7 +39,11 @@ public class SLMixinService extends MixinServiceAbstract {
 
         @Override
         public Class<?> findClass(String name, boolean initialize) throws ClassNotFoundException {
-            return Class.forName(name, initialize, Thread.currentThread().getContextClassLoader());
+            try {
+                return Class.forName(name, initialize, Thread.currentThread().getContextClassLoader());
+            } catch (ClassNotFoundException e) {
+                return Class.forName(name, initialize, getClass().getClassLoader());
+            }
         }
 
         @Override
