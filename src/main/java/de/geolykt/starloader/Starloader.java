@@ -55,10 +55,6 @@ public final class Starloader {
         return instance.extensions;
     }
 
-    public static File getGalimulatorJar() {
-        return instance.config.getTargetJar();
-    }
-
     public static File getExtensionDir() {
         return instance.config.getExtensionsFolder();
     }

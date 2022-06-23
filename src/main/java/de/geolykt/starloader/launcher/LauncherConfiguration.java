@@ -28,10 +28,18 @@ public final class LauncherConfiguration {
     private boolean patchSupport;
     private String sleadnAuthority;
     private File storageLoc;
+    private final boolean enableExtensionsByDefault;
+
+    LauncherConfiguration(boolean enableExtensionsByDefault) {
+        this.enableExtensionsByDefault = enableExtensionsByDefault;
+    }
 
     LauncherConfiguration(File configLoc) throws IOException {
+        this.enableExtensionsByDefault = false;
         storageLoc = configLoc;
-        load();
+        if (configLoc != null) {
+            load();
+        }
     }
 
     public File getDataFolder() {
@@ -43,13 +51,18 @@ public final class LauncherConfiguration {
             return extensions; // List does not need updating
         }
         extensions = new ExtensionPrototypeList(extensionsFolder);
-        JSONArray arr = extensionsObject.getJSONArray("enabled");
-        for (Object enabledExtension : arr) {
-            String[] entry = enabledExtension.toString().split("@");
-            if (entry.length == 2) {
-                for (ExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
-                    if (prototype.version.equals(entry[1])) {
-                        prototype.enabled = true;
+
+        if (enableExtensionsByDefault) {
+            extensions.getPrototypes().forEach(prototype -> prototype.enabled = true);
+        } else {
+            JSONArray arr = extensionsObject.getJSONArray("enabled");
+            for (Object enabledExtension : arr) {
+                String[] entry = enabledExtension.toString().split("@");
+                if (entry.length == 2) {
+                    for (ExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
+                        if (prototype.version.equals(entry[1])) {
+                            prototype.enabled = true;
+                        }
                     }
                 }
             }

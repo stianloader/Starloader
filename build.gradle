@@ -4,12 +4,11 @@ plugins {
     id 'maven-publish'
     id "eclipse"
     id "com.github.johnrengelman.shadow" version "7.0.0"
-    id "org.beryx.jlink" version "2.24.2"
 }
 
 group 'de.geolykt.starloader'
 def archivesBaseName = 'launcher'
-version '3.1.0'
+version '4.0.0'
 
 // Our classloader require Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
@@ -19,6 +18,14 @@ repositories {
     maven {
         name = 'Geolykt'
         url = 'https://geolykt.de/maven/'
+    }
+}
+
+sourceSets {
+    bootstrap {
+        ext.javaVersion = 8
+        compileClasspath += sourceSets.main.runtimeClasspath
+        runtimeClasspath += sourceSets.main.runtimeClasspath
     }
 }
 
@@ -66,27 +73,25 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'de.geolykt.starloader.launcher.Launcher', 'Multi-Release': true
+        attributes 'Multi-Release': true
     }
 }
 
 shadowJar {
     mergeServiceFiles()
+    from sourceSets.main.output, sourceSets.bootstrap.output
 }
+
+shadowJar.dependsOn(bootstrapClasses)
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
-    from sourceSets.main.allSource
+    from sourceSets.main.allSource, sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
     classifier = 'javadoc'
     from javadoc.destinationDir
-}
-
-application {
-    mainClass = 'de.geolykt.starloader.launcher.Launcher'
-    mainModule = 'de.geolykt.starloader.launcher'
 }
 
 publishing {
@@ -107,51 +112,13 @@ publishing {
     }
 }
 
-jlink {
-    options = ['--compress', '2', '--no-header-files', '--no-man-pages']
-    launcher {
-        name = 'StarloaderLauncher'
-    }
-    jpackage {
-        installerOptions = [
-            '--description', 'Launcher for modded galimulator. Beware that while this feature is present in official sources, it has significant drawbacks compared to the traditional SLC + SLL install.',
-            '--copyright', 'Copyright 2021-2021 Geolykt',
-            '--vendor', 'Starloader-project',
-            '--license-file', 'LICENSE'
-        ]
-        // Note: you need to have rpm-build installed if you wish to create RPM builds
-        // Creating .deb packages requires dpkg and fakeroot to be installed
-        installerType = project.findProperty('installerType') // Passed from the commandLine (example: -PinstallerType=rpm)
-        if (installerType == 'msi') {
-            imageOptions += ['--icon', 'src/main/resources/icon.ico']
-            installerOptions += [
-                '--win-per-user-install', '--win-dir-chooser',
-                '--win-menu', '--win-shortcut'
-            ]
-        }
-        if (installerType in ['deb', 'rpm']) {
-            imageOptions += ['--icon', 'src/main/resources/icon.png']
-            installerOptions += [
-                '--linux-menu-group', 'Game;Simulation;Java;',
-                '--linux-app-category', 'games', // SLL also falls under 'java', not sure whether we can have multiple categories
-                '--linux-shortcut'
-            ]
-        }
-        if (installerType == 'deb') {
-            installerOptions += [
-                '--linux-deb-maintainer', 'admin@geolykt.de'
-            ]
-        }
-        if (installerType == 'rpm') {
-            installerOptions += [
-                '--linux-rpm-license-type', 'ASL 2.0' // aka Apache 2.0
-            ]
+project.sourceSets.each { set -> {
+    if (set.ext.has("javaVersion")) {
+        project.tasks[set.compileJavaTaskName].sourceCompatibility = set.ext.javaVersion
+        project.tasks[set.compileJavaTaskName].targetCompatibility = set.ext.javaVersion
+        project.tasks[set.compileJavaTaskName].javaCompiler = javaToolchains.compilerFor {
+            languageVersion = JavaLanguageVersion.of(set.ext.javaVersion)
         }
     }
-}
+}}
 
-jpackage {
-    doFirst {
-        project.getProperty('installerType') // throws exception if its missing
-    }
-}
