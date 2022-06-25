@@ -1,9 +1,13 @@
 package de.geolykt.starloader;
 
 import java.io.File;
+import java.lang.reflect.Field;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.launcher.LauncherConfiguration;
 import de.geolykt.starloader.mod.Extension;
@@ -21,6 +25,11 @@ public final class Starloader {
     private Starloader(LauncherConfiguration config) {
         this.config = config;
         this.extensions = new ExtensionManager();
+    }
+
+    private Starloader(LauncherConfiguration config, ExtensionManager extensions) {
+        this.config = config;
+        this.extensions = extensions;
     }
 
     private void start() {
@@ -59,7 +68,28 @@ public final class Starloader {
         return instance.config.getExtensionsFolder();
     }
 
-    public static File getDataDir() {
-        return instance.config.getDataFolder();
+    static {
+        // Usually the Starloader class should be loaded by the root classloader, but in certain
+        // cases this does not happen. To fix this, this class delegates all but the #start methods
+        // to the actual instance loaded by the root classloader
+        if (Starloader.class.getClassLoader().getClass() != MinestomRootClassLoader.class) {
+            MinestomRootClassLoader rootCl = MinestomRootClassLoader.getInstance();
+            try {
+                Class<?> slClass = Class.forName("de.geolykt.starloader.Starloader", false, rootCl);
+                Field instanceField = slClass.getDeclaredField("instance");
+                Field cfgField = slClass.getDeclaredField("config");
+                Field extField = slClass.getDeclaredField("extensions");
+                cfgField.setAccessible(true);
+                extField.setAccessible(true);
+                instanceField.setAccessible(true);
+                Object instance = instanceField.get(null);
+                Objects.requireNonNull(instance, "Unable to find instance of actual the Starloader class (Did it start yet?)");
+                LauncherConfiguration config = (LauncherConfiguration) cfgField.get(instance);
+                ExtensionManager extensions = (ExtensionManager) extField.get(instance);
+                Starloader.instance = new Starloader(config, extensions);
+            } catch (Exception e) {
+                throw new IllegalStateException("This class should be loaded by the root classloader!", e);
+            }
+        }
     }
 }

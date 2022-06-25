@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassReader;
@@ -44,7 +45,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * Classes that cannot be loaded/modified by this classloader.
      * Will go through parent class loader
      */
-    public final Set<String> protectedClasses = new HashSet<>() {
+    private final Set<String> protectedClasses = new HashSet<>() {
         private static final long serialVersionUID = 1562431043013365680L;
 
         {
@@ -53,7 +54,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         }
     };
 
-    public final Set<String> protectedPackages = new HashSet<>() {
+    public final Set<String> protectedPackages = new CopyOnWriteArraySet<>() {
         private static final long serialVersionUID = -4833006816182792038L;
 
         {
@@ -64,12 +65,11 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             add("org.spongepowered");
             add("org.json");
             add("net.minestom.server.extras.selfmodification"); // We do not want to load this package ourselves
-            add("net.fabricmc.accesswidener"); // this package will throw a linkage error too when loaded otherwise
             add("de.geolykt.starloader.transformers");
             add("de.geolykt.starloader.launcher");
             add("de.geolykt.starloader.deobf.access");
             add("de.geolykt.starloader.mod");
-            add("de.geolykt.starloader.layout");
+            add("de.geolykt.starloader.util");
             add("ch.qos.logback");
         }
     };
@@ -81,6 +81,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     private final URLClassLoader asmClassLoader;
 
     // TODO: priorities?
+    // TODO: make concurrent
     private final List<ASMTransformer> modifiers = new LinkedList<>();
 
     private MinestomRootClassLoader(ClassLoader parent) {
@@ -240,34 +241,6 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return new RawClassData(url, transformedBytes);
     }
 
-    /**
-     * Loads and possibly transforms class bytecode corresponding to the given binary name.
-     *
-     * @param name
-     * @param transform
-     * @return The transformed bytes
-     * @throws IOException
-     * @throws ClassNotFoundException
-     * @deprecated This method is a duplicate of {@link #loadClassBytes(String, boolean)}, which should be used over this one.
-     */
-    @Deprecated(forRemoval = true, since = "3.1.0")
-    public byte[] loadBytes(String name, boolean transform) throws IOException, ClassNotFoundException {
-        if (name == null) {
-            throw new ClassNotFoundException();
-        }
-        String path = name.replace(".", "/") + ".class";
-        InputStream input = getResourceAsStream(path);
-        if (input == null) {
-            throw new ClassNotFoundException("Could not find resource " + path);
-        }
-        byte[] originalBytes = input.readAllBytes();
-        input.close();
-        if (transform) {
-            return transformBytes(originalBytes, name);
-        }
-        return originalBytes;
-    }
-
     public byte[] loadBytesWithChildren(String name, boolean transform) throws IOException, ClassNotFoundException {
         if (name == null) {
             throw new ClassNotFoundException();
@@ -342,7 +315,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     }
 
     @NotNull
-    public URLClassLoader newChild(@NotNull URL... urls) {
+    private URLClassLoader newChild(@NotNull URL... urls) {
         URLClassLoader instance = URLClassLoader.newInstance(urls, this);
         if (instance == null) {
             throw new IllegalStateException();

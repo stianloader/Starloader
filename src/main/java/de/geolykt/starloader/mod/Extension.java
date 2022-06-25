@@ -5,16 +5,25 @@ import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import de.geolykt.starloader.Starloader;
 
 public abstract class Extension {
-    // Set by reflection
-    // FIXME issue: null within the constructor
-    private ExtensionDescription description;
-    // Set by reflection
-    // FIXME issue: null within the constructor
-    private Logger logger;
+    private final ExtensionDescription description;
+    @NotNull
+    private final Logger logger;
 
-    protected Extension() { }
+    @SuppressWarnings("null")
+    protected Extension() {
+        if (Starloader.getExtensionManager().currentlyLoadedExt != null) {
+            this.description = Starloader.getExtensionManager().currentlyLoadedExt;
+            Starloader.getExtensionManager().currentlyLoadedExt = null;
+        } else {
+            throw new IllegalStateException("Unable to obtain extension description from extension manager");
+        }
+        logger = LoggerFactory.getLogger(this.getClass());
+    }
 
     public void preInitialize() { }
 
@@ -77,22 +86,15 @@ public abstract class Extension {
     @Deprecated(forRemoval = false)
     public void unload() { }
 
+    @SuppressWarnings("null")
     @NotNull
     public final ExtensionDescription getDescription() {
-        ExtensionDescription description = this.description;
-        if (description == null) {
-            throw new IllegalStateException("You cannot call getDescription() in the constructor. Sorry.");
-        }
-        return description;
+        return this.description;
     }
 
     @NotNull
     public final Logger getLogger() {
-        Logger logger = this.logger;
-        if (logger == null) {
-            throw new IllegalStateException("You cannot call getLogger() in the constructor. Sorry.");
-        }
-        return logger;
+        return this.logger;
     }
 
     public static class ExtensionDescription {

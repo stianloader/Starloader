@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -16,6 +15,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -33,7 +33,7 @@ import com.google.gson.Gson;
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
-import de.geolykt.starloader.deobf.access.AccessTransformInfo;
+import de.geolykt.starloader.mod.Extension.ExtensionDescription;
 
 public class ExtensionManager {
 
@@ -41,10 +41,8 @@ public class ExtensionManager {
 
     private static final Gson GSON = new Gson();
 
-    private final Map<String, MinestomExtensionClassLoader> extensionLoaders = new HashMap<>();
-    private final Map<String, Extension> extensions = new HashMap<>();
-    @NotNull
-    private final AccessTransformInfo accessWidener = new AccessTransformInfo();
+    private final Map<String, MinestomExtensionClassLoader> extensionLoaders = new ConcurrentHashMap<>();
+    private final Map<String, Extension> extensions = new ConcurrentHashMap<>();
     private boolean loaded;
 
     @NotNull
@@ -53,6 +51,8 @@ public class ExtensionManager {
     @SuppressWarnings("null")
     @NotNull
     private final List<Extension> immutableExtensionListView = Collections.unmodifiableList(extensionList);
+
+    ExtensionDescription currentlyLoadedExt;
 
     // Option
     private boolean loadOnStartup = true;
@@ -186,6 +186,7 @@ public class ExtensionManager {
         }
         Extension extension = null;
         try {
+            currentlyLoadedExt = extensionDescription;
             extension = constructor.newInstance();
         } catch (InstantiationException e) {
             LOGGER.error("Main class '{}' in '{}' cannot be an abstract class.", mainClass, extensionName, e);
@@ -196,31 +197,8 @@ public class ExtensionManager {
             LOGGER.error("While instantiating the main class '{}' in '{}' an exception was thrown.", mainClass, extensionName, e.getTargetException()
             );
             return null;
-        }
-
-        // Set extension description
-        try {
-            Field descriptionField = extensionClass.getSuperclass().getDeclaredField("description");
-            descriptionField.setAccessible(true);
-            descriptionField.set(extension, extensionDescription);
-        } catch (IllegalAccessException e) {
-            // We made it accessible, should not occur
-        } catch (NoSuchFieldException e) {
-            LOGGER.error("Main class '{}' in '{}' has no description field.", mainClass, extensionName, e);
-            return null;
-        }
-
-        // Set logger
-        try {
-            Field loggerField = extensionClass.getSuperclass().getDeclaredField("logger");
-            loggerField.setAccessible(true);
-            loggerField.set(extension, LoggerFactory.getLogger(extensionClass));
-        } catch (IllegalAccessException e) {
-            // We made it accessible, should not occur
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            // This should also not occur (unless someone changed the logger in Extension superclass).
-            LOGGER.error("Main class '{}' in '{}' has no logger field.", mainClass, extensionName, e);
+        } finally {
+            currentlyLoadedExt = null;
         }
 
         // add dependents to pre-existing extensions, so that they can easily be found during reloading
@@ -439,6 +417,7 @@ public class ExtensionManager {
      * Extensions are allowed to apply Mixin transformers, the magic happens here.
      */
     private void setupCodeModifiers(@NotNull List<DiscoveredExtension> extensions) {
+        // FIXME code modifiers persist (particularly asm transformers and mixins) even though the extension never started correctly
         ClassLoader cl = getClass().getClassLoader();
         if (!(cl instanceof MinestomRootClassLoader)) {
             LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This may render ASM Transformers useless.", cl);
@@ -640,5 +619,9 @@ public class ExtensionManager {
      */
     public void shutdown() {
         this.extensionList.forEach(this::unload);
+    }
+
+    void getDescription(Extension extension) {
+        //
     }
 }
