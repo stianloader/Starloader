@@ -1,11 +1,9 @@
 package de.geolykt.starloader.mod;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -31,10 +29,11 @@ import org.spongepowered.asm.mixin.Mixins;
 
 import com.google.gson.Gson;
 
-import net.fabricmc.accesswidener.AccessWidener;
-import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
+
+import de.geolykt.starloader.deobf.access.AccessTransformInfo;
+import de.geolykt.starloader.deobf.access.AccessWidenerReader;
 
 public class ExtensionManager {
 
@@ -44,7 +43,8 @@ public class ExtensionManager {
 
     private final Map<String, MinestomExtensionClassLoader> extensionLoaders = new HashMap<>();
     private final Map<String, Extension> extensions = new HashMap<>();
-    private final @NotNull AccessWidener accessWidener = new AccessWidener();
+    @NotNull
+    private final AccessTransformInfo accessWidener = new AccessTransformInfo();
     private boolean loaded;
 
     @NotNull
@@ -405,7 +405,6 @@ public class ExtensionManager {
     @SuppressWarnings("resource")
     private void setupAccessWideners(List<DiscoveredExtension> extensionsToLoad) {
         MinestomRootClassLoader.getInstance().setWidener(accessWidener, this);
-        AccessWidenerReader accessReader = new AccessWidenerReader(accessWidener);
         for (DiscoveredExtension extension : extensionsToLoad) {
             if (extension.getAccessWidener().equals("")) {
                 continue;
@@ -419,10 +418,16 @@ public class ExtensionManager {
                     jar.close();
                     continue;
                 }
-                Reader r = new InputStreamReader(jar.getInputStream(entry));
-                accessReader.read(new BufferedReader(r), null);
-                r.close();
-                jar.close();
+                try (AccessWidenerReader accessReader = new AccessWidenerReader(accessWidener, jar.getInputStream(entry), true)) {
+                    accessReader.readHeader();
+                    while (accessReader.readLn()) {
+                        // Continue reading
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    jar.close();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 LOGGER.warn("Failed to set up an access widener for {}!", extension.getName());

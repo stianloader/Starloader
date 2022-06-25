@@ -19,16 +19,12 @@ import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.fabricmc.accesswidener.AccessWidener;
-import net.fabricmc.accesswidener.AccessWidenerVisitor;
-
+import de.geolykt.starloader.deobf.access.AccessTransformInfo;
 import de.geolykt.starloader.mod.ExtensionManager;
 import de.geolykt.starloader.transformers.ASMTransformer;
 import de.geolykt.starloader.transformers.RawClassData;
@@ -42,7 +38,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     private static MinestomRootClassLoader INSTANCE;
 
-    private AccessWidener widener;
+    private AccessTransformInfo widener;
 
     /**
      * Classes that cannot be loaded/modified by this classloader.
@@ -71,6 +67,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             add("net.fabricmc.accesswidener"); // this package will throw a linkage error too when loaded otherwise
             add("de.geolykt.starloader.transformers");
             add("de.geolykt.starloader.launcher");
+            add("de.geolykt.starloader.deobf.access");
             add("de.geolykt.starloader.mod");
             add("de.geolykt.starloader.layout");
             add("ch.qos.logback");
@@ -293,14 +290,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             ClassReader reader = new ClassReader(classBytecode);
             ClassNode node = new ClassNode();
             boolean modified = false;
-            if (widener != null && widener.getTargets().contains(qualifiedName)) {
-                ClassVisitor visitor = AccessWidenerVisitor.createClassVisitor(Opcodes.ASM9, node, widener);
-                reader.accept(visitor, 0);
-                modified = true;
-            } else {
-                reader.accept(node, 0);
-            }
+
+            reader.accept(node, 0);
             try {
+                modified = widener.apply(node, true);
                 synchronized (modifiers) {
                     Iterator<ASMTransformer> transformers = modifiers.iterator();
                     while (transformers.hasNext()) {
@@ -432,7 +425,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return Collections.unmodifiableList(this.modifiers);
     }
 
-    public void setWidener(@SuppressWarnings("exports") @NotNull AccessWidener accessWidener, @NotNull ExtensionManager extensionManager) {
+    public void setWidener(@SuppressWarnings("exports") @NotNull AccessTransformInfo accessWidener, @NotNull ExtensionManager extensionManager) {
         if (Objects.isNull(extensionManager)) {
             throw new NullPointerException();
         }

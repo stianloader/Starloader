@@ -35,7 +35,6 @@ import javax.swing.PopupFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.launch.MixinBootstrap;
-import org.spongepowered.asm.launch.platform.CommandLineOptions;
 import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
 import org.spongepowered.asm.mixin.Mixins;
 
@@ -389,7 +388,7 @@ public final class Utils {
     }
 
     protected static final void startMixin(String[] args) {
-        MixinBootstrap.init(CommandLineOptions.ofArgs(Arrays.asList(args)));
+        MixinBootstrap.init();
         MixinBootstrap.getPlatform().inject();
         Mixins.getConfigs().forEach(c -> MinestomRootClassLoader.getInstance().protectedPackages.add(c.getConfig().getMixinPackage()));
     }

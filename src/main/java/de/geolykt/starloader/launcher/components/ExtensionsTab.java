@@ -2,6 +2,8 @@ package de.geolykt.starloader.launcher.components;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,8 +14,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import de.geolykt.starloader.launcher.LauncherConfiguration;
-import de.geolykt.starloader.layout.TableLayout;
-import de.geolykt.starloader.layout.TableLayoutConstraints;
 import de.geolykt.starloader.mod.ExtensionPrototype;
 import de.geolykt.starloader.mod.ExtensionPrototypeList;
 
@@ -25,11 +25,11 @@ public class ExtensionsTab extends JPanel implements StarloaderTab {
     protected List<Component> right = null;
     protected List<Component> center = null;
     protected List<Component> left = null;
-    protected TableLayout layout = null;
+    protected GridBagLayout layout = null;
 
     public ExtensionsTab(LauncherConfiguration config) {
         cfg = config;
-        layout = new TableLayout();
+        layout = new GridBagLayout();
         setLayout(layout);
     }
 
@@ -68,11 +68,11 @@ public class ExtensionsTab extends JPanel implements StarloaderTab {
             left = new ArrayList<>();
         }
         right.add(new JLabel(""));
-        add(right.get(0), new TableLayoutConstraints(0, 0, 0, 0, TableLayoutConstraints.LEFT, TableLayoutConstraints.CENTER));
+        add(right.get(0), newGridBagConstraints(0, 0, 0, 0, GridBagConstraints.WEST));
         center.add(new JLabel("Name"));
-        add(center.get(0), new TableLayoutConstraints(1, 0, 1, 0, TableLayoutConstraints.LEFT, TableLayoutConstraints.CENTER));
+        add(center.get(0), newGridBagConstraints(1, 0, 1, 0, GridBagConstraints.WEST));
         left.add(new JLabel("Version"));
-        add(left.get(0), new TableLayoutConstraints(2, 0, 2, 0, TableLayoutConstraints.LEFT, TableLayoutConstraints.CENTER));
+        add(left.get(0), newGridBagConstraints(2, 0, 2, 0, GridBagConstraints.WEST));
         extList = cfg.getExtensionList();
         int i = 1;
         for (ExtensionPrototype prototype : extList.getPrototypes()) {
@@ -82,9 +82,9 @@ public class ExtensionsTab extends JPanel implements StarloaderTab {
             right.add(checkbox);
             center.add(name);
             left.add(version);
-            add(checkbox, new TableLayoutConstraints(0, i, 0, i, TableLayoutConstraints.LEFT, TableLayoutConstraints.CENTER));
-            add(name, new TableLayoutConstraints(1, i, 1, i, TableLayoutConstraints.LEFT, TableLayoutConstraints.CENTER));
-            add(version, new TableLayoutConstraints(2, i, 2, i, TableLayoutConstraints.LEFT, TableLayoutConstraints.CENTER));
+            add(checkbox, newGridBagConstraints(0, i, 0, i, GridBagConstraints.WEST));
+            add(name, newGridBagConstraints(1, i, 1, i, GridBagConstraints.WEST));
+            add(version, newGridBagConstraints(2, i, 2, i, GridBagConstraints.WEST));
             i++;
         }
         // Update layout
@@ -101,9 +101,19 @@ public class ExtensionsTab extends JPanel implements StarloaderTab {
             versionLen = Math.max(version.width * 1.5, versionLen);
             heights[i] = Math.max(name.height, Math.max(version.height, checkbox.height)) * 1.5;
         }
-        layout.setColumn(new double[] {checkboxWidth, nameLen, versionLen});
-        layout.setRow(heights);
+        layout.columnWeights = new double[] {checkboxWidth, nameLen, versionLen};
+        layout.rowWeights = heights;
         layout.layoutContainer(this);
         repaint();
+    }
+
+    private static GridBagConstraints newGridBagConstraints(int x1, int y1, int x2, int y2, int anchor) {
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = x1;
+        constraints.gridy = y1;
+        constraints.gridheight = (y2 - y1) + 1;
+        constraints.gridwidth = (x2 - x1) + 1;
+        constraints.anchor = anchor;
+        return constraints;
     }
 }

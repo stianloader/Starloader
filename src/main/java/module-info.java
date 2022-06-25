@@ -15,10 +15,8 @@ open module de.geolykt.starloader.launcher {
     requires transitive com.google.gson;
     requires transitive org.jetbrains.annotations;
     requires transitive org.slf4j;
-    requires transitive de.geolykt.starloader.accesswidener;
 
     // Stuff we use but don't expose to everyone
-    requires de.geolykt.starloader.tablelayout;
     requires org.json;
     requires java.base;
     requires java.desktop;
