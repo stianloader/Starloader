@@ -116,7 +116,13 @@ public class CLILauncher {
                 throw new IllegalStateException("Unable to find jar manifest!", e);
             }
 
+            if (mainClass == null) {
+                LoggerFactory.getLogger(CLILauncher.class).error("Unable to find main class! Fall-backing with com.example.Main");
+                mainClass = "com.example.Main";
+            }
+
             LoggerFactory.getLogger(CLILauncher.class).info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
+
             Utils.startMain(cl.loadClass(mainClass), args);
         } catch (Throwable t) {
             t.printStackTrace();

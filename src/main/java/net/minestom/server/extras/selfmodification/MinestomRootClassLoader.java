@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.geolykt.starloader.deobf.access.AccessTransformInfo;
-import de.geolykt.starloader.mod.ExtensionManager;
+import de.geolykt.starloader.deobf.access.AccessWidenerReader;
 import de.geolykt.starloader.transformers.ASMTransformer;
 import de.geolykt.starloader.transformers.RawClassData;
 
@@ -38,7 +38,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     private static MinestomRootClassLoader INSTANCE;
 
-    private AccessTransformInfo widener;
+    private AccessTransformInfo widener = new AccessTransformInfo();
 
     /**
      * Classes that cannot be loaded/modified by this classloader.
@@ -122,7 +122,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        Class<?> loadedClass = findLoadedClass(name);
+        Class<?> loadedClass = findLoadedClass(Objects.requireNonNull(name, "name must not be null"));
         if (loadedClass != null) {
             return loadedClass;
         }
@@ -312,7 +312,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                 }
             } catch (Throwable t) {
                 // Apparently errors would get absorbed otherwise.
-                LOGGER.error("Error within ASM transforming process. CLASS WILL NOT BE MODIFIED - THIS MAY BE LETHAL.", t);
+                LOGGER.error("Error within ASM transforming process. CLASS {} WILL NOT BE MODIFIED - THIS MAY BE LETHAL.", qualifiedName, t);
                 throw new RuntimeException("Error within ASM transforming process.", t);
             }
             try {
@@ -387,32 +387,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         }
     }
 
-    /**
-     * Adds a modifier to the modifier pool.
-     *
-     * @param modifier The modifier to add
-     * @deprecated {@link CodeModifier} is getting phased out, use {@link ASMTransformer} instead. Replaced by {@link #addTransformer(ASMTransformer)}.
-     */
-    @Deprecated(forRemoval = true, since = "2.1.0")
-    public void addCodeModifier(CodeModifier modifier) {
-        this.addTransformer(modifier);
-    }
-
     @Override
     public void addURL(URL url) {
         super.addURL(url);
-    }
-
-    /**
-     * Obtains the modifiers currently in use.
-     *
-     * @return the modifiers
-     * @deprecated While this method exposes the modifiers as {@link CodeModifier}, it internally uses {@link ASMTransformer}. This will lead to death and destruction later on.
-     */
-    @Deprecated(forRemoval = true, since = "2.1.0")
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public List<CodeModifier> getModifiers() {
-        return (List) modifiers;
     }
 
     /**
@@ -425,10 +402,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return Collections.unmodifiableList(this.modifiers);
     }
 
-    public void setWidener(@SuppressWarnings("exports") @NotNull AccessTransformInfo accessWidener, @NotNull ExtensionManager extensionManager) {
-        if (Objects.isNull(extensionManager)) {
-            throw new NullPointerException();
+    public void readAccessWidener(@NotNull InputStream in) throws IOException {
+        try (AccessWidenerReader accessReader = new AccessWidenerReader(widener, in, true)) {
+            accessReader.readHeader();
+            while (accessReader.readLn()) {
+                // Continue reading
+            }
         }
-        this.widener = accessWidener;
     }
 }

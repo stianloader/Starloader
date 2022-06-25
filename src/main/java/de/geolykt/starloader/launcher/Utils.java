@@ -1,16 +1,11 @@
 package de.geolykt.starloader.launcher;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -21,16 +16,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Locale;
-
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.Popup;
-import javax.swing.PopupFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +28,7 @@ import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.Starloader;
 import de.geolykt.starloader.UnlikelyEventException;
-import de.geolykt.starloader.launcher.components.MouseClickListener;
 import de.geolykt.starloader.launcher.service.SLMixinService;
-import de.geolykt.starloader.util.Version;
-import de.geolykt.starloader.util.Version.Stabillity;
 
 /**
  * Collection of static utility methods.
@@ -62,53 +45,6 @@ public final class Utils {
     public static final String STEAM_WINDOWS_REGISTRY_INSTALL_DIR_KEY = "InstallPath";
 
     public static final String STEAM_WINDOWS_REGISTRY_KEY = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Valve\\Steam";
-    public static final HashMap<String, Version> VERSIONS = new HashMap<>();
-
-    static {
-        // TODO add more jars to this collection and check "pure guess" jars
-        // It would also be interesting if steam/itch provides the checksums for this file, could we check or not?
-
-        // 4.5 Linux checksum is a pure guess, while all other windows checksums (except for 4.5) are also pure guesses
-        VERSIONS.put("f8ea33e66efbefda91a4c24f8f44b45700e27a0ad0765eeec049f77b6b7307cc", new Version(4, 5, 0, "linux", Stabillity.STABLE));
-        VERSIONS.put("25a7738ff8a137fc1d1e668535b4ca3464609aba4e45eaa276a698f364add666", new Version(4, 5, 0, "windows", Stabillity.STABLE));
-        VERSIONS.put("d0f0bc784e1596a38c61c007b077aebb366146b878f692fe15fec850504adb0f", new Version(4, 7, 0, "linux", Stabillity.STABLE));
-        VERSIONS.put("b659d3fd10bf03d90bfa3142614e7c70793d9fc184e1cfcc39f1535e726d7d08", new Version(4, 7, 0, "windows", Stabillity.STABLE));
-        VERSIONS.put("dbaff4dbb9d9289fc0424f7d538fe48fe87b6bb2ad50cbb52f443e1d7ef670ab", new Version(4, 8, 0, "linux", Stabillity.BETA));
-        // 4.8 was accidentally released in a somewhat Platform-independent state, that means the same jar should run on all plattforms
-        VERSIONS.put("a09045718ca85933c7a53461cc313602dd803dbd773dfef2b72044ee8f57b156", new Version(4, 8, 0, "linux", "contains Windows natives", Stabillity.STABLE));
-        VERSIONS.put("6a8ffa84adafe1019a8359ca69dc9ee75f4a3a6ce1da916bf130976639f82fea", new Version(4, 9, 0, "linux", Stabillity.BETA));
-        VERSIONS.put("49c1e88149b6ee286772805b286529b20a5f77aa2310f386b77d7ec3110bab50", new Version(4, 9, 1, "linux", Stabillity.BETA));
-        VERSIONS.put("5b0dbb545b157b43e9fa1f85cfe5f6afa8203b61567fed6404d7172a242584d6", new Version(4, 9, 2, "linux", Stabillity.BETA));
-        VERSIONS.put("d41575068df6b7139115b1d216c5bf047d192c214b66b88d5eef00aeccf1367a", new Version(4, 9, 3, "linux", Stabillity.BETA));
-        VERSIONS.put("addad321401c5e711b3267acbc4c89fee8e7767e2a9507ab13a98b9e2306a2d1", new Version(4, 9, 4, "linux", Stabillity.BETA));
-        VERSIONS.put("b252fb1587f622246dc46846113c2c023a04f7262e9c621aed7039bb85046146", new Version(4, 9, 5, "linux", Stabillity.BETA));
-        VERSIONS.put("2769105a9ee6b1519daf5d355598dcc49d08b09479ede7fb48011bd3dcd50435", new Version(4, 9, 6, "linux", Stabillity.BETA));
-        VERSIONS.put("e31a2a169bf63836007f55b3078d4c28d3196890ab3987cf1d9135a14e2903d1", new Version(4, 9, 0, "linux", Stabillity.STABLE));
-        VERSIONS.put("fac772c5b99e5cd7e1724eabe6d5ce9ff188c1db38d0516241d644f6b97e7768", new Version(4, 10, 0, "linux", Stabillity.ALPHA));
-        VERSIONS.put("9e40f7eb4d71205dc6a31b6765fa6f76678aceb64e0e55a72abe915a1d2c2664", new Version(4, 10, 1, "linux", Stabillity.ALPHA));
-    }
-
-    public static final Dimension combineLargest(Dimension original, Dimension newer, Dimension max) {
-        int width = Math.min(Math.max(original.width, newer.width), max.width);
-        int height = Math.min(Math.max(original.height, newer.height), max.height);
-        return new Dimension(width, height);
-    }
-
-    public static final Popup createPopup(Component owner, Component contents, boolean darkerBackground) {
-        if (darkerBackground) {
-            contents.setBackground(Color.GRAY);
-            if (contents instanceof JComponent) {
-                ((JComponent) contents).setOpaque(true);
-            }
-        }
-        int hwowner = owner.getWidth() / 2;
-        int hhowner = owner.getHeight() / 2;
-        int hwcontent = (int) contents.getPreferredSize().getWidth() / 2;
-        int hhcontent = (int) contents.getPreferredSize().getHeight() / 2;
-        int x = owner.getX() + Math.max(hwowner - hwcontent, 0);
-        int y = owner.getY() + Math.max(hhowner - hhcontent, 0);
-        return PopupFactory.getSharedInstance().getPopup(owner, contents, x, y);
-    }
 
     /**
      * Obtains the directory where starloader puts it's logs into,
@@ -298,24 +234,6 @@ public final class Utils {
             e.printStackTrace();
             return null;
         }
-    }
-
-    public static final void reportError(Component parent, Throwable t) {
-        JPanel popupPanel = new JPanel();
-        popupPanel.setLayout(new BoxLayout(popupPanel, BoxLayout.Y_AXIS));
-        popupPanel.add(new JLabel("An error has occured!"));
-        StringWriter swriter = new StringWriter();
-        PrintWriter writer = new PrintWriter(swriter);
-        t.printStackTrace(writer);
-        swriter.toString().lines().forEachOrdered(ln -> {
-            popupPanel.add(new JLabel(ln));
-        });
-
-        JButton popupButton = new JButton("Ok");
-        popupPanel.add(popupButton);
-        Popup popup = createPopup(parent, popupPanel, true);
-        popupButton.addMouseListener(new MouseClickListener(popup::hide));
-        popup.show();
     }
 
     @SuppressWarnings("resource")

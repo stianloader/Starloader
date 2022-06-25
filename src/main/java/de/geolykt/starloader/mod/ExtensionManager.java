@@ -3,6 +3,7 @@ package de.geolykt.starloader.mod;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -33,7 +34,6 @@ import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.deobf.access.AccessTransformInfo;
-import de.geolykt.starloader.deobf.access.AccessWidenerReader;
 
 public class ExtensionManager {
 
@@ -404,7 +404,6 @@ public class ExtensionManager {
 
     @SuppressWarnings("resource")
     private void setupAccessWideners(List<DiscoveredExtension> extensionsToLoad) {
-        MinestomRootClassLoader.getInstance().setWidener(accessWidener, this);
         for (DiscoveredExtension extension : extensionsToLoad) {
             if (extension.getAccessWidener().equals("")) {
                 continue;
@@ -418,13 +417,14 @@ public class ExtensionManager {
                     jar.close();
                     continue;
                 }
-                try (AccessWidenerReader accessReader = new AccessWidenerReader(accessWidener, jar.getInputStream(entry), true)) {
-                    accessReader.readHeader();
-                    while (accessReader.readLn()) {
-                        // Continue reading
+                try (InputStream awFile = jar.getInputStream(entry)) {
+                    if (awFile == null) {
+                        throw new NullPointerException("jar.getInputStream(entry) yielded null");
                     }
+                    MinestomRootClassLoader.getInstance().readAccessWidener(awFile);
                 } catch (IOException e) {
                     e.printStackTrace();
+                    LOGGER.warn("Failed to set up an access widener for {}!", extension.getName());
                 } finally {
                     jar.close();
                 }

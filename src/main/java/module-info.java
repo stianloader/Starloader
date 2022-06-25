@@ -19,8 +19,6 @@ open module de.geolykt.starloader.launcher {
     // Stuff we use but don't expose to everyone
     requires org.json;
     requires java.base;
-    requires java.desktop;
-    requires java.net.http; // For the SlEADN client
     requires ch.qos.logback.classic;
     requires ch.qos.logback.core;
 
