@@ -29,18 +29,30 @@ will not run as it is missing vital dependencies.
 
 ## Running
 
-The jar then needs to be placed at the Galimulator folder 
-(home/.steam/steam/steamapps/common/Galimulator in my case)
-and can then be executed via
+On MacOS it has to be run manually via a Java 17 JRE with a command such as
+`java -cp starloader-launcher-XYZ-all.jar de.geolykt.starloader.launcher.CLILauncher`
 
-    java -jar Galimulator-Starloader-1.0.0-SNAPSHOT-all.jar
+Place the built `starloader-launcher-XYZ-all.jar` in the galimulator folder.
+Then edit the `config.json` file in the galimulator folder to be
 
-or similar. However Java 11+ needs to be used.
-If you are a linux (or any in fact) user, then you should use AdoptopenJDK
+```json
+{
+  "classPath": [
+    "jar/galimulator-desktop.jar",
+    "starloader-launcher-XYZ-all.jar"
+  ],
+  "mainClass": "starloader.launcher.J8Boot",
+  "vmArgs": [
+    "-Dsun.java2d.dpiaware=true"
+  ]
+}
+```
+Make sure to modify the `mainClass` entry to be equal to the one shown above,
+The `starloader-launcher-XYZ-all.jar` entry in the `classPath` entry should
+correspond to the name of the starloader-launcher file you copied into the
+galimulator folder.
 
-over your vendor JDK. Many vendor JDKs are known to not work
-
-with libGDX, one of galimulator's main libraries.
+Mods need to be added in a "mods" folder located in the galimulator directory.
 
 ## Licensing and redistributing
 
