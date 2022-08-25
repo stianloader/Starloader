@@ -8,7 +8,7 @@ plugins {
 
 group 'de.geolykt.starloader'
 def archivesBaseName = 'launcher' // Note: publishing uses a different base name because reasons
-version '20220628'
+version '20220825'
 
 // Our classloader require Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
@@ -35,6 +35,14 @@ sourceSets {
 
 java {
     modularity.inferModulePath.set(true)
+}
+
+javadoc {
+    options {
+        addMultilineStringsOption("-add-exports").setValue([
+            'org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer=de.geolykt.starloader.launcher'
+        ])
+    }
 }
 
 compileJava {
@@ -71,13 +79,13 @@ dependencies {
     // Logging
     // SLF4J is the base logger for most libraries, therefore we should provide integration to it
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    api 'org.slf4j:slf4j-api:2.0.0-alpha7'
+    api 'org.slf4j:slf4j-api:2.0.0'
 
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
     // recaf's attach (which I use to inspect bytecode) breaks on slf4j-simple, so we are using logback in the meantime
     // We formerly used Log4J, so eventually we should go back to it as we still package the config files for it
-    implementation 'ch.qos.logback:logback-classic:1.3.0-alpha16'
-    implementation 'ch.qos.logback:logback-core:1.3.0-alpha16'
+    implementation 'ch.qos.logback:logback-classic:1.3.0-beta0'
+    implementation 'ch.qos.logback:logback-core:1.3.0-beta0'
     // api 'org.slf4j:slf4j-simple:2.0.0-alpha5'
 
     // Jars we need to include to trick JPMS
@@ -123,6 +131,9 @@ publishing {
     }
     repositories {
         mavenLocal()
+        /*maven {
+          url = "/home/Geolykt/.m2/alt/maven/"
+        }*/
     }
 }
 
