@@ -257,15 +257,26 @@ public final class Utils {
                     SLMixinService.getInstance().getPhaseConsumer().accept(Phase.INIT);
                     SLMixinService.getInstance().getPhaseConsumer().accept(Phase.DEFAULT);
                 }
-                Enumeration<URL> manifests = cl.getResources("META-INF/MANIFEST.MF");
 
                 URL manifest = null;
+                Enumeration<URL> manifests = cl.findResources("META-INF/MANIFEST.MF");
+
                 while (manifests.hasMoreElements()) {
                     manifest = manifests.nextElement();
                 }
+
                 if (manifest == null) {
-                    throw new IllegalStateException("Unable to find jar manifest!");
+                    manifests = cl.getResources("META-INF/MANIFEST.MF");
+
+                    while (manifests.hasMoreElements()) {
+                        manifest = manifests.nextElement();
+                    }
+
+                    if (manifest == null) {
+                        throw new IllegalStateException("Unable to find jar manifest!");
+                    }
                 }
+
                 String mainClass = null;
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(manifest.openStream(), StandardCharsets.UTF_8))) {
                     for (String ln = br.readLine(); ln != null; ln = br.readLine()) {
