@@ -30,11 +30,11 @@ public final class LauncherConfiguration {
     private File storageLoc;
     private final boolean enableExtensionsByDefault;
 
-    LauncherConfiguration(boolean enableExtensionsByDefault) {
+    public LauncherConfiguration(boolean enableExtensionsByDefault) {
         this.enableExtensionsByDefault = enableExtensionsByDefault;
     }
 
-    LauncherConfiguration(File configLoc) throws IOException {
+    public LauncherConfiguration(File configLoc) throws IOException {
         this.enableExtensionsByDefault = false;
         storageLoc = configLoc;
         if (configLoc != null) {
