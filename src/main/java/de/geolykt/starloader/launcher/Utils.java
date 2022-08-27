@@ -237,7 +237,7 @@ public final class Utils {
     }
 
     @SuppressWarnings("resource")
-    protected static final void startGalimulator(String[] args, LauncherConfiguration preferences) {
+    public static final void startGalimulator(String[] args, LauncherConfiguration preferences) {
         if (isJava9()) {
             MinestomRootClassLoader cl = MinestomRootClassLoader.getInstance();
             try {
