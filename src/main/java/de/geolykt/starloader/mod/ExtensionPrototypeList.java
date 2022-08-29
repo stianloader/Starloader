@@ -66,6 +66,17 @@ public class ExtensionPrototypeList {
         return extensions;
     }
 
+    public void addPrototype(ExtensionPrototype prototype) {
+        extensions.add(prototype);
+        extensionsByName.compute(prototype.name, (key, list) -> {
+            if (list == null) {
+                list = new ArrayList<>();
+            }
+            list.add(prototype);
+            return list;
+        });
+    }
+
     public List<ExtensionPrototype> getPrototypes(String s) {
         List<ExtensionPrototype> l = extensionsByName.get(s);
         if (l == null) {

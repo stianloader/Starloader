@@ -54,7 +54,7 @@ public final class LauncherConfiguration {
 
         if (enableExtensionsByDefault) {
             extensions.getPrototypes().forEach(prototype -> prototype.enabled = true);
-        } else {
+        } else if (extensionsObject != null) {
             JSONArray arr = extensionsObject.getJSONArray("enabled");
             for (Object enabledExtension : arr) {
                 String[] entry = enabledExtension.toString().split("@");
