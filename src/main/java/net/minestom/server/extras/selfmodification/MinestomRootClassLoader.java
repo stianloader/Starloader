@@ -1,6 +1,5 @@
 package net.minestom.server.extras.selfmodification;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -323,18 +322,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return instance;
     }
 
-    public void loadModifier(File[] originFiles, String codeModifierClass) {
-        @NotNull URL[] urls = new @NotNull URL[originFiles.length];
+    public void loadModifier(URL[] originFiles, String codeModifierClass) {
         try {
-            for (int i = 0; i < originFiles.length; i++) {
-                URL url = originFiles[i].toURI().toURL();
-                if (url == null) {
-                    throw new InternalError();
-                }
-                urls[i] = url;
-            }
-            @SuppressWarnings("resource")
-            URLClassLoader loader = newChild(urls);
+            @SuppressWarnings({ "resource", "null" })
+            URLClassLoader loader = newChild(originFiles);
             Class<?> modifierClass = loader.loadClass(codeModifierClass);
             if (ASMTransformer.class.isAssignableFrom(modifierClass)) {
                 ASMTransformer modifier = (ASMTransformer) modifierClass.getDeclaredConstructor().newInstance();
@@ -343,7 +334,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                     addTransformer(modifier);
                 }
             }
-        } catch (MalformedURLException | ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+        } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
             e.printStackTrace();
         }
     }

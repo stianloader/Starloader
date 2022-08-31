@@ -420,12 +420,11 @@ public class ExtensionManager {
         // FIXME code modifiers persist (particularly asm transformers and mixins) even though the extension never started correctly
         ClassLoader cl = getClass().getClassLoader();
         if (!(cl instanceof MinestomRootClassLoader)) {
-            LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This may render ASM Transformers useless.", cl);
             if (cl.getClass().getModule() != null) {
-                // For a reason that is beyond me the MinestomRootClassloader is working as intended even in JPMS.
-                LOGGER.warn("Mods may not start up correctly. However since you are using JPMS it is likely that you will not see any grave issues.");
+                // The extension manager class is loaded by the parent classloader, so yeah...
                 cl = MinestomRootClassLoader.getInstance();
             } else {
+                LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This may render ASM Transformers useless.", cl);
                 LOGGER.warn("As you are not using JPMS we will abort right there.");
                 return;
             }
@@ -436,7 +435,7 @@ public class ExtensionManager {
         for (DiscoveredExtension extension : extensions) {
             try {
                 for (String codeModifierClass : extension.getCodeModifiers()) {
-                    modifiableClassLoader.loadModifier(extension.files.toArray(new File[0]), codeModifierClass);
+                    modifiableClassLoader.loadModifier(extension.files.toArray(new URL[0]), codeModifierClass);
                 }
                 if (!extension.getMixinConfig().isEmpty()) {
                     final String mixinConfigFile = extension.getMixinConfig();
