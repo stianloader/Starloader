@@ -8,6 +8,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -257,7 +258,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return originalBytes;
     }
 
-    byte[] transformBytes(byte[] classBytecode, @NotNull String qualifiedName) {
+    synchronized byte[] transformBytes(byte[] classBytecode, @NotNull String qualifiedName) {
         if (!isProtected(qualifiedName)) {
             ClassReader reader = new ClassReader(classBytecode);
             ClassNode node = new ClassNode();
@@ -329,10 +330,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             Class<?> modifierClass = loader.loadClass(codeModifierClass);
             if (ASMTransformer.class.isAssignableFrom(modifierClass)) {
                 ASMTransformer modifier = (ASMTransformer) modifierClass.getDeclaredConstructor().newInstance();
-                synchronized (modifiers) {
-                    LOGGER.warn("Added ASM Transformer: {}", modifier);
-                    addTransformer(modifier);
-                }
+                LOGGER.warn("Added ASM Transformer: {}", modifier);
+                addTransformer(modifier);
             }
         } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
             e.printStackTrace();
@@ -345,7 +344,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * @param transformer The transformer to add
      * @since 2.1.0
      */
-    public void addTransformer(ASMTransformer transformer) {
+    public synchronized void addTransformer(ASMTransformer transformer) {
         synchronized (modifiers) {
             modifiers.add(transformer);
         }
@@ -362,8 +361,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * @return The ASM transformers in use.
      * @since 2.1.0
      */
-    public List<ASMTransformer> getTransformers() {
-        return Collections.unmodifiableList(this.modifiers);
+    public synchronized List<ASMTransformer> getTransformers() {
+        synchronized (modifiers) {
+            return new ArrayList<>(modifiers);
+        }
     }
 
     public void readAccessWidener(@NotNull InputStream in) throws IOException {
