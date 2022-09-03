@@ -47,4 +47,8 @@ public abstract class HierarchyClassLoader extends URLClassLoader {
         // We are increasing the visibility of this method knowingly to suppress an issue with LWJGL running code it shouldn't run.
         return super.findLibrary(libname);
     }
+
+    static {
+        ClassLoader.registerAsParallelCapable();
+    }
 }

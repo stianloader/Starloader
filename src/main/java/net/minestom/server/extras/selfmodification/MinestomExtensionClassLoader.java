@@ -76,4 +76,8 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
         super.finalize();
         System.err.println("Class loader " + getName() + " finalized.");
     }
+
+    static {
+        ClassLoader.registerAsParallelCapable();
+    }
 }
