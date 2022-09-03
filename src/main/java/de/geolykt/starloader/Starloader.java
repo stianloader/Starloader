@@ -72,10 +72,14 @@ public final class Starloader {
         // Usually the Starloader class should be loaded by the root classloader, but in certain
         // cases this does not happen. To fix this, this class delegates all but the #start methods
         // to the actual instance loaded by the root classloader
+        label001:
         if (Starloader.class.getClassLoader().getClass() != MinestomRootClassLoader.class) {
             MinestomRootClassLoader rootCl = MinestomRootClassLoader.getInstance();
             try {
                 Class<?> slClass = Class.forName("de.geolykt.starloader.Starloader", false, rootCl);
+                if (slClass == Starloader.class) {
+                    break label001; // Everything is happening as intended. The root classloader is likely delegating it's calls to some other classloader as the other classloader has the class loaded.
+                }
                 Field instanceField = slClass.getDeclaredField("instance");
                 Field cfgField = slClass.getDeclaredField("config");
                 Field extField = slClass.getDeclaredField("extensions");
@@ -83,7 +87,10 @@ public final class Starloader {
                 extField.setAccessible(true);
                 instanceField.setAccessible(true);
                 Object instance = instanceField.get(null);
-                Objects.requireNonNull(instance, "Unable to find instance of actual the Starloader class (Did it start yet?)");
+                if (instance == null) {
+                    throw new IllegalStateException("Unable to find instance of actual the Starloader class (Did it start yet?);"
+                            + " This Class instance was loaded by " + Starloader.class.getClassLoader() + ", where as it should've been " + slClass.getClassLoader());
+                }
                 LauncherConfiguration config = (LauncherConfiguration) cfgField.get(instance);
                 ExtensionManager extensions = (ExtensionManager) extField.get(instance);
                 Starloader.instance = new Starloader(config, extensions);
