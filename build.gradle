@@ -8,7 +8,7 @@ plugins {
 
 group 'de.geolykt.starloader'
 def archivesBaseName = 'launcher'
-version '20220904'
+version '20221022'
 
 // Our classloader requires Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 // Java 16/17 was not used because as of now it is not needed as the project is out of the active development phase
@@ -58,7 +58,7 @@ dependencies {
 
     // I am very well aware that this is just a reference implementation, but it has served me well in the past; so I prefer it over any other implementation
     // https://mvnrepository.com/artifact/org.json/json
-    api 'org.json:json:20220320'
+    api 'org.json:json:20220924'
 
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     api group: 'org.jetbrains', name: 'annotations', version: '23.0.0'
@@ -80,14 +80,9 @@ dependencies {
     // Logging
     // SLF4J is the base logger for most libraries, therefore we should provide integration to it
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    api 'org.slf4j:slf4j-api:2.0.0'
-
-    // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    // recaf's attach (which I use to inspect bytecode) breaks on slf4j-simple, so we are using logback in the meantime
-    // We formerly used Log4J, so eventually we should go back to it as we still package the config files for it
-    implementation 'ch.qos.logback:logback-classic:1.3.0-beta0'
-    implementation 'ch.qos.logback:logback-core:1.3.0-beta0'
-    // api 'org.slf4j:slf4j-simple:2.0.0-alpha5'
+    api 'org.slf4j:slf4j-api:2.0.3'
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
+    implementation 'org.slf4j:slf4j-simple:2.0.3'
 
     // Jars we need to include to trick JPMS
     compileOnly 'empty:log4j:999.0.0'
@@ -133,7 +128,7 @@ publishing {
     repositories {
         mavenLocal()
         /*maven {
-          url = "/home/Geolykt/.m2/alt/maven/"
+          url = "/home/geolykt/.m2/alt/maven/"
         }*/
     }
 }

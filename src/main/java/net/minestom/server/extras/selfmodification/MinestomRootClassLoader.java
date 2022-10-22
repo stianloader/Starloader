@@ -9,7 +9,6 @@ import java.net.URLClassLoader;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
