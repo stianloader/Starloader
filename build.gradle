@@ -8,7 +8,7 @@ plugins {
 
 group 'de.geolykt.starloader'
 def archivesBaseName = 'launcher'
-version '20221022'
+version '20221220'
 
 // Our classloader requires Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 // Java 16/17 was not used because as of now it is not needed as the project is out of the active development phase
@@ -70,10 +70,10 @@ dependencies {
     api 'com.google.guava:guava:30.1.1-jre'
 
     // Code modification
-    api "org.ow2.asm:asm:9.3"
-    api "org.ow2.asm:asm-tree:9.3"
-    api "org.ow2.asm:asm-analysis:9.3"
-    api "org.ow2.asm:asm-util:9.3"
+    api "org.ow2.asm:asm:9.4"
+    api "org.ow2.asm:asm-tree:9.4"
+    api "org.ow2.asm:asm-analysis:9.4"
+    api "org.ow2.asm:asm-util:9.4"
     api "org.ow2.asm:asm-commons:9.3"
     api "org.spongepowered:mixin:0.8.5"
 
@@ -81,8 +81,9 @@ dependencies {
     // SLF4J is the base logger for most libraries, therefore we should provide integration to it
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
     api 'org.slf4j:slf4j-api:2.0.3'
-    // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
-    implementation 'org.slf4j:slf4j-simple:2.0.3'
+    // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+    implementation 'ch.qos.logback:logback-classic:1.4.5'
+    implementation 'ch.qos.logback:logback-core:1.4.5'
 
     // Jars we need to include to trick JPMS
     compileOnly 'empty:log4j:999.0.0'
