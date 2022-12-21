@@ -274,7 +274,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                         if (internalName == null) {
                             throw new NullPointerException();
                         }
-                        if (transformer.isValidTraget(internalName) && transformer.accept(node)) {
+                        if (transformer.isValidTarget(internalName) && transformer.accept(node)) {
                             if (!transformer.isValid()) {
                                 transformers.remove();
                             }

@@ -36,9 +36,9 @@ public abstract class ASMTransformer {
      * @param internalName The internal name of the class
      * @return Whether it is a potential target
      * @see Type#getInternalName()
-     * @since 2.1.0
+     * @since 4.0.0
      */
-    public abstract boolean isValidTraget(@NotNull String internalName);
+    public abstract boolean isValidTarget(@NotNull String internalName);
 
     /**
      * Called everytime {@link #accept(ClassNode)} is called and returns true and is used

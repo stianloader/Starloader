@@ -28,7 +28,7 @@ public final class ASMMixinTransformer extends ASMTransformer {
     }
 
     @Override
-    public boolean isValidTraget(@NotNull String internalName) {
+    public boolean isValidTarget(@NotNull String internalName) {
         return true; // TODO check whether we can evaluate whether a class is a target of a mixin or not
     }
 
