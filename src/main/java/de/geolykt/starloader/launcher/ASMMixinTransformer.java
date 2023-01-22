@@ -36,4 +36,9 @@ public final class ASMMixinTransformer extends ASMTransformer {
     public boolean isValid() {
         return true;
     }
+
+    @Override
+    public int getPriority() {
+        return -10_000;
+    }
 }

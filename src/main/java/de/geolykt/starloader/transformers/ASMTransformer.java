@@ -10,10 +10,10 @@ import org.objectweb.asm.Type;
  *
  * @since 2.1.0
  */
-public abstract class ASMTransformer {
+public abstract class ASMTransformer implements Comparable<ASMTransformer> {
 
     /**
-     * Transforms the provided classnode to the transformer's liking.
+     * Transforms the provided {@link ClassNode} to the transformer's liking.
      * Must return true if the class node has been modified, should
      * it not returns false, then the transformation MAY be discarded,
      * however it could also not be discarded. It is best to assume that
@@ -24,6 +24,32 @@ public abstract class ASMTransformer {
      * @since 2.1.0
      */
     public abstract boolean accept(@NotNull ClassNode node);
+
+    /**
+     * Base implementation of {@link Comparable#compareTo(Object)} based on {@link ASMTransformer#getPriority()}.
+     * A return value of 0 indicates that both transformers have the same priority, at which point the application
+     * order may be arbitrary.
+     *
+     * @param o The transformer to compare this transformer against. May not be null.
+     * @return The difference in priorities.
+     * @since 4.0.0
+     */
+    @Override
+    public int compareTo(ASMTransformer o) {
+        return this.getPriority() - o.getPriority();
+    }
+
+    /**
+     * Obtains the priority of this transformer.
+     * The priority is used to note when a transformer should be applied in relation to other transformers.
+     * Should two transformers have the same priority, the order will be arbitrary.
+     *
+     * @return The priority of the transformer
+     * @since 4.0.0
+     */
+    public int getPriority() {
+        return 0;
+    }
 
     /**
      * Checks whether the given class denoted by the internal name would

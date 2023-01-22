@@ -29,7 +29,12 @@ public class ExtensionPrototypeList {
         extensionFolder = sourceFolder;
         extensions = new ArrayList<>();
         extensionsByName = new HashMap<>();
-        for (File jarFile : extensionFolder.listFiles(JarFilter.INSTANCE)) {
+        File[] jarFiles = extensionFolder.listFiles(JarFilter.INSTANCE);
+        if (jarFiles == null) {
+            LOGGER.warn("Unable to list files at {}", extensionFolder);
+            return;
+        }
+        for (File jarFile : jarFiles) {
             try {
                 JarFile jar = new JarFile(jarFile);
                 ZipEntry entry = jar.getEntry("extension.json");

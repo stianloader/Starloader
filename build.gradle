@@ -8,17 +8,19 @@ plugins {
 
 group 'de.geolykt.starloader'
 def archivesBaseName = 'launcher'
-version '20221221'
+version '20230122'
 
-// Our classloader requires Java9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
-// Java 16/17 was not used because as of now it is not needed as the project is out of the active development phase
+// Our classloader requires Java 9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
+// Java 16/17 was not used because it is not needed and would unnecessarily lower the amount of users that could use the application
+// out of the box.
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
 
 repositories {
     mavenCentral()
     maven {
         name = "MixinRepo"
-        url = "https://repo.spongepowered.org/repository/maven-public/"
+        //url = "https://repo.spongepowered.org/repository/maven-public/"
+        url = "https://files.minecraftforge.net/maven/"
     }
     maven {
         name = "SLL-Build-Dependencies"
@@ -61,7 +63,7 @@ dependencies {
     api 'org.json:json:20220924'
 
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
-    api group: 'org.jetbrains', name: 'annotations', version: '23.0.0'
+    api group: 'org.jetbrains', name: 'annotations', version: '24.0.0'
 
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
     api 'com.google.code.gson:gson:2.8.9'
@@ -74,13 +76,13 @@ dependencies {
     api "org.ow2.asm:asm-tree:9.4"
     api "org.ow2.asm:asm-analysis:9.4"
     api "org.ow2.asm:asm-util:9.4"
-    api "org.ow2.asm:asm-commons:9.3"
+    api "org.ow2.asm:asm-commons:9.4"
     api "org.spongepowered:mixin:0.8.5"
 
     // Logging
     // SLF4J is the base logger for most libraries, therefore we should provide integration to it
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    api 'org.slf4j:slf4j-api:2.0.3'
+    api 'org.slf4j:slf4j-api:2.0.6'
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
     implementation 'ch.qos.logback:logback-classic:1.4.5'
     implementation 'ch.qos.logback:logback-core:1.4.5'

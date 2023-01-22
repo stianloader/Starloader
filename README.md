@@ -21,7 +21,11 @@ Feel free to take a look at it at #galimulator-modding @ irc.esper.net
 
 ## Building
 
-The project can be built via gradle and a JDK 11 or higher.
+<b>Due to how the the people over at Sponge compile their module-infos,
+  building SLL requires Java 16 or higher. Running SLL works with Java 11
+  and beyond regardless.</b>
+
+The project can be built via gradle and a JDK 16 or higher.
 This can be easily done via `./gradlew shadowJar` on most systems.
 The built jar is located in the build/libs folder, and should have a "-all"
 suffix, if that isn't the case you might have not built that shadowjar, which
@@ -29,8 +33,8 @@ will not run as it is missing vital dependencies.
 
 ## Running
 
-On MacOS it has to be run manually via a Java 17 JRE with a command such as
-`java -cp starloader-launcher-XYZ-all.jar de.geolykt.starloader.launcher.CLILauncher`
+On MacOS it has to be run manually via a Java 11 JRE (17 recommended) with a command such
+as `java -cp starloader-launcher-XYZ-all.jar de.geolykt.starloader.launcher.CLILauncher`
 
 Place the built `starloader-launcher-XYZ-all.jar` in the galimulator folder.
 Then edit the `config.json` file in the galimulator folder to be
@@ -59,6 +63,6 @@ Mods need to be added in a "mods" folder located in the galimulator directory.
 All code is licensed under the Apache 2.0 license, allowing you to redistribute
 the source.
 
-Additionally a few portions of our code (i. e. the whole selfmodification and extension system)
+Additionally a few portions of our code (i. e. most of the selfmodification and extension system)
 was largely written by Minestom contributors, who have contributed their code under
 the Apache 2.0 license

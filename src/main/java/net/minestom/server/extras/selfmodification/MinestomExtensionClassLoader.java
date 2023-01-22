@@ -2,6 +2,8 @@ package net.minestom.server.extras.selfmodification;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class MinestomExtensionClassLoader extends HierarchyClassLoader {
 
@@ -9,6 +11,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
      * Root ClassLoader, everything goes through it before any attempt at loading is done inside this classloader.
      */
     private final MinestomRootClassLoader root;
+    private static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
 
     public MinestomExtensionClassLoader(String name, URL[] urls, MinestomRootClassLoader root) {
         super(name, urls, root);
@@ -48,6 +51,13 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
             try (in) {
                 byte[] bytes = in.readAllBytes();
                 bytes = root.transformBytes(bytes, name);
+                if (DEBUG) {
+                    Path parent = Path.of("classes", path).getParent();
+                    if (parent != null) {
+                        Files.createDirectories(parent);
+                    }
+                    Files.write(Path.of("classes", path), bytes);
+                }
                 Class<?> clazz = defineClass(name, bytes, 0, bytes.length);
                 if (resolve) {
                     resolveClass(clazz);

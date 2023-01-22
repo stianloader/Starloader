@@ -6,12 +6,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -28,6 +30,7 @@ import de.geolykt.starloader.deobf.access.AccessTransformInfo;
 import de.geolykt.starloader.deobf.access.AccessWidenerReader;
 import de.geolykt.starloader.transformers.ASMTransformer;
 import de.geolykt.starloader.transformers.RawClassData;
+import de.geolykt.starloader.util.OrderedCollection;
 
 /**
  * Class Loader that can modify class bytecode when they are loaded.
@@ -35,6 +38,7 @@ import de.geolykt.starloader.transformers.RawClassData;
 public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
+    private static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
 
     private static MinestomRootClassLoader INSTANCE;
 
@@ -60,7 +64,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             add("com.google");
             add("org.objectweb.asm");
             add("org.slf4j");
-            add("org.apache");
+            //add("org.apache");
             add("org.spongepowered");
             add("org.json");
             add("net.minestom.server.extras.selfmodification"); // We do not want to load this package ourselves
@@ -79,9 +83,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      */
     private final URLClassLoader asmClassLoader;
 
-    // TODO: priorities?
-    // TODO: make concurrent
-    private final List<ASMTransformer> modifiers = new LinkedList<>();
+    private final Collection<ASMTransformer> modifiers = new OrderedCollection<>();
 
     private MinestomRootClassLoader(ClassLoader parent) {
         super("Starloader Root ClassLoader", extractURLsFromClasspath(), parent);
@@ -237,6 +239,14 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             transformedBytes = originalBytes;
         }
 
+        if (DEBUG) {
+            Path parent = Path.of("classes", path).getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.write(Path.of("classes", path), transformedBytes);
+        }
+
         return new RawClassData(url, transformedBytes);
     }
 
@@ -274,7 +284,13 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                         if (internalName == null) {
                             throw new NullPointerException();
                         }
+                        if (DEBUG) {
+                            LOGGER.info("{} could be able to transform {}", transformer.getClass().getSimpleName(), internalName);
+                        }
                         if (transformer.isValidTarget(internalName) && transformer.accept(node)) {
+                            if (DEBUG) {
+                                LOGGER.info("{} was transformed by a {}", internalName, transformer.getClass().getSimpleName());
+                            }
                             if (!transformer.isValid()) {
                                 transformers.remove();
                             }
@@ -329,7 +345,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             Class<?> modifierClass = loader.loadClass(codeModifierClass);
             if (ASMTransformer.class.isAssignableFrom(modifierClass)) {
                 ASMTransformer modifier = (ASMTransformer) modifierClass.getDeclaredConstructor().newInstance();
-                LOGGER.warn("Added ASM Transformer: {}", modifier);
+                LOGGER.info("Added ASM Transformer: {}", modifier);
                 addTransformer(modifier);
             }
         } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
@@ -345,7 +361,16 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      */
     public synchronized void addTransformer(ASMTransformer transformer) {
         synchronized (modifiers) {
+            if (DEBUG) {
+                LOGGER.info("Adding transformer {}", transformer.getClass().getName());
+            }
             modifiers.add(transformer);
+            if (DEBUG) {
+                LOGGER.info("Currently registered transformers: ");
+                for (ASMTransformer x :modifiers) {
+                    LOGGER.info("  - {}", x.getClass().getName());
+                }
+            }
         }
     }
 
