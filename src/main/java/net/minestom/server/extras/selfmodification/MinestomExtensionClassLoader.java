@@ -12,6 +12,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
      */
     private final MinestomRootClassLoader root;
     private static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
+    private static final boolean DUMP = DEBUG || Boolean.getBoolean("classloader.dump");
 
     public MinestomExtensionClassLoader(String name, URL[] urls, MinestomRootClassLoader root) {
         super(name, urls, root);
@@ -51,7 +52,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
             try (in) {
                 byte[] bytes = in.readAllBytes();
                 bytes = root.transformBytes(bytes, name);
-                if (DEBUG) {
+                if (DUMP) {
                     Path parent = Path.of("classes", path).getParent();
                     if (parent != null) {
                         Files.createDirectories(parent);
