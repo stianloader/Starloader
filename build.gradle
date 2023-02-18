@@ -8,7 +8,7 @@ plugins {
 
 group 'de.geolykt.starloader'
 def archivesBaseName = 'launcher'
-version '20230122'
+version '4.0.0-20230212'
 
 // Our classloader requires Java 9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 // Java 16/17 was not used because it is not needed and would unnecessarily lower the amount of users that could use the application
@@ -16,16 +16,8 @@ version '20230122'
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '11'
 
 repositories {
+    mavenLocal() // Required for Micromixin - we may want to use a proper library in the future
     mavenCentral()
-    maven {
-        name = "MixinRepo"
-        //url = "https://repo.spongepowered.org/repository/maven-public/"
-        url = "https://files.minecraftforge.net/maven/"
-    }
-    maven {
-        name = "SLL-Build-Dependencies"
-        url = "deps/"
-    }
 }
 
 sourceSets {
@@ -40,22 +32,6 @@ java {
     modularity.inferModulePath.set(true)
 }
 
-javadoc {
-    options {
-        addMultilineStringsOption("-add-exports").setValue([
-            'org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer=de.geolykt.starloader.launcher'
-        ])
-    }
-}
-
-compileJava {
-    doFirst {
-        options.compilerArgs = [
-            "--add-exports", "org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer=de.geolykt.starloader.launcher"
-        ]
-    }
-}
-
 dependencies {
 
     // I am very well aware that this is just a reference implementation, but it has served me well in the past; so I prefer it over any other implementation
@@ -68,16 +44,13 @@ dependencies {
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
     api 'com.google.code.gson:gson:2.8.9'
 
-    // Required for mixins
-    api 'com.google.guava:guava:30.1.1-jre'
-
     // Code modification
     api "org.ow2.asm:asm:9.4"
     api "org.ow2.asm:asm-tree:9.4"
     api "org.ow2.asm:asm-analysis:9.4"
     api "org.ow2.asm:asm-util:9.4"
     api "org.ow2.asm:asm-commons:9.4"
-    api "org.spongepowered:mixin:0.8.5"
+    implementation "de.geolykt.starloader:micromixin-transformer:0.0.1-SNAPSHOT"
 
     // Logging
     // SLF4J is the base logger for most libraries, therefore we should provide integration to it
@@ -86,10 +59,6 @@ dependencies {
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
     implementation 'ch.qos.logback:logback-classic:1.4.5'
     implementation 'ch.qos.logback:logback-core:1.4.5'
-
-    // Jars we need to include to trick JPMS
-    compileOnly 'empty:log4j:999.0.0'
-    compileOnly 'empty:modlauncher:999.0.0'
 }
 
 jar {
@@ -145,12 +114,3 @@ project.sourceSets.each { set -> {
         }
     }
 }}
-
-// Based on https://stackoverflow.com/a/71749829
-eclipse.classpath.file {
-    whenMerged {
-        entries.find{ it.path ==~ '.*JRE_CONTAINER.*' }.each {
-            it.entryAttributes['add-exports'] = 'org.spongepowered.mixin/org.spongepowered.asm.mixin.transformer=de.geolykt.starloader.launcher'
-        }
-    }
-}

@@ -20,11 +20,12 @@ import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
-import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
 
+import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
-import de.geolykt.starloader.launcher.service.SLMixinService;
+import de.geolykt.micromixin.BytecodeProvider;
+import de.geolykt.micromixin.MixinTransformer;
 
 public class CLILauncher {
 
@@ -70,9 +71,9 @@ public class CLILauncher {
         });
 
         // Start mixins & load extensions
-        Utils.startMixin(args);
-        cl.addTransformer(new ASMMixinTransformer(SLMixinService.getInstance()));
-        SLMixinService.getInstance().getPhaseConsumer().accept(Phase.PREINIT);
+        BytecodeProvider<HierarchyClassLoader> provider = new MixinBytecodeProvider();
+        MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider);
+        cl.addTransformer(new ASMMixinTransformer(transformer));
         // ensure extensions are loaded when starting the server
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
@@ -88,9 +89,6 @@ public class CLILauncher {
             e.printStackTrace();
             return;
         }
-
-        SLMixinService.getInstance().getPhaseConsumer().accept(Phase.INIT);
-        SLMixinService.getInstance().getPhaseConsumer().accept(Phase.DEFAULT);
 
         // Find & launch main class
         try {

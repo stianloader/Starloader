@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
@@ -20,15 +19,14 @@ import java.util.Locale;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongepowered.asm.launch.MixinBootstrap;
-import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
-import org.spongepowered.asm.mixin.Mixins;
 
+import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
+import de.geolykt.micromixin.BytecodeProvider;
+import de.geolykt.micromixin.MixinTransformer;
 import de.geolykt.starloader.Starloader;
 import de.geolykt.starloader.UnlikelyEventException;
-import de.geolykt.starloader.launcher.service.SLMixinService;
 
 /**
  * Collection of static utility methods.
@@ -195,7 +193,7 @@ public final class Utils {
 
     public static final boolean isJava9() {
         try {
-            URLClassLoader.getPlatformClassLoader(); // This should throw an error in Java 8 and below
+            ClassLoader.getPlatformClassLoader(); // This should throw an error in Java 8 and below
             // I am well aware that this will never throw an error due to Java versions, but it's still a bit of futureproofing
             return true;
         } catch (Throwable e) {
@@ -247,15 +245,13 @@ public final class Utils {
             }
             try {
                 if (preferences.hasExtensionsEnabled()) {
-                    startMixin(args);
-                    cl.addTransformer(new ASMMixinTransformer(SLMixinService.getInstance()));
-                    SLMixinService.getInstance().getPhaseConsumer().accept(Phase.PREINIT);
+                    BytecodeProvider<HierarchyClassLoader> provider = new MixinBytecodeProvider();
+                    MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider);
+                    cl.addTransformer(new ASMMixinTransformer(transformer));
                     // ensure extensions are loaded when starting the server
                     Class<?> slClass = Class.forName("de.geolykt.starloader.Starloader", true, cl);
                     Method init = slClass.getDeclaredMethod("start", LauncherConfiguration.class);
                     init.invoke(null, preferences);
-                    SLMixinService.getInstance().getPhaseConsumer().accept(Phase.INIT);
-                    SLMixinService.getInstance().getPhaseConsumer().accept(Phase.DEFAULT);
                 }
 
                 URL manifest = null;
@@ -314,12 +310,6 @@ public final class Utils {
         } catch (Exception e) {
             throw new RuntimeException("Error while invoking main class!", e);
         }
-    }
-
-    protected static final void startMixin(String[] args) {
-        MixinBootstrap.init();
-        MixinBootstrap.getPlatform().inject();
-        Mixins.getConfigs().forEach(c -> MinestomRootClassLoader.getInstance().protectedPackages.add(c.getConfig().getMixinPackage()));
     }
 
     /**

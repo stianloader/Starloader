@@ -9,6 +9,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,20 +21,25 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongepowered.asm.mixin.Mixins;
 
 import com.google.gson.Gson;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
+import de.geolykt.micromixin.MixinConfig;
+import de.geolykt.starloader.launcher.ASMMixinTransformer;
 import de.geolykt.starloader.mod.Extension.ExtensionDescription;
+import de.geolykt.starloader.transformers.ASMTransformer;
 
 public class ExtensionManager {
 
@@ -420,14 +426,8 @@ public class ExtensionManager {
         // FIXME code modifiers persist (particularly asm transformers and mixins) even though the extension never started correctly
         ClassLoader cl = getClass().getClassLoader();
         if (!(cl instanceof MinestomRootClassLoader)) {
-            if (cl.getClass().getModule() != null) {
-                // The extension manager class is loaded by the parent classloader, so yeah...
-                cl = MinestomRootClassLoader.getInstance();
-            } else {
-                LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This may render ASM Transformers useless.", cl);
-                LOGGER.warn("As you are not using JPMS we will abort right there.");
-                return;
-            }
+            // The extension manager class is excluded from the root classloader, so yeah...
+            cl = MinestomRootClassLoader.getInstance();
         }
         @SuppressWarnings("resource")
         MinestomRootClassLoader modifiableClassLoader = (MinestomRootClassLoader) cl;
@@ -439,8 +439,35 @@ public class ExtensionManager {
                 }
                 if (!extension.getMixinConfig().isEmpty()) {
                     final String mixinConfigFile = extension.getMixinConfig();
-                    Mixins.addConfiguration(mixinConfigFile);
-                    LOGGER.info("Found mixin in extension {}: {}", extension.getName(), mixinConfigFile);
+                    boolean added = false;
+                    for (ASMTransformer transformer : modifiableClassLoader.getTransformers()) {
+                        if (transformer instanceof ASMMixinTransformer) {
+                            JSONObject mixinConfigJson = null;
+                            for (URL url : extension.files) {
+                                try (ZipInputStream zipIn = new ZipInputStream(url.openStream())) {
+                                    for (ZipEntry entry = zipIn.getNextEntry(); entry != null; entry = zipIn.getNextEntry()) {
+                                        if (entry.getName().equals(mixinConfigFile)) {
+                                            mixinConfigJson = new JSONObject(new String(zipIn.readAllBytes(), StandardCharsets.UTF_8));
+                                        }
+                                    }
+                                } catch (IOException e) {
+                                    LOGGER.warn("Unable to open jar \"" + url + "\".", e);
+                                }
+                            }
+                            if (mixinConfigJson == null) {
+                                throw new IOException("Cannot find mixin config " + mixinConfigFile + " in extension " + extension.getName());
+                            }
+                            MixinConfig mixinConfig = MixinConfig.fromJson(mixinConfigJson);
+                            // TODO Use Classloader futures in order to sandbox different mixins
+                            // This reduces the chance of collision of two mixins
+                            ((ASMMixinTransformer) transformer).transformer.addMixin(modifiableClassLoader, mixinConfig);
+                            added = true;
+                            LOGGER.info("Found mixin in extension {}: {}", extension.getName(), mixinConfigFile);
+                        }
+                    }
+                    if (!added) {
+                        LOGGER.error("Unable to add mixin {} in extension {} as there is no classloader!");
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
