@@ -39,6 +39,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
     private static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
+    private static final boolean DUMP = DEBUG || Boolean.getBoolean("classloader.dump");
 
     private static MinestomRootClassLoader INSTANCE;
 
@@ -52,7 +53,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         private static final long serialVersionUID = 1562431043013365680L;
 
         {
-            add("net.minestom.server.extras.selfmodification.CodeModifier");
+            add("de.geolykt.starloader.Starloader");
+            add("de.geolykt.starloader.UnlikelyEventException");
             add("net.minestom.server.extras.selfmodification.MinestomOverwriteClassLoader");
         }
     };
@@ -143,12 +145,15 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
                 return define(name, resolve);
             } catch (Throwable ex) {
-                // FIXME this state is always achieved if classes from extensions are loaded.
-                // While apparently this will not cause all too much issues, it might still be dangerous.
-                LOGGER.debug("Failed to load class \""+ name + "\", resorting to parent loader. Code modifications forbidden.", ex);
+                LOGGER.trace("Failed to load class \""+ name + "\", resorting to parent loader. Code modifications forbidden. {}", ex);
                 // fail to load class, let parent load
                 // this forbids code modification, but at least it will load
-                return super.loadClass(name, resolve);
+                try {
+                    return super.loadClass(name, resolve);
+                } catch (ClassNotFoundException cnfe) {
+                    cnfe.addSuppressed(ex);
+                    throw cnfe;
+                }
             }
         }
     }
@@ -189,6 +194,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                 resolveClass(defined);
             }
             return defined;
+        } catch (LinkageError e) {
+            // Well we did hit the right classloader (so no need to check children), but it did not produce the right output
+            throw new ClassNotFoundException("Invalid bytecode for class " + name, e);
         } catch (ClassNotFoundException e) {
             // could not load inside this classloader, attempt with children
             Class<?> defined = null;
@@ -199,6 +207,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                     return defined;
                 } catch (ClassNotFoundException e1) {
                     // not found inside this child, move on to next
+                    e.addSuppressed(e1);
                 }
             }
             throw e;
@@ -239,7 +248,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             transformedBytes = originalBytes;
         }
 
-        if (DEBUG) {
+        if (DUMP) {
             Path parent = Path.of("classes", path).getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
@@ -345,7 +354,6 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             Class<?> modifierClass = loader.loadClass(codeModifierClass);
             if (ASMTransformer.class.isAssignableFrom(modifierClass)) {
                 ASMTransformer modifier = (ASMTransformer) modifierClass.getDeclaredConstructor().newInstance();
-                LOGGER.info("Added ASM Transformer: {}", modifier);
                 addTransformer(modifier);
             }
         } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {

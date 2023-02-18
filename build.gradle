@@ -8,7 +8,7 @@ plugins {
 
 group 'de.geolykt.starloader'
 def archivesBaseName = 'launcher'
-version '20230122'
+version '4.0.0-20230218'
 
 // Our classloader requires Java 9+ in order to work, but since noone should be using Java 9 and 10, it was bumped all the way to Java 11
 // Java 16/17 was not used because it is not needed and would unnecessarily lower the amount of users that could use the application
