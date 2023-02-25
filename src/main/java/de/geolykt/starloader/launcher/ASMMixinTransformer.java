@@ -9,6 +9,7 @@ import de.geolykt.micromixin.MixinTransformer;
 import de.geolykt.starloader.transformers.ASMTransformer;
 
 public final class ASMMixinTransformer extends ASMTransformer {
+    // TODO: Refuse classloading for any mixin classes
 
     public final MixinTransformer<HierarchyClassLoader> transformer;
 

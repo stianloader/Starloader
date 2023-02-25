@@ -569,11 +569,7 @@ public class ExtensionManager {
 
         LOGGER.info("Discover dynamic extension from jar {}", jarFile.getAbsolutePath());
         DiscoveredExtension discoveredExtension = discoverFromJar(jarFile);
-        List<DiscoveredExtension> extensionsToLoad = Collections.singletonList(discoveredExtension);
-        if (extensionsToLoad == null) {
-            throw new InternalError();
-        }
-        return loadExtensionList(extensionsToLoad);
+        return loadExtensionList(Collections.singletonList(discoveredExtension));
     }
 
     private boolean loadExtensionList(@NotNull List<DiscoveredExtension> extensionsToLoad) {

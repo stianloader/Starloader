@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
@@ -25,6 +26,8 @@ import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.micromixin.BytecodeProvider;
 import de.geolykt.micromixin.MixinTransformer;
+import de.geolykt.micromixin.supertypes.ClassWrapperPool;
+import de.geolykt.micromixin.supertypes.ReflectionClassWrapperProvider;
 import de.geolykt.starloader.Starloader;
 import de.geolykt.starloader.UnlikelyEventException;
 
@@ -246,7 +249,9 @@ public final class Utils {
             try {
                 if (preferences.hasExtensionsEnabled()) {
                     BytecodeProvider<HierarchyClassLoader> provider = new MixinBytecodeProvider();
-                    MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider);
+                    ClassWrapperPool cwPool = new ClassWrapperPool();
+                    cwPool.addProvider(new ReflectionClassWrapperProvider(URLClassLoader.newInstance(new URL[0], cl)));
+                    MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider, cwPool);
                     cl.addTransformer(new ASMMixinTransformer(transformer));
                     // ensure extensions are loaded when starting the server
                     Class<?> slClass = Class.forName("de.geolykt.starloader.Starloader", true, cl);

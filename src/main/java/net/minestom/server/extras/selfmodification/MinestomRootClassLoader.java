@@ -55,7 +55,6 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         {
             add("de.geolykt.starloader.Starloader");
             add("de.geolykt.starloader.UnlikelyEventException");
-            add("net.minestom.server.extras.selfmodification.MinestomOverwriteClassLoader");
         }
     };
 
@@ -66,7 +65,6 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             add("com.google");
             add("org.objectweb.asm");
             add("org.slf4j");
-            //add("org.apache");
             add("org.spongepowered");
             add("org.json");
             add("net.minestom.server.extras.selfmodification"); // We do not want to load this package ourselves
