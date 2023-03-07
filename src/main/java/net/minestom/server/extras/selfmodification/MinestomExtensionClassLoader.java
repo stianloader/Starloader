@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.CodeSigner;
+import java.security.CodeSource;
 
 public class MinestomExtensionClassLoader extends HierarchyClassLoader {
 
@@ -45,11 +47,11 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
         try {
             // not in children, attempt load in this classloader
             String path = name.replace(".", "/") + ".class";
-            InputStream in = getResourceAsStream(path);
-            if (in == null) {
-                throw new ClassNotFoundException("Could not load class " + name);
+            URL url = getResource(path);
+            if (url == null) {
+                throw new ClassNotFoundException("Could not find class " + name);
             }
-            try (in) {
+            try (InputStream in = url.openStream()) {
                 byte[] bytes = in.readAllBytes();
                 bytes = root.transformBytes(bytes, name);
                 if (DUMP) {
@@ -59,7 +61,8 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
                     }
                     Files.write(Path.of("classes", path), bytes);
                 }
-                Class<?> clazz = defineClass(name, bytes, 0, bytes.length);
+                URL jarURL = new URL(url.getPath().substring(0, url.getPath().lastIndexOf('!')));
+                Class<?> clazz = defineClass(name, bytes, 0, bytes.length, new CodeSource(jarURL, (CodeSigner[]) null));
                 if (resolve) {
                     resolveClass(clazz);
                 }
