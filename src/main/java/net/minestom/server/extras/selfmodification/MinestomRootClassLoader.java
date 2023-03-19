@@ -40,6 +40,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
     private static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
     private static final boolean DUMP = DEBUG || Boolean.getBoolean("classloader.dump");
+    @SuppressWarnings("null") // Yes it can be null, but "path.seperator" should always be present - in theory
+    @NotNull
+    private static final String PATH_SEPARATOR = System.getProperty("path.separator");
 
     private static MinestomRootClassLoader INSTANCE;
 
@@ -103,7 +106,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     private static URL[] extractURLsFromClasspath() {
         String classpath = System.getProperty("java.class.path");
-        String[] parts = classpath.split(";");
+        String[] parts = classpath.split(PATH_SEPARATOR);
         URL[] urls = new URL[parts.length];
         for (int i = 0; i < urls.length; i++) {
             try {
