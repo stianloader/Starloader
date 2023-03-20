@@ -18,11 +18,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.LoggerFactory;
 
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
@@ -30,7 +27,6 @@ import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.micromixin.BytecodeProvider;
 import de.geolykt.micromixin.MixinTransformer;
-import de.geolykt.micromixin.supertypes.ASMClassWrapperProvider;
 import de.geolykt.micromixin.supertypes.ClassWrapperPool;
 import de.geolykt.micromixin.supertypes.ReflectionClassWrapperProvider;
 
@@ -100,7 +96,14 @@ public class CLILauncher {
         }
 
         // Find & launch main class
+        String mainClass = System.getProperty("de.geolykt.starloader.launcher.CLILauncher.mainClass");
+
+        findManifest:
         try {
+            if (mainClass != null) {
+                break findManifest;
+            }
+
             Enumeration<URL> manifests = cl.getResources("META-INF/MANIFEST.MF");
 
             URL manifest = null;
@@ -108,9 +111,8 @@ public class CLILauncher {
                 manifest = manifests.nextElement();
             }
             if (manifest == null) {
-                throw new IllegalStateException("Unable to find jar manifest!");
+                throw new IOException("Unable to find jar manifest!");
             }
-            String mainClass = null;
             try (BufferedReader br = new BufferedReader(new InputStreamReader(manifest.openStream(), StandardCharsets.UTF_8))) {
                 for (String ln = br.readLine(); ln != null; ln = br.readLine()) {
                     ln = ln.split("#", 2)[0];
@@ -120,16 +122,20 @@ public class CLILauncher {
                     }
                 }
             } catch (IOException e) {
-                throw new IllegalStateException("Unable to find jar manifest!", e);
+                throw new IOException("Unable to find jar manifest!", e);
             }
+        } catch (IOException t) {
+            t.printStackTrace();
+        }
 
-            if (mainClass == null) {
-                LoggerFactory.getLogger(CLILauncher.class).error("Unable to find main class! Fall-backing with com.example.Main");
-                mainClass = "com.example.Main";
-            }
+        if (mainClass == null) {
+            LoggerFactory.getLogger(CLILauncher.class).error("Unable to find main class! Fall-backing to com.example.Main");
+            mainClass = "com.example.Main";
+        }
 
-            LoggerFactory.getLogger(CLILauncher.class).info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
+        LoggerFactory.getLogger(CLILauncher.class).info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
 
+        try {
             Utils.startMain(cl.loadClass(mainClass), args);
         } catch (Throwable t) {
             t.printStackTrace();
