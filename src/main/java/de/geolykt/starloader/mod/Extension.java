@@ -32,7 +32,8 @@ public abstract class Extension {
     public void postInitialize() { }
 
     /**
-     * @deprecated This method is a boilerplate solution, for more info see below
+     * @deprecated This method is a boilerplate solution, for more info see below.
+     * However, the method is not slated for removal.
      *
      * WARNING: The implementation of this method should be coded very carefully.
      * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
@@ -41,11 +42,12 @@ public abstract class Extension {
      * method for unloading is used, for example SLAPI offers the ApplicationStopEvent and SignalExtensionTerminationExtension.
      * Other extension libraries might offer similar alternatives that are a lot more safer to use.
      */
-    @Deprecated(forRemoval = false)
+    @Deprecated
     public void preTerminate() { }
 
     /**
      * @deprecated This method is a boilerplate solution, for more info see below
+     * However, the method is not slated for removal.
      *
      * WARNING: The implementation of this method should be coded very carefully.
      * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
@@ -54,11 +56,12 @@ public abstract class Extension {
      * method for unloading is used, for example SLAPI offers the ApplicationStopEvent and SignalExtensionTerminationExtension.
      * Other extension libraries might offer similar alternatives that are a lot more safer to use.
      */
-    @Deprecated(forRemoval = false)
+    @Deprecated
     public void terminate() { }
 
     /**
      * @deprecated This method is a boilerplate solution, for more info see below
+     * However, the method is not slated for removal.
      *
      * WARNING: The implementation of this method should be coded very carefully.
      * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
@@ -67,11 +70,12 @@ public abstract class Extension {
      * method for unloading is used, for example SLAPI offers the ApplicationStopEvent and SignalExtensionTerminationExtension.
      * Other extension libraries might offer similar alternatives that are a lot more safer to use.
      */
-    @Deprecated(forRemoval = false)
+    @Deprecated
     public void postTerminate() { }
 
     /**
      * @deprecated This method is a boilerplate solution, for more info see below
+     * However, the method is not slated for removal.
      *
      * WARNING: The implementation of this method should be coded very carefully.
      * The implementation should be thread-safe and avoid deadlocks and should not rely on the existence of other threads.
@@ -83,7 +87,7 @@ public abstract class Extension {
      * After calling this method, the entirety of the Extension is unloaded, which means classes provided by the extension
      * become unusable.
      */
-    @Deprecated(forRemoval = false)
+    @Deprecated
     public void unload() { }
 
     @SuppressWarnings("null")

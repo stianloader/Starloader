@@ -40,6 +40,7 @@ import de.geolykt.micromixin.MixinConfig;
 import de.geolykt.starloader.launcher.ASMMixinTransformer;
 import de.geolykt.starloader.mod.Extension.ExtensionDescription;
 import de.geolykt.starloader.transformers.ASMTransformer;
+import de.geolykt.starloader.util.JavaInterop;
 
 public class ExtensionManager {
 
@@ -447,7 +448,7 @@ public class ExtensionManager {
                                 try (ZipInputStream zipIn = new ZipInputStream(url.openStream())) {
                                     for (ZipEntry entry = zipIn.getNextEntry(); entry != null; entry = zipIn.getNextEntry()) {
                                         if (entry.getName().equals(mixinConfigFile)) {
-                                            mixinConfigJson = new JSONObject(new String(zipIn.readAllBytes(), StandardCharsets.UTF_8));
+                                            mixinConfigJson = new JSONObject(new String(JavaInterop.readAllBytes(zipIn), StandardCharsets.UTF_8));
                                         }
                                     }
                                 } catch (IOException e) {
@@ -575,7 +576,7 @@ public class ExtensionManager {
     private boolean loadExtensionList(@NotNull List<DiscoveredExtension> extensionsToLoad) {
         // ensure correct order of dependencies
         LOGGER.debug("Reorder extensions to ensure proper load order");
-        var temp = generateLoadOrder(extensionsToLoad);
+        List<DiscoveredExtension> temp = generateLoadOrder(extensionsToLoad);
         if (temp == null) {
             throw new AssertionError();
         }

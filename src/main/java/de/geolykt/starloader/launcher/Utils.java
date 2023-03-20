@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Locale;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,7 @@ import de.geolykt.micromixin.supertypes.ClassWrapperPool;
 import de.geolykt.micromixin.supertypes.ReflectionClassWrapperProvider;
 import de.geolykt.starloader.Starloader;
 import de.geolykt.starloader.UnlikelyEventException;
+import de.geolykt.starloader.util.JavaInterop;
 
 /**
  * Collection of static utility methods.
@@ -46,6 +48,8 @@ public final class Utils {
     public static final String STEAM_WINDOWS_REGISTRY_INSTALL_DIR_KEY = "InstallPath";
 
     public static final String STEAM_WINDOWS_REGISTRY_KEY = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Valve\\Steam";
+
+    private static final byte[] SHARED_DUMMY_ARRAY = new byte[4096];
 
     /**
      * Obtains the directory where starloader puts it's logs into,
@@ -100,13 +104,7 @@ public final class Utils {
             throw new RuntimeException("Jar was not found!");
         }
         try (DigestInputStream digestStream = new DigestInputStream(new FileInputStream(file), digest)) {
-            if (isJava9()) {
-                digestStream.readAllBytes(); // This should be considerably faster than the other methods, however only got introduced in Java 9
-            } else {
-                while (digestStream.read() != -1) {
-                    // Empty block; Read all bytes
-                }
-            }
+            fastExhaust(digestStream);
             digest = digestStream.getMessageDigest();
         } catch (Exception e) {
             throw new RuntimeException("Something went wrong while obtaining the checksum of the galimulator jar.", e);
@@ -194,16 +192,6 @@ public final class Utils {
         }
     }
 
-    public static final boolean isJava9() {
-        try {
-            ClassLoader.getPlatformClassLoader(); // This should throw an error in Java 8 and below
-            // I am well aware that this will never throw an error due to Java versions, but it's still a bit of futureproofing
-            return true;
-        } catch (Throwable e) {
-            return false;
-        }
-    }
-
     /**
      * Stupid little hack.
      *
@@ -218,9 +206,13 @@ public final class Utils {
             Process process = Runtime.getRuntime().exec("reg query " + '"' + location + "\" /v " + key);
 
             process.waitFor();
-            InputStream is = process.getInputStream();
-            String output = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            is.close();
+            String output;
+            try (InputStream is = process.getInputStream()) {
+                if (is == null) {
+                    throw new AssertionError();
+                }
+                output = new String(JavaInterop.readAllBytes(is), StandardCharsets.UTF_8);
+            }
 
             if (!output.contains(location) || !output.contains(key)) {
                 return null;
@@ -239,69 +231,61 @@ public final class Utils {
 
     @SuppressWarnings("resource")
     public static final void startGalimulator(String[] args, LauncherConfiguration preferences) {
-        if (isJava9()) {
-            MinestomRootClassLoader cl = MinestomRootClassLoader.getInstance();
-            try {
-                cl.addURL(preferences.getTargetJar().toURI().toURL());
-            } catch (MalformedURLException e1) {
-                throw new RuntimeException("Something went wrong while adding the target jar to the Classpath", e1);
+        MinestomRootClassLoader cl = MinestomRootClassLoader.getInstance();
+        try {
+            cl.addURL(preferences.getTargetJar().toURI().toURL());
+        } catch (MalformedURLException e1) {
+            throw new RuntimeException("Something went wrong while adding the target jar to the Classpath", e1);
+        }
+        try {
+            if (preferences.hasExtensionsEnabled()) {
+                BytecodeProvider<HierarchyClassLoader> provider = new MixinBytecodeProvider();
+                ClassWrapperPool cwPool = new ClassWrapperPool();
+                cwPool.addProvider(new ReflectionClassWrapperProvider(URLClassLoader.newInstance(new URL[0], cl)));
+                MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider, cwPool);
+                cl.addTransformer(new ASMMixinTransformer(transformer));
+                // ensure extensions are loaded when starting the server
+                Class<?> slClass = Class.forName("de.geolykt.starloader.Starloader", true, cl);
+                Method init = slClass.getDeclaredMethod("start", LauncherConfiguration.class);
+                init.invoke(null, preferences);
             }
-            try {
-                if (preferences.hasExtensionsEnabled()) {
-                    BytecodeProvider<HierarchyClassLoader> provider = new MixinBytecodeProvider();
-                    ClassWrapperPool cwPool = new ClassWrapperPool();
-                    cwPool.addProvider(new ReflectionClassWrapperProvider(URLClassLoader.newInstance(new URL[0], cl)));
-                    MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider, cwPool);
-                    cl.addTransformer(new ASMMixinTransformer(transformer));
-                    // ensure extensions are loaded when starting the server
-                    Class<?> slClass = Class.forName("de.geolykt.starloader.Starloader", true, cl);
-                    Method init = slClass.getDeclaredMethod("start", LauncherConfiguration.class);
-                    init.invoke(null, preferences);
-                }
 
-                URL manifest = null;
-                Enumeration<URL> manifests = cl.findResources("META-INF/MANIFEST.MF");
+            URL manifest = null;
+            Enumeration<URL> manifests = cl.findResources("META-INF/MANIFEST.MF");
+
+            while (manifests.hasMoreElements()) {
+                manifest = manifests.nextElement();
+            }
+
+            if (manifest == null) {
+                manifests = cl.getResources("META-INF/MANIFEST.MF");
 
                 while (manifests.hasMoreElements()) {
                     manifest = manifests.nextElement();
                 }
 
                 if (manifest == null) {
-                    manifests = cl.getResources("META-INF/MANIFEST.MF");
+                    throw new IllegalStateException("Unable to find jar manifest!");
+                }
+            }
 
-                    while (manifests.hasMoreElements()) {
-                        manifest = manifests.nextElement();
-                    }
-
-                    if (manifest == null) {
-                        throw new IllegalStateException("Unable to find jar manifest!");
+            String mainClass = null;
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(manifest.openStream(), StandardCharsets.UTF_8))) {
+                for (String ln = br.readLine(); ln != null; ln = br.readLine()) {
+                    ln = ln.split("#", 2)[0];
+                    if (ln.startsWith("Main-Class:")) {
+                        mainClass = ln.split(":", 2)[1].trim();
+                        break;
                     }
                 }
-
-                String mainClass = null;
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(manifest.openStream(), StandardCharsets.UTF_8))) {
-                    for (String ln = br.readLine(); ln != null; ln = br.readLine()) {
-                        ln = ln.split("#", 2)[0];
-                        if (ln.startsWith("Main-Class:")) {
-                            mainClass = ln.split(":", 2)[1].trim();
-                            break;
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new IllegalStateException("Unable to find jar manifest!", e);
-                }
-
-                LOGGER.info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
-                startMain(cl.loadClass(mainClass), args);
-            } catch (Exception e1) {
-                throw new RuntimeException("Something went wrong while bootstrapping.", e1);
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to find jar manifest!", e);
             }
-        } else {
-            try {
-                throw new UnsupportedOperationException("Java 8 is not supported.");
-            } catch (SecurityException | IllegalArgumentException e1) {
-                throw new RuntimeException("Something went wrong while adding the target jar to the Classpath", e1);
-            }
+
+            LOGGER.info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
+            startMain(cl.loadClass(mainClass), args);
+        } catch (Exception e1) {
+            throw new RuntimeException("Something went wrong while bootstrapping.", e1);
         }
     }
 
@@ -315,6 +299,10 @@ public final class Utils {
         } catch (Exception e) {
             throw new RuntimeException("Error while invoking main class!", e);
         }
+    }
+
+    public static final void fastExhaust(@NotNull InputStream in) throws IOException {
+        while (in.read(SHARED_DUMMY_ARRAY) != -1);
     }
 
     /**

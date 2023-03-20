@@ -1,4 +1,4 @@
-open module de.geolykt.starloader.launcher {
+module de.geolykt.starloader.launcher {
     requires transitive org.objectweb.asm.commons;
     requires transitive org.objectweb.asm.util;
     requires transitive org.objectweb.asm;

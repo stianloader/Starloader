@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.geolykt.starloader.util.JarFilter;
+import de.geolykt.starloader.util.JavaInterop;
 
 public class ExtensionPrototypeList {
 
@@ -35,15 +36,18 @@ public class ExtensionPrototypeList {
             return;
         }
         for (File jarFile : jarFiles) {
-            try {
-                JarFile jar = new JarFile(jarFile);
+            try (JarFile jar = new JarFile(jarFile)) {
                 ZipEntry entry = jar.getEntry("extension.json");
                 if (entry == null) {
-                    jar.close();
                     continue;
                 }
-                InputStream is = jar.getInputStream(entry);
-                JSONObject jsonObj = new JSONObject(new String(is.readAllBytes(), StandardCharsets.UTF_8));
+                JSONObject jsonObj;
+                try (InputStream is = jar.getInputStream(entry)) {
+                    if (is == null) {
+                        throw new AssertionError();
+                    }
+                    jsonObj = new JSONObject(new String(JavaInterop.readAllBytes(is), StandardCharsets.UTF_8));
+                }
                 ExtensionPrototype prototype = new ExtensionPrototype(jarFile, jsonObj.getString("name"), jsonObj.optString("version", "unkown"));
                 extensions.add(prototype);
                 if (extensionsByName.containsKey(prototype.name)) {
@@ -53,8 +57,6 @@ public class ExtensionPrototypeList {
                     l.add(prototype);
                     extensionsByName.put(prototype.name, l);
                 }
-                is.close();
-                jar.close();
             } catch (IOException e) {
                 LOGGER.warn("Failed to load potential extension {}: {}", jarFile.getPath(), e);
                 continue;

@@ -13,6 +13,7 @@ import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -38,7 +39,7 @@ public class CLILauncher {
 
         //
         for (Object o : jsonConfig.getJSONArray("classPath")) {
-            extraPaths.add(Path.of(o.toString()).toAbsolutePath());
+            extraPaths.add(Paths.get(o.toString()).toAbsolutePath());
         }
         URI launcherURI;
         try {
@@ -47,7 +48,7 @@ public class CLILauncher {
             e.printStackTrace();
             return extraPaths;
         }
-        Path launcherPath = Path.of(launcherURI);
+        Path launcherPath = Paths.get(launcherURI);
         extraPaths.remove(launcherPath);
         return extraPaths;
     }
@@ -55,7 +56,8 @@ public class CLILauncher {
     public static void main(String[] args) {
         Set<Path> bootPaths = null;
         try {
-            JSONObject json = new JSONObject(Files.readString(Path.of("config.json"), StandardCharsets.UTF_8));
+            String read = new String(Files.readAllBytes(Paths.get("config.json")), StandardCharsets.UTF_8);
+            JSONObject json = new JSONObject(read);
             bootPaths = getPaths(json);
         } catch (JSONException | IOException e) {
             e.printStackTrace();

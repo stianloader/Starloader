@@ -10,6 +10,7 @@ import org.objectweb.asm.tree.ClassNode;
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 
 import de.geolykt.micromixin.BytecodeProvider;
+import de.geolykt.starloader.util.JavaInterop;
 
 class MixinBytecodeProvider implements BytecodeProvider<HierarchyClassLoader> {
 
@@ -23,7 +24,7 @@ class MixinBytecodeProvider implements BytecodeProvider<HierarchyClassLoader> {
             String path = name.replace('.', '/') + ".class";
             InputStream input = modularityAttachment.getResourceAsStreamWithChildren(path);
             if (input == null) {
-                throw new ClassNotFoundException("Classloader " + modularityAttachment.getName() + " does not provide " + path);
+                throw new ClassNotFoundException("Classloader " + JavaInterop.getClassloaderName(modularityAttachment) + " does not provide " + path);
             }
             cr = new ClassReader(input);
         } catch (IOException e) {
@@ -32,5 +33,4 @@ class MixinBytecodeProvider implements BytecodeProvider<HierarchyClassLoader> {
         cr.accept(node, 0);
         return node;
     }
-
 }

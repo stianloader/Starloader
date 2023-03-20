@@ -1,10 +1,10 @@
 package de.geolykt.starloader.launcher;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashSet;
 
 import org.json.JSONArray;
@@ -125,8 +125,9 @@ public final class LauncherConfiguration {
             sleadnAuthority = "https://localhost:26676/";
             return;
         }
-        try (FileInputStream fis = new FileInputStream(storageLoc)) {
-            String data = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
+        try {
+            byte[] readBytes = Files.readAllBytes(this.storageLoc.toPath());
+            String data = new String(readBytes, StandardCharsets.UTF_8);
             JSONObject jsonObj = new JSONObject(data);
             galimulatorFile = new File(jsonObj.getString("target-jar"));
             extensionSupport = jsonObj.getBoolean("do-extensions");
@@ -148,6 +149,8 @@ public final class LauncherConfiguration {
                 }
             }
             sleadnAuthority = jsonObj.optString("sleadn-authority", "https://localhost:26676/");
+        } catch (IOException e) {
+            throw new IOException("Cannot read launcher configuration");
         }
     }
 

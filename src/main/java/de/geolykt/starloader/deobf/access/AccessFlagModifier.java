@@ -33,7 +33,7 @@ public abstract class AccessFlagModifier {
             if (name.isPresent() || descriptor.isPresent()) {
                 throw new IllegalArgumentException("Neither name nor descriptor may be present for the CLASS type.");
             }
-        } else if (name.isEmpty() || descriptor.isEmpty()) {
+        } else if (!name.isPresent() || !descriptor.isPresent()) {
             throw new IllegalArgumentException("Both name and descriptor must be present for anything but the CLASS type.");
         }
         this.isCompileOnly = compileOnly;

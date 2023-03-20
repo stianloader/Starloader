@@ -4,8 +4,13 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+
+import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
+
+import de.geolykt.starloader.util.JavaInterop;
 
 public class MinestomExtensionClassLoader extends HierarchyClassLoader {
 
@@ -52,14 +57,17 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
                 throw new ClassNotFoundException("Could not find class " + name);
             }
             try (InputStream in = url.openStream()) {
-                byte[] bytes = in.readAllBytes();
+                if (in == null) {
+                    throw new AssertionError();
+                }
+                byte[] bytes = JavaInterop.readAllBytes(in);
                 bytes = root.transformBytes(bytes, name);
                 if (DUMP) {
-                    Path parent = Path.of("classes", path).getParent();
+                    Path parent = Paths.get("classes", path).getParent();
                     if (parent != null) {
                         Files.createDirectories(parent);
                     }
-                    Files.write(Path.of("classes", path), bytes);
+                    Files.write(Paths.get("classes", path), bytes);
                 }
                 URL jarURL = new URL(url.getPath().substring(0, url.getPath().lastIndexOf('!')));
                 Class<?> clazz = defineClass(name, bytes, 0, bytes.length, new CodeSource(jarURL, (CodeSigner[]) null));
@@ -85,7 +93,8 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
     }
 
     @Override
-    @Deprecated(forRemoval = false, since = "9")
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "9")
     protected void finalize() throws Throwable {
         super.finalize();
         System.err.println("Class loader " + getName() + " finalized.");
