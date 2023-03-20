@@ -2,8 +2,9 @@ package de.geolykt.starloader.util;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -82,7 +83,7 @@ public class LogFileAppender extends AppenderBase<ILoggingEvent> {
             File logsFolder = new File(Utils.getApplicationFolder(), "logs");
             logsFolder.mkdirs();
             File logfile = new File(logsFolder, formatter.format(LocalDateTime.now(Clock.systemDefaultZone())));
-            bw = new BufferedWriter(new FileWriter(logfile, StandardCharsets.UTF_8, false));
+            bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logfile), StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IllegalStateException("Unable to initalize appender.", e);
         }

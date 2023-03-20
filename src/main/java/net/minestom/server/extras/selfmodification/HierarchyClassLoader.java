@@ -2,7 +2,6 @@ package net.minestom.server.extras.selfmodification;
 
 import java.io.InputStream;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -11,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Classloader part of a hierarchy of classloader.
  */
-public abstract class HierarchyClassLoader extends URLClassLoader {
+public abstract class HierarchyClassLoader extends JavaInteropURLClassloader {
     protected final List<MinestomExtensionClassLoader> children = new LinkedList<>();
 
     public HierarchyClassLoader(String name, URL[] urls, ClassLoader parent) {

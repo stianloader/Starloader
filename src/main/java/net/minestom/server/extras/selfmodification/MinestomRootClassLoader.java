@@ -8,16 +8,16 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassReader;
@@ -30,6 +30,7 @@ import de.geolykt.starloader.deobf.access.AccessTransformInfo;
 import de.geolykt.starloader.deobf.access.AccessWidenerReader;
 import de.geolykt.starloader.transformers.ASMTransformer;
 import de.geolykt.starloader.transformers.RawClassData;
+import de.geolykt.starloader.util.JavaInterop;
 import de.geolykt.starloader.util.OrderedCollection;
 
 /**
@@ -52,35 +53,25 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * Classes that cannot be loaded/modified by this classloader.
      * Will go through parent class loader
      */
-    private final Set<String> protectedClasses = new HashSet<>() {
-        private static final long serialVersionUID = 1562431043013365680L;
+    private final Set<String> protectedClasses = ConcurrentHashMap.newKeySet();
+    public final Set<String> protectedPackages = ConcurrentHashMap.newKeySet();
 
-        {
-            add("de.geolykt.starloader.Starloader");
-            add("de.geolykt.starloader.UnlikelyEventException");
-            add("net.minestom.server.extras.selfmodification.MinestomOverwriteClassLoader");
-        }
-    };
-
-    public final Set<String> protectedPackages = new CopyOnWriteArraySet<>() {
-        private static final long serialVersionUID = -4833006816182792038L;
-
-        {
-            add("com.google");
-            add("org.objectweb.asm");
-            add("org.slf4j");
-            //add("org.apache");
-            add("org.spongepowered");
-            add("org.json");
-            add("net.minestom.server.extras.selfmodification"); // We do not want to load this package ourselves
-            add("de.geolykt.starloader.transformers");
-            add("de.geolykt.starloader.launcher");
-            add("de.geolykt.starloader.deobf.access");
-            add("de.geolykt.starloader.mod");
-            add("de.geolykt.starloader.util");
-            add("ch.qos.logback");
-        }
-    };
+    {
+        this.protectedClasses.add("de.geolykt.starloader.Starloader");
+        this.protectedClasses.add("de.geolykt.starloader.UnlikelyEventException");
+        this.protectedPackages.add("com.google");
+        this.protectedPackages.add("org.objectweb.asm");
+        this.protectedPackages.add("org.slf4j");
+        this.protectedPackages.add("org.spongepowered");
+        this.protectedPackages.add("org.json");
+        this.protectedPackages.add("net.minestom.server.extras.selfmodification"); // We do not want to load this package ourselves
+        this.protectedPackages.add("de.geolykt.starloader.transformers");
+        this.protectedPackages.add("de.geolykt.starloader.launcher");
+        this.protectedPackages.add("de.geolykt.starloader.deobf.access");
+        this.protectedPackages.add("de.geolykt.starloader.mod");
+        this.protectedPackages.add("de.geolykt.starloader.util");
+        this.protectedPackages.add("ch.qos.logback");
+    }
 
     /**
      * Used to let ASM find out common super types, without actually committing to loading them
@@ -136,7 +127,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
         try {
             // we do not load system classes by ourselves
-            Class<?> systemClass = ClassLoader.getPlatformClassLoader().loadClass(name);
+            Class<?> systemClass = JavaInterop.getPlattformClassloader().loadClass(name);
             LOGGER.trace("System class: {}", systemClass);
             return systemClass;
         } catch (ClassNotFoundException e) {
@@ -242,7 +233,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         if (input == null) {
             throw new ClassNotFoundException("Could not find resource " + path);
         }
-        byte[] originalBytes = input.readAllBytes();
+        byte[] originalBytes = JavaInterop.readAllBytes(input);
         input.close();
         byte[] transformedBytes;
         if (transform) {
@@ -252,11 +243,11 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         }
 
         if (DUMP) {
-            Path parent = Path.of("classes", path).getParent();
+            Path parent = Paths.get("classes", path).getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
             }
-            Files.write(Path.of("classes", path), transformedBytes);
+            Files.write(Paths.get("classes", path), transformedBytes);
         }
 
         return new RawClassData(url, transformedBytes);
@@ -271,7 +262,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         if (input == null) {
             throw new ClassNotFoundException("Could not find resource " + path);
         }
-        byte[] originalBytes = input.readAllBytes();
+        byte[] originalBytes = JavaInterop.readAllBytes(input);
         input.close();
         if (transform) {
             return transformBytes(originalBytes, name);

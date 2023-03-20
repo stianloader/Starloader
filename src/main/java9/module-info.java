@@ -12,7 +12,6 @@ open module de.geolykt.starloader.launcher {
     requires transitive org.objectweb.asm.util;
     requires transitive org.objectweb.asm;
     requires transitive org.spongepowered.mixin;
-    requires transitive com.google.gson;
     requires transitive org.jetbrains.annotations;
     requires transitive org.slf4j;
 
@@ -21,6 +20,7 @@ open module de.geolykt.starloader.launcher {
     requires java.base;
     requires ch.qos.logback.classic;
     requires ch.qos.logback.core;
+    requires com.google.gson;
 
     exports de.geolykt.starloader.mod;
     exports de.geolykt.starloader.transformers;

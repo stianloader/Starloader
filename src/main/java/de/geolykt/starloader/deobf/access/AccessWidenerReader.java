@@ -40,8 +40,9 @@ public class AccessWidenerReader implements AutoCloseable {
         for (String ln = br.readLine(); ln != null; ln = br.readLine()) {
             int indexOfCommentSymbol = ln.indexOf('#');
             String pureLine = indexOfCommentSymbol == -1 ? ln : ln.substring(0, indexOfCommentSymbol);
-            if (!pureLine.isBlank()) {
-                String[] blocks = pureLine.trim().split("\\s+");
+            String trimLine = pureLine.trim();
+            if (!trimLine.isEmpty()) {
+                String[] blocks = trimLine.split("\\s+");
                 if (blocks.length != 3) {
                     throw new IllegalHeaderException("Header must be in the format of \"accessWidener v2 intermediary\"");
                 }
@@ -67,10 +68,11 @@ public class AccessWidenerReader implements AutoCloseable {
         }
         int indexOfCommentSymbol = ln.indexOf('#');
         String pureLine = indexOfCommentSymbol == -1 ? ln : ln.substring(0, indexOfCommentSymbol);
-        if (pureLine.isBlank()) {
+        String trimLine = pureLine.trim();
+        if (trimLine.isEmpty()) {
             return true;
         }
-        String[] blocks = pureLine.trim().split("\\s+");
+        String[] blocks = trimLine.split("\\s+");
 
         boolean compileOnly = false;
         if (blocks.length != 0 && (compileOnly = blocks[0].equalsIgnoreCase("compileOnly"))) {

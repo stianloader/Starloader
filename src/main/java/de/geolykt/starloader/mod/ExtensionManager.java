@@ -420,14 +420,8 @@ public class ExtensionManager {
         // FIXME code modifiers persist (particularly asm transformers and mixins) even though the extension never started correctly
         ClassLoader cl = getClass().getClassLoader();
         if (!(cl instanceof MinestomRootClassLoader)) {
-            if (cl.getClass().getModule() != null) {
-                // The extension manager class is loaded by the parent classloader, so yeah...
-                cl = MinestomRootClassLoader.getInstance();
-            } else {
-                LOGGER.warn("Current class loader is not a MinestomRootClassLoader, but {}. This may render ASM Transformers useless.", cl);
-                LOGGER.warn("As you are not using JPMS we will abort right there.");
-                return;
-            }
+            // The extension manager class is excluded from the root classloader, so yeah...
+            cl = MinestomRootClassLoader.getInstance();
         }
         @SuppressWarnings("resource")
         MinestomRootClassLoader modifiableClassLoader = (MinestomRootClassLoader) cl;
@@ -543,16 +537,13 @@ public class ExtensionManager {
         LOGGER.info("Discover dynamic extension from jar {}", jarFile.getAbsolutePath());
         DiscoveredExtension discoveredExtension = discoverFromJar(jarFile);
         List<DiscoveredExtension> extensionsToLoad = Collections.singletonList(discoveredExtension);
-        if (extensionsToLoad == null) {
-            throw new InternalError();
-        }
         return loadExtensionList(extensionsToLoad);
     }
 
     private boolean loadExtensionList(@NotNull List<DiscoveredExtension> extensionsToLoad) {
         // ensure correct order of dependencies
         LOGGER.debug("Reorder extensions to ensure proper load order");
-        var temp = generateLoadOrder(extensionsToLoad);
+        List<DiscoveredExtension> temp = generateLoadOrder(extensionsToLoad);
         if (temp == null) {
             throw new AssertionError();
         }
