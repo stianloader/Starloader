@@ -7,11 +7,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashSet;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import de.geolykt.starloader.mod.ExtensionPrototypeList;
-import de.geolykt.starloader.mod.ExtensionPrototype;
+import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
+import de.geolykt.starloader.mod.NamedExtensionPrototype;
 
 /**
  * Object that stores the configuration of the launcher.
@@ -19,7 +20,7 @@ import de.geolykt.starloader.mod.ExtensionPrototype;
 public final class LauncherConfiguration {
 
     private File dataFolder;
-    private ExtensionPrototypeList extensions;
+    private DirectoryExtensionPrototypeList extensions;
     private File extensionsFolder;
     private JSONObject extensionsObject;
     private boolean extensionSupport;
@@ -46,20 +47,22 @@ public final class LauncherConfiguration {
         return this.dataFolder;
     }
 
-    public ExtensionPrototypeList getExtensionList() {
+    @NotNull
+    public DirectoryExtensionPrototypeList getExtensionList() {
+        DirectoryExtensionPrototypeList extensions = this.extensions;
         if (extensions != null && extensions.getFolder().equals(getExtensionsFolder())) {
             return extensions; // List does not need updating
         }
-        extensions = new ExtensionPrototypeList(extensionsFolder);
+        this.extensions = extensions = new DirectoryExtensionPrototypeList(extensionsFolder);
 
         if (enableExtensionsByDefault) {
-            extensions.getPrototypes().forEach(prototype -> prototype.enabled = true);
+            extensions.forEach(prototype -> prototype.enabled = true);
         } else if (extensionsObject != null) {
             JSONArray arr = extensionsObject.getJSONArray("enabled");
             for (Object enabledExtension : arr) {
                 String[] entry = enabledExtension.toString().split("@");
                 if (entry.length == 2) {
-                    for (ExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
+                    for (NamedExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
                         if (prototype.version.equals(entry[1])) {
                             prototype.enabled = true;
                         }
@@ -119,7 +122,7 @@ public final class LauncherConfiguration {
             extensionsFolder = new File(Utils.getApplicationFolder(), "extensions");
             extensionsFolder.mkdirs();
             patchesFolder = new File(Utils.getApplicationFolder(), "patches");
-            extensions = new ExtensionPrototypeList(extensionsFolder);
+            extensions = new DirectoryExtensionPrototypeList(extensionsFolder);
             extensionsObject = new JSONObject();
             extensionsObject.put("enabled", new JSONArray());
             sleadnAuthority = "https://localhost:26676/";
@@ -136,12 +139,12 @@ public final class LauncherConfiguration {
             patchesFolder = new File(jsonObj.getString("folder-patches"));
             dataFolder = new File(jsonObj.getString("folder-data"));
             extensionsObject = jsonObj.getJSONObject("extensions");
-            extensions = new ExtensionPrototypeList(extensionsFolder);
+            extensions = new DirectoryExtensionPrototypeList(extensionsFolder);
             JSONArray arr = extensionsObject.getJSONArray("enabled");
             for (Object enabledExtension : arr) {
                 String[] entry = enabledExtension.toString().split("@");
                 if (entry.length == 2) {
-                    for (ExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
+                    for (NamedExtensionPrototype prototype : extensions.getPrototypes(entry[0])) {
                         if (prototype.version.equals(entry[1])) {
                             prototype.enabled = true;
                         }
@@ -166,7 +169,7 @@ public final class LauncherConfiguration {
         JSONArray arr = extensionsObject.getJSONArray("enabled");
         HashSet<String> s = new HashSet<>();
         arr.forEach(e -> s.add(e.toString()));
-        for (ExtensionPrototype prototype : extensions.getPrototypes()) {
+        for (NamedExtensionPrototype prototype : extensions) {
             if (prototype.enabled) {
                 s.add(String.format("%s@%s", prototype.name, prototype.version));
             } else {
@@ -188,7 +191,7 @@ public final class LauncherConfiguration {
         this.dataFolder = dataFolder;
     }
 
-    public void setExtensionList(ExtensionPrototypeList extList) {
+    public void setExtensionList(DirectoryExtensionPrototypeList extList) {
         extensions = extList;
     }
 

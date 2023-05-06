@@ -1,12 +1,12 @@
 package de.geolykt.starloader.mod;
 
-import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +25,9 @@ public final class DiscoveredExtension {
     private String accessWidener;
     private ExternalDependencies externalDependencies;
     public transient List<URL> files = new LinkedList<>();
-    public transient LoadStatus loadStatus = LoadStatus.LOAD_SUCCESS;
-    private transient File originalJar;
+    @NotNull
+    private transient LoadStatus loadStatus = LoadStatus.LOAD_SUCCESS;
+    public transient URLClassLoader modifierLoader;
 
     @SuppressWarnings("null")
     @NotNull
@@ -82,13 +83,21 @@ public final class DiscoveredExtension {
         return externalDependencies;
     }
 
-    public void setOriginalJar(@Nullable File file) {
-        originalJar = file;
+    void setLoadStatus(@NotNull LoadStatus loadStatus) {
+        this.loadStatus = loadStatus;
+        if (loadStatus != LoadStatus.LOAD_SUCCESS && modifierLoader != null) {
+            try {
+                modifierLoader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            modifierLoader = null;
+        }
     }
 
-    @Nullable
-    public File getOriginalJar() {
-        return originalJar;
+    @NotNull
+    public LoadStatus getLoadStatus() {
+        return loadStatus;
     }
 
     public static void verifyIntegrity(@NotNull DiscoveredExtension extension) {

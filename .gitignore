@@ -11,3 +11,5 @@ galimulator-desktop.jar
 # Ignore maven build output directory
 target/
 
+# File produced by the maven-shade-plugin
+dependency-reduced-pom.xml

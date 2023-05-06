@@ -131,7 +131,7 @@ public class CLILauncher {
         }
 
         if (mainClass == null) {
-            LoggerFactory.getLogger(CLILauncher.class).error("Unable to find main class! Fall-backing to com.example.Main");
+            LoggerFactory.getLogger(CLILauncher.class).error("Unable to find main class! Falling back to com.example.Main");
             mainClass = "com.example.Main";
         }
 
