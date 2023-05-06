@@ -2,15 +2,20 @@ package de.geolykt.starloader;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.util.List;
 
+import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.launcher.LauncherConfiguration;
+import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
 import de.geolykt.starloader.mod.Extension;
 import de.geolykt.starloader.mod.ExtensionManager;
+import de.geolykt.starloader.mod.ExtensionPrototype;
 
 public final class Starloader {
 
@@ -19,21 +24,22 @@ public final class Starloader {
     private static Starloader instance;
 
     private final ExtensionManager extensions;
-    private final LauncherConfiguration config;
+    @NotNull
+    private final List<@NotNull ? extends ExtensionPrototype> extensionSource;
 
     private Starloader(LauncherConfiguration config) {
-        this.config = config;
+        this.extensionSource = config.getExtensionList();
         this.extensions = new ExtensionManager();
     }
 
-    private Starloader(LauncherConfiguration config, ExtensionManager extensions) {
-        this.config = config;
+    private Starloader(@NotNull List<@NotNull ? extends ExtensionPrototype> extensionSource, ExtensionManager extensions) {
+        this.extensionSource = extensionSource;
         this.extensions = extensions;
     }
 
     private void start() {
-        extensions.loadExtensions(config.getExtensionList());
-        LOGGER.info("From {} prototypes, {} extensions were loaded.", config.getExtensionList().getPrototypes().size(), extensions.getExtensions().size());
+        extensions.loadExtensions(extensionSource);
+        LOGGER.info("From {} prototypes, {} extensions were loaded.", extensionSource.size(), extensions.getExtensions().size());
         long start = System.currentTimeMillis();
         LOGGER.info("Initializing extension: preinit");
         extensions.getExtensions().forEach(Extension::preInitialize);
@@ -50,6 +56,17 @@ public final class Starloader {
         }, "ExtensionsShutdownThread"));
     }
 
+    @Internal
+    public static void start(@NotNull List<@NotNull ExtensionPrototype> extensionSource) {
+        if (instance != null) {
+            throw new IllegalStateException("Starloader initialized twice!");
+        }
+        LOGGER.info("Java version: {}", System.getProperty("java.version"));
+        instance = new Starloader(extensionSource, new ExtensionManager());
+        instance.start();
+    }
+
+    @Internal
     public static void start(LauncherConfiguration config) {
         if (instance != null) {
             throw new IllegalStateException("Starloader initialized twice!");
@@ -64,7 +81,11 @@ public final class Starloader {
     }
 
     public static File getExtensionDir() {
-        return instance.config.getExtensionsFolder();
+        if (instance.extensionSource instanceof DirectoryExtensionPrototypeList) {
+            return ((DirectoryExtensionPrototypeList) instance.extensionSource).getFolder();
+        } else {
+            return new File("extensions");
+        }
     }
 
     static {
@@ -80,9 +101,9 @@ public final class Starloader {
                     break label001; // Everything is happening as intended. The root classloader is likely delegating it's calls to some other classloader as the other classloader has the class loaded.
                 }
                 Field instanceField = slClass.getDeclaredField("instance");
-                Field cfgField = slClass.getDeclaredField("config");
+                Field srcField = slClass.getDeclaredField("extensionSource");
                 Field extField = slClass.getDeclaredField("extensions");
-                cfgField.setAccessible(true);
+                srcField.setAccessible(true);
                 extField.setAccessible(true);
                 instanceField.setAccessible(true);
                 Object instance = instanceField.get(null);
@@ -90,9 +111,11 @@ public final class Starloader {
                     throw new IllegalStateException("Unable to find instance of actual the Starloader class (Did it start yet?);"
                             + " This Class instance was loaded by " + Starloader.class.getClassLoader() + ", where as it should've been " + slClass.getClassLoader());
                 }
-                LauncherConfiguration config = (LauncherConfiguration) cfgField.get(instance);
+                @SuppressWarnings({ "unchecked", "null" })
+                List<@NotNull ExtensionPrototype> extensionSource = (List<ExtensionPrototype>) srcField.get(instance);
                 ExtensionManager extensions = (ExtensionManager) extField.get(instance);
-                Starloader.instance = new Starloader(config, extensions);
+                assert extensionSource != null;
+                Starloader.instance = new Starloader(extensionSource, extensions);
             } catch (Exception e) {
                 throw new IllegalStateException("This class should be loaded by the root classloader!", e);
             }

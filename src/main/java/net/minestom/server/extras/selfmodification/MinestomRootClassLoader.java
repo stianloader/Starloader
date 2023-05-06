@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -333,7 +334,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     }
 
     @NotNull
-    private URLClassLoader newChild(@NotNull URL... urls) {
+    @Internal
+    public URLClassLoader newChild(@NotNull URL... urls) {
         URLClassLoader instance = URLClassLoader.newInstance(urls, this);
         if (instance == null) {
             throw new IllegalStateException();
@@ -341,14 +343,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return instance;
     }
 
-    public void loadModifier(URL[] originFiles, String codeModifierClass) {
+    @Internal
+    public void loadModifier(ClassLoader modifierLoader, String codeModifierClass) {
         try {
-            @SuppressWarnings({ "resource", "null" })
-            URLClassLoader loader = newChild(originFiles);
-            Class<?> modifierClass = loader.loadClass(codeModifierClass);
+            Class<?> modifierClass = modifierLoader.loadClass(codeModifierClass);
             if (ASMTransformer.class.isAssignableFrom(modifierClass)) {
-                ASMTransformer modifier = (ASMTransformer) modifierClass.getDeclaredConstructor().newInstance();
-                addTransformer(modifier);
+                addTransformer((ASMTransformer) modifierClass.getDeclaredConstructor().newInstance());
             }
         } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
             e.printStackTrace();

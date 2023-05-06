@@ -7,8 +7,6 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.geolykt.starloader.Starloader;
-
 public abstract class Extension {
     private final ExtensionDescription description;
     @NotNull
@@ -16,9 +14,10 @@ public abstract class Extension {
 
     @SuppressWarnings("null")
     protected Extension() {
-        if (Starloader.getExtensionManager().currentlyLoadedExt != null) {
-            this.description = Starloader.getExtensionManager().currentlyLoadedExt;
-            Starloader.getExtensionManager().currentlyLoadedExt = null;
+        ExtensionDescription desc = ExtensionManager.CURRENTLY_LOADED_EXTENSION.get();
+        if (desc != null) {
+            this.description = desc;
+            ExtensionManager.CURRENTLY_LOADED_EXTENSION.set(null);
         } else {
             throw new IllegalStateException("Unable to obtain extension description from extension manager");
         }
