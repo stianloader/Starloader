@@ -24,6 +24,7 @@ import de.geolykt.micromixin.supertypes.ReflectionClassWrapperProvider;
 import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
 import de.geolykt.starloader.mod.ExtensionPrototype;
 import de.geolykt.starloader.mod.NamedExtensionPrototype;
+import de.geolykt.starloader.transformers.StarplaneAnnotationsInlineTransformer;
 
 /**
  * An entrypoint that is meant for debugging SLL mods within an IDE.
@@ -36,6 +37,7 @@ import de.geolykt.starloader.mod.NamedExtensionPrototype;
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modURLs</b>: A JSON-array of JSON-arrays that specify the URLs used for each mod. That is each array is it's own mod "unit" and may point to a directory or a JAR-file. Mods from the specified mod directory will also be added, should the mod directory be defined via a system property.</li>
  *  <!--<li><b>de.geolykt.starloader.launcher.IDELauncher.negativeAW</b>: The path to the negative access widener which should be used. Negative access wideners are used to reverse compile-time access and are applied before any other transformer or accesswidener.</li>-->
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modDirectory</b>: Fully qualified path to the mod directory to use.</li>
+ *  <li><b>de.geolykt.starloader.launcher.IDELauncher.inlineStarplaneAnnotations</b>: Whether the {@link StarplaneAnnotationsInlineTransformer} should be used.</li>
  * </ul>
  *
  * @since 4.0.0-20230506
@@ -70,6 +72,7 @@ public class IDELauncher {
         if ((modURLs == null && modDirectory == null) || bootURLs == null) {
             throw new IllegalStateException("The modURLs and/or the bootURLs system property is not set.");
         }
+        boolean inlineSPAnnotations = Boolean.getBoolean("de.geolykt.starloader.launcher.IDELauncher.inlineStarplaneAnnotations");
 
         List<URL> bootPaths = new ArrayList<>();
         List<List<URL>> mods = new ArrayList<>();
@@ -113,6 +116,11 @@ public class IDELauncher {
 
         MinestomRootClassLoader cl = MinestomRootClassLoader.getInstance();
         bootPaths.forEach(cl::addURL);
+
+        if (inlineSPAnnotations) {
+            LoggerFactory.getLogger(IDELauncher.class).info("Making use of the StarplaneAnnotationsInlineTransformer.");
+            cl.addTransformer(new StarplaneAnnotationsInlineTransformer());
+        }
 
         // Start mixins & load extensions
         BytecodeProvider<HierarchyClassLoader> provider = new MixinBytecodeProvider();
