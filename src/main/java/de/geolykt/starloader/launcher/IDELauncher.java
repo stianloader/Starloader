@@ -4,6 +4,8 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +21,9 @@ import de.geolykt.micromixin.BytecodeProvider;
 import de.geolykt.micromixin.MixinTransformer;
 import de.geolykt.micromixin.supertypes.ClassWrapperPool;
 import de.geolykt.micromixin.supertypes.ReflectionClassWrapperProvider;
+import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
 import de.geolykt.starloader.mod.ExtensionPrototype;
+import de.geolykt.starloader.mod.NamedExtensionPrototype;
 
 /**
  * An entrypoint that is meant for debugging SLL mods within an IDE.
@@ -29,8 +33,9 @@ import de.geolykt.starloader.mod.ExtensionPrototype;
  * <ul>
  *  <li><b>de.geolykt.starloader.launcher.CLILauncher.mainClass</b>: The main class to run after the launcher initialized fully (for galimulator it is com.example.Main).</li>
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.bootURLs</b>: A JSON-array of URLs to add to the root classloader.</li>
- *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modURLs</b>: A JSON-array of JSON-arrays that specify the URLs used for each mod. That is each array is it's own mod "unit" and may point to a directory or a JAR-file.</li>
+ *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modURLs</b>: A JSON-array of JSON-arrays that specify the URLs used for each mod. That is each array is it's own mod "unit" and may point to a directory or a JAR-file. Mods from the specified mod directory will also be added, should the mod directory be defined via a system property.</li>
  *  <!--<li><b>de.geolykt.starloader.launcher.IDELauncher.negativeAW</b>: The path to the negative access widener which should be used. Negative access wideners are used to reverse compile-time access and are applied before any other transformer or accesswidener.</li>-->
+ *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modDirectory</b>: Fully qualified path to the mod directory to use.</li>
  * </ul>
  *
  * @since 4.0.0-20230506
@@ -47,15 +52,22 @@ public class IDELauncher {
         if (negativeAW == null) {
             LoggerFactory.getLogger(IDELauncher.class).warn("Did not specify a negative access widener.");
         }
+        String modDirectory = System.getProperty("de.geolykt.starloader.launcher.IDELauncher.modDirectory");
         String modURLs = System.getProperty("de.geolykt.starloader.launcher.IDELauncher.modURLs");
         if (modURLs == null) {
-            LoggerFactory.getLogger(IDELauncher.class).error("Unable to find the URLs of mods. Cannot proceed!");
+            if (modDirectory == null) {
+                LoggerFactory.getLogger(IDELauncher.class).error("Unable to find the URLs of mods. Cannot proceed!");
+            } else {
+                LoggerFactory.getLogger(IDELauncher.class).warn("Unable to find the URLs of mods.");
+            }
+        } else if (modDirectory == null) {
+            LoggerFactory.getLogger(IDELauncher.class).warn("Extension directory undefined.");
         }
         String bootURLs = System.getProperty("de.geolykt.starloader.launcher.IDELauncher.bootURLs");
         if (bootURLs == null) {
             LoggerFactory.getLogger(IDELauncher.class).error("Unable to find the URLs that need to be added to the root classloader. Cannot proceed!");
         }
-        if (modURLs == null || bootURLs == null) {
+        if ((modURLs == null && modDirectory == null) || bootURLs == null) {
             throw new IllegalStateException("The modURLs and/or the bootURLs system property is not set.");
         }
 
@@ -70,7 +82,7 @@ public class IDELauncher {
                 try {
                     bootPaths.add(new URL((String) o));
                 } catch (MalformedURLException e) {
-                    LoggerFactory.getLogger(IDELauncher.class).error("Invalid URL {}", o);
+                    LoggerFactory.getLogger(IDELauncher.class).error("Invalid URL " + o, e);
                     throw new IllegalStateException("Encountered invalid URL in boot URL property: " + o, e);
                 }
             }
@@ -81,7 +93,7 @@ public class IDELauncher {
         for (Object o0 : new JSONArray(modURLs)) {
             if (!(o0 instanceof JSONArray)) {
                 LoggerFactory.getLogger(IDELauncher.class).error("Invalid mod {}", o0);
-                throw new IllegalStateException("Encountered invalid object in mods URL property: " + o0);
+                throw new IllegalStateException("Encountered invalid object in mods URL property (it should be an array): " + o0);
             }
             List<URL> mod = new ArrayList<>();
             for (Object o : (JSONArray) o0) {
@@ -111,19 +123,29 @@ public class IDELauncher {
         // ensure extensions are loaded when starting the server
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
-            Method init = slClass.getDeclaredMethod("start", List.class);
+            Method init = slClass.getDeclaredMethod("start", List.class, Path.class);
 
             List<ExtensionPrototype> prototypes = new ArrayList<>();
             for (List<URL> mod : mods) {
                 prototypes.add(new ExtensionPrototype(mod, true));
             }
+            Path modDirectoryPath = Paths.get("extensions");
+            if (modDirectory != null) {
+                modDirectoryPath = Paths.get(modDirectory);
+                prototypes.addAll(new DirectoryExtensionPrototypeList(modDirectoryPath.toFile()));
+            }
 
             LoggerFactory.getLogger(IDELauncher.class).info("Using prototypes from following sources:");
             prototypes.forEach((prototype) -> {
-                LoggerFactory.getLogger(IDELauncher.class).info("- {}", Arrays.asList(prototype.originURLs));
+                if (prototype instanceof NamedExtensionPrototype) {
+                    NamedExtensionPrototype namedPrototype = (NamedExtensionPrototype) prototype;
+                    LoggerFactory.getLogger(IDELauncher.class).info("- {} v{} (loaded from {})", namedPrototype.name, namedPrototype.version, namedPrototype.originURLs);
+                } else {
+                    LoggerFactory.getLogger(IDELauncher.class).info("- {}", prototype.originURLs);
+                }
             });
 
-            init.invoke(null, prototypes);
+            init.invoke(null, prototypes, modDirectoryPath.toAbsolutePath());
         } catch (Exception e) {
             e.printStackTrace();
             return;

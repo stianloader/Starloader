@@ -17,12 +17,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.ApiStatus.Internal;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -422,30 +420,19 @@ public class ExtensionManager {
                     loadedModifier = true;
                     modifiableClassLoader.loadModifier(extension.modifierLoader, codeModifierClass);
                 }
-                if (!loadedModifier) {
-                    // Let's free some memory if we can
-                    extension.modifierLoader.close();
-                    extension.modifierLoader = null;
-                }
                 if (!extension.getMixinConfig().isEmpty()) {
                     final String mixinConfigFile = extension.getMixinConfig();
                     boolean added = false;
                     for (ASMTransformer transformer : modifiableClassLoader.getTransformers()) {
                         if (transformer instanceof ASMMixinTransformer) {
-                            JSONObject mixinConfigJson = null;
-                            for (URL url : extension.files) {
-                                try (ZipInputStream zipIn = new ZipInputStream(url.openStream())) {
-                                    for (ZipEntry entry = zipIn.getNextEntry(); entry != null; entry = zipIn.getNextEntry()) {
-                                        if (entry.getName().equals(mixinConfigFile)) {
-                                            mixinConfigJson = new JSONObject(new String(JavaInterop.readAllBytes(zipIn), StandardCharsets.UTF_8));
-                                        }
-                                    }
-                                } catch (IOException e) {
-                                    LOGGER.warn("Unable to open jar \"" + url + "\".", e);
+                            JSONObject mixinConfigJson;
+                            try (InputStream is = extension.modifierLoader.getResourceAsStream(mixinConfigFile)) {
+                                if (is == null) {
+                                    throw new IOException("Classloader.getResourceAsStream(mixinConfigFile) yielded null.");
                                 }
-                            }
-                            if (mixinConfigJson == null) {
-                                throw new IOException("Cannot find mixin config " + mixinConfigFile + " in extension " + extension.getName());
+                                mixinConfigJson = new JSONObject(new String(JavaInterop.readAllBytes(is), StandardCharsets.UTF_8));
+                            } catch (IOException e) {
+                                throw new IOException("Cannot find mixin config " + mixinConfigFile + " in extension " + extension.getName(), e);
                             }
                             MixinConfig mixinConfig = MixinConfig.fromJson(mixinConfigJson);
                             // TODO Use Classloader futures in order to sandbox different mixins
@@ -458,6 +445,11 @@ public class ExtensionManager {
                     if (!added) {
                         LOGGER.error("Unable to add mixin {} in extension {} as there is no classloader!");
                     }
+                }
+                if (!loadedModifier) {
+                    // Let's free some memory if we can
+                    extension.modifierLoader.close();
+                    extension.modifierLoader = null;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
