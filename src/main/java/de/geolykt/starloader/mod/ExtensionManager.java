@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixins;
@@ -415,15 +416,15 @@ public class ExtensionManager {
                     loadedModifier = true;
                     modifiableClassLoader.loadModifier(extension.modifierLoader, codeModifierClass);
                 }
-                if (!loadedModifier) {
-                    // Let's free some memory if we can
-                    extension.modifierLoader.close();
-                    extension.modifierLoader = null;
-                }
                 if (!extension.getMixinConfig().isEmpty()) {
                     final String mixinConfigFile = extension.getMixinConfig();
                     Mixins.addConfiguration(mixinConfigFile);
                     LOGGER.info("Found mixin in extension {}: {}", extension.getName(), mixinConfigFile);
+                }
+                if (!loadedModifier) {
+                    // Let's free some memory if we can
+                    extension.modifierLoader.close();
+                    extension.modifierLoader = null;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
