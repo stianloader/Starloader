@@ -28,12 +28,21 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
 
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
-        return root.loadClass(name);
+        return this.loadClass(name, false);
     }
 
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        return root.loadClass(name, resolve);
+        try {
+            return this.loadClassAsChild(name, resolve);
+        } catch (ClassNotFoundException cnfe) {
+            try {
+                return root.loadClass(name, resolve);
+            } catch (ClassNotFoundException e) {
+                e.addSuppressed(cnfe);
+                throw e;
+            }
+        }
     }
 
     /**
@@ -52,7 +61,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
         try {
             // not in children, attempt load in this classloader
             String path = name.replace(".", "/") + ".class";
-            URL url = getResource(path);
+            URL url = this.findResource(path);
             if (url == null) {
                 throw new ClassNotFoundException("Could not find class " + name);
             }
@@ -69,8 +78,12 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
                     }
                     Files.write(Paths.get("classes", path), bytes);
                 }
-                URL jarURL = new URL(url.getPath().substring(0, url.getPath().lastIndexOf('!')));
-                Class<?> clazz = defineClass(name, bytes, 0, bytes.length, new CodeSource(jarURL, (CodeSigner[]) null));
+                String urlPath = url.getPath();
+                int seperatorIndex = urlPath.lastIndexOf('!');
+                if (seperatorIndex != -1) {
+                    url = new URL(urlPath.substring(0, seperatorIndex));
+                }
+                Class<?> clazz = defineClass(name, bytes, 0, bytes.length, new CodeSource(url, (CodeSigner[]) null));
                 if (resolve) {
                     resolveClass(clazz);
                 }
@@ -94,7 +107,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
 
     @Override
     @Deprecated
-    @ScheduledForRemoval(inVersion = "9")
+    @ScheduledForRemoval
     protected void finalize() throws Throwable {
         super.finalize();
         System.err.println("Class loader " + getName() + " finalized.");

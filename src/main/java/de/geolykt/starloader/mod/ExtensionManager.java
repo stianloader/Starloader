@@ -141,9 +141,12 @@ public class ExtensionManager {
 
         Class<?> jarClass;
         try {
-            jarClass = Class.forName(mainClass, true, loader);
+            jarClass = loader.loadClassAsChild(mainClass.replace('/', '.'), true);
+            if (jarClass.getClassLoader() != loader) {
+                throw new ClassNotFoundException("Class " + jarClass.getName() + " is loaded by classloader \"" + JavaInterop.getClassloaderName(jarClass.getClassLoader()) + "\", but expected it to be loaded by \"" + JavaInterop.getClassloaderName(loader) + "\"");
+            }
         } catch (ClassNotFoundException e) {
-            LOGGER.error("Could not find main class '{}' in extension '{}'.", mainClass, extensionName, e);
+            LOGGER.error("Could not find main class '{}' in extension '{}' with associated URLs '{}'.", mainClass, extensionName, extensionDescription.getOrigin().files, e);
             return null;
         }
 
@@ -151,7 +154,7 @@ public class ExtensionManager {
         try {
             extensionClass = jarClass.asSubclass(Extension.class);
         } catch (ClassCastException e) {
-            LOGGER.error("Main class '{}' in '{}' does not extend the 'Extension' superclass.", mainClass, extensionName, e);
+            LOGGER.error("Main class '{}' in '{}' does not extend the 'Extension' superclass. Instead it directly extends '{}' from classloader '{}'", mainClass, extensionName, jarClass.getSuperclass().getName(), JavaInterop.getClassloaderName(jarClass.getSuperclass().getClassLoader()), e);
             return null;
         }
 
