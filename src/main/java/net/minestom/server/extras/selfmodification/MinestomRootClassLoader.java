@@ -179,8 +179,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             if (rawClass.getSource() == null) {
                 defined = defineClass(name, bytes, 0, bytes.length);
             } else {
-                String path = rawClass.getSource().getPath();
-                URL jarURL = new URL(path.substring(0, path.lastIndexOf('!')));
+                URL jarURL = rawClass.getSource();
+                String path = jarURL.getPath();
+                int seperatorIndex = path.lastIndexOf('!');
+                if (seperatorIndex != -1) {
+                    jarURL = new URL(path.substring(0, seperatorIndex));
+                }
                 defined = defineClass(name, bytes, 0, bytes.length, new CodeSource(jarURL, (CodeSigner[]) null));
             }
 
