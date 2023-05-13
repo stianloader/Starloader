@@ -129,9 +129,13 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
         try {
             // we do not load system classes by ourselves
-            Class<?> systemClass = JavaInterop.getPlattformClassloader().loadClass(name);
-            LOGGER.trace("System class: {}", systemClass);
-            return systemClass;
+            ClassLoader loader = JavaInterop.getPlattformClassloader();
+            if (loader != null) {
+                Class<?> systemClass = loader.loadClass(name);
+                LOGGER.trace("System class: {}", systemClass);
+                return systemClass;
+            }
+            throw new ClassNotFoundException("Java 9 " + (JavaInterop.isJava9() ? "capable " : "incapable") + " JavaInterop implementation refused to return the plattform classloader.");
         } catch (ClassNotFoundException e) {
             try {
                 if (isProtected(name)) {

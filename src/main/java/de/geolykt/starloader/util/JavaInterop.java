@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 
@@ -32,7 +33,8 @@ public final class JavaInterop {
         return baos.toByteArray();
     }
 
+    @Nullable
     public static final ClassLoader getPlattformClassloader() {
-        return ClassLoader.getSystemClassLoader();
+        return null;
     }
 }

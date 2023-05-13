@@ -18,6 +18,7 @@ import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
 import de.geolykt.starloader.mod.Extension;
 import de.geolykt.starloader.mod.ExtensionManager;
 import de.geolykt.starloader.mod.ExtensionPrototype;
+import de.geolykt.starloader.util.JavaInterop;
 
 public final class Starloader {
 
@@ -67,7 +68,7 @@ public final class Starloader {
         if (instance != null) {
             throw new IllegalStateException("Starloader initialized twice!");
         }
-        LOGGER.info("Java version: {}", System.getProperty("java.version"));
+        LOGGER.info("Java version: {}. JavaInterop J9: {}", System.getProperty("java.version"), JavaInterop.isJava9());
         instance = new Starloader(extensionSource, new ExtensionManager(), modDir);
         instance.start();
     }
@@ -77,7 +78,7 @@ public final class Starloader {
         if (instance != null) {
             throw new IllegalStateException("Starloader initialized twice!");
         }
-        LOGGER.info("Java version: {}", System.getProperty("java.version"));
+        LOGGER.info("Java version: {}. JavaInterop J9: {}", System.getProperty("java.version"), JavaInterop.isJava9());
         instance = new Starloader(config);
         instance.start();
     }
