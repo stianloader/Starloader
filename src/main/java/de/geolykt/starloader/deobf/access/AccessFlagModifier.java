@@ -3,10 +3,15 @@ package de.geolykt.starloader.deobf.access;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.objectweb.asm.Opcodes;
 
+@Deprecated
+@ScheduledForRemoval(inVersion = "5.0.0")
 public abstract class AccessFlagModifier {
 
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public static enum Type {
         CLASS,
         METHOD,
@@ -42,6 +47,8 @@ public abstract class AccessFlagModifier {
     public abstract int apply(int oldAccessFlag);
     public abstract String toAccessWidenerString();
 
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public static class AccessibleModifier extends AccessFlagModifier {
 
         public AccessibleModifier(Type type, String clazz, Optional<String> name, Optional<String> descriptor, boolean compileOnly) {
@@ -63,6 +70,8 @@ public abstract class AccessFlagModifier {
         }
     }
 
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public static class ExtendableModifier extends AccessFlagModifier {
 
         public ExtendableModifier(Type type, String clazz, Optional<String> name, Optional<String> descriptor, boolean compileOnly) {
@@ -89,6 +98,8 @@ public abstract class AccessFlagModifier {
         }
     }
 
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public static class RemoveFlagModifier extends AccessFlagModifier {
 
         private final int flag;

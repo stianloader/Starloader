@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,10 @@ public final class DiscoveredExtension {
     private String[] authors;
     private String[] codeModifiers;
     private String[] dependencies;
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     private String accessWidener;
+    private String reversibleAccessSetter;
     private ExternalDependencies externalDependencies;
     public transient List<URL> files = new LinkedList<>();
     @NotNull
@@ -67,8 +71,23 @@ public final class DiscoveredExtension {
 
     @SuppressWarnings("null")
     @NotNull
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public String getAccessWidener() {
         return accessWidener;
+    }
+
+    /**
+     * Obtains the reversible access setter file required by this extension.
+     * Returns an empty string if not set.
+     *
+     * @return The path to the reversible access setter file relative to the {@link #files} of this extension.
+     * @since 4.0.0
+     */
+    @SuppressWarnings("null")
+    @NotNull
+    public String getReversibleAccessSetter() {
+        return this.reversibleAccessSetter;
     }
 
     @SuppressWarnings("null")
@@ -144,6 +163,11 @@ public final class DiscoveredExtension {
         }
         if (extension.accessWidener == null) {
             extension.accessWidener = "";
+        } else {
+            LOGGER.warn("Extension '{}' specified an access widener, however access wideners are scheduled for removal and will not work in SLL 5.0. Use reversible access setters (via the 'reversibleAccessSetter' field) instead.", extension.name);
+        }
+        if (extension.reversibleAccessSetter == null) {
+            extension.reversibleAccessSetter = "";
         }
         if (extension.authors == null) {
             extension.authors = new String[0];

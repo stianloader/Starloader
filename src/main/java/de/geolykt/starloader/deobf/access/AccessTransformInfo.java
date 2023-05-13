@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InnerClassNode;
@@ -15,6 +16,8 @@ import org.objectweb.asm.tree.MethodNode;
 
 import de.geolykt.starloader.deobf.access.AccessFlagModifier.Type;
 
+@Deprecated
+@ScheduledForRemoval(inVersion = "5.0.0")
 public final class AccessTransformInfo {
 
     final List<AccessFlagModifier> modifiers = new ArrayList<>();

@@ -22,18 +22,17 @@ Feel free to take a look at it at #galimulator-modding @ irc.esper.net
 ## Building
 
 <b>Due to how the the people over at Sponge compile their module-infos,
-  building SLL requires Java 16 or higher. Running SLL works with Java 11
+  building SLL requires Java 16 or higher. Running SLL works with Java 1.8
   and beyond regardless.</b>
 
-The project can be built via gradle and a JDK 16 or higher.
-This can be easily done via `./gradlew shadowJar` on most systems.
-The built jar is located in the build/libs folder, and should have a "-all"
-suffix, if that isn't the case you might have not built that shadowjar, which
-will not run as it is missing vital dependencies.
+The project can be built via maven and a JDK 11 or higher (JDK 17 is recommended).
+This can be easily done via `mvn install` on most systems.
+The built jar is located in the target folder. (Note: you probably
+don't want the jar prefixed with "original-")
 
 ## Running
 
-On MacOS it has to be run manually via a Java 11 JRE (17 recommended) with a command such
+On MacOS it has to be run manually via a Java 1.8 JRE (17 recommended) with a command such
 as `java -cp starloader-launcher-XYZ-all.jar de.geolykt.starloader.launcher.CLILauncher`
 
 Place the built `starloader-launcher-XYZ-all.jar` in the galimulator folder.
@@ -45,7 +44,7 @@ Then edit the `config.json` file in the galimulator folder to be
     "jar/galimulator-desktop.jar",
     "starloader-launcher-XYZ-all.jar"
   ],
-  "mainClass": "starloader.launcher.J8Boot",
+  "mainClass": "de.geolykt.starloader.launcher.CLILauncher",
   "vmArgs": [
     "-Dsun.java2d.dpiaware=true"
   ]
@@ -63,6 +62,6 @@ Mods need to be added in a "mods" folder located in the galimulator directory.
 All code is licensed under the Apache 2.0 license, allowing you to redistribute
 the source.
 
-Additionally a few portions of our code (i. e. most of the selfmodification and extension system)
+Additionally a few portions of our code (i. e. large parts of the selfmodification and extension system)
 was largely written by Minestom contributors, who have contributed their code under
 the Apache 2.0 license

@@ -1,6 +1,9 @@
 package de.geolykt.starloader.transformers;
 
 import org.objectweb.asm.tree.ClassNode;
+
+import de.geolykt.starloader.launcher.ASMMixinTransformer;
+
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.Type;
 
@@ -43,6 +46,18 @@ public abstract class ASMTransformer implements Comparable<ASMTransformer> {
      * Obtains the priority of this transformer.
      * The priority is used to note when a transformer should be applied in relation to other transformers.
      * Should two transformers have the same priority, the order will be arbitrary.
+     *
+     * <p>Transformers with a lower numeric priority value are run first. That is, the higher the
+     * priority of a transformer, the more "final" it's descision is.
+     *
+     * <p>Important transform priorities are:
+     * <ul>
+     *  <li>-10_010: {@link ReversibleAccessSetterTransformer}</li>
+     *  <li>-10_010: {@link StarplaneAnnotationsInlineTransformer}</li>
+     *  <li>-10_000: {@link ASMMixinTransformer}</li>
+     *  <li>-9_900: Most SLAPI transformers</li>
+     *  <li>100: SLAPI GL transformer (intercepts GL11#glScissor calls)<li>
+     * </ul>
      *
      * @return The priority of the transformer
      * @since 4.0.0
