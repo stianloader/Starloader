@@ -35,12 +35,11 @@ import de.geolykt.starloader.transformers.StarplaneAnnotationsInlineTransformer;
  *  <li><b>de.geolykt.starloader.launcher.CLILauncher.mainClass</b>: The main class to run after the launcher initialized fully (for galimulator it is com.example.Main).</li>
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.bootURLs</b>: A JSON-array of URLs to add to the root classloader.</li>
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modURLs</b>: A JSON-array of JSON-arrays that specify the URLs used for each mod. That is each array is it's own mod "unit" and may point to a directory or a JAR-file. Mods from the specified mod directory will also be added, should the mod directory be defined via a system property.</li>
- *  <!--<li><b>de.geolykt.starloader.launcher.IDELauncher.negativeAW</b>: The path to the negative access widener which should be used. Negative access wideners are used to reverse compile-time access and are applied before any other transformer or accesswidener.</li>-->
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modDirectory</b>: Fully qualified path to the mod directory to use.</li>
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.inlineStarplaneAnnotations</b>: Whether the {@link StarplaneAnnotationsInlineTransformer} should be used.</li>
  * </ul>
  *
- * @since 4.0.0-20230506
+ * @since 4.0.0
  */
 public class IDELauncher {
 
@@ -49,10 +48,6 @@ public class IDELauncher {
         if (mainClass == null) {
             LoggerFactory.getLogger(IDELauncher.class).warn("Main class not set! Falling back to com.example.Main");
             mainClass = "com.example.Main";
-        }
-        String negativeAW = System.getProperty("de.geolykt.starloader.launcher.IDELauncher.negativeAW");
-        if (negativeAW == null) {
-            LoggerFactory.getLogger(IDELauncher.class).warn("Did not specify a negative access widener.");
         }
         String modDirectory = System.getProperty("de.geolykt.starloader.launcher.IDELauncher.modDirectory");
         String modURLs = System.getProperty("de.geolykt.starloader.launcher.IDELauncher.modURLs");

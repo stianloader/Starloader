@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.geolykt.starloader</groupId>
     <artifactId>launcher</artifactId>
-    <version>4.0.0-20230510</version>
+    <version>4.0.0-20230513</version>
     <name>Starloader Launcher</name>
 
     <properties>
@@ -112,6 +112,13 @@
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
+
+        <dependency>
+            <groupId>de.geolykt.starloader</groupId>
+            <artifactId>reversible-access-setter</artifactId>
+            <version>1.0.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -142,7 +149,7 @@
                             <Built-By>${env.USERNAME}</Built-By>
                         </manifestEntries>
                         <addMavenDescriptor>true</addMavenDescriptor>
-                        <compress>true</compress>
+                        <compress>false</compress>
                     </archive>
                 </configuration>
             </plugin>
@@ -150,7 +157,7 @@
                 <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-compiler-plugin -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.11.0</version>
                 <configuration>
                     <release>8</release>
                 </configuration>
@@ -194,11 +201,17 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                    </transformers>
                     <filters>
                         <filter>
                             <artifact>*:*</artifact>
                             <excludes>
                                 <exclude>**/module-info.class</exclude>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
                                 <exclude>META-INF/MANIFEST.MF</exclude>
                             </excludes>
                         </filter>

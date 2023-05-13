@@ -1,5 +1,6 @@
 package de.geolykt.starloader.mod;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,6 +36,7 @@ import de.geolykt.starloader.launcher.ASMMixinTransformer;
 import de.geolykt.starloader.mod.DiscoveredExtension.LoadStatus;
 import de.geolykt.starloader.mod.Extension.ExtensionDescription;
 import de.geolykt.starloader.transformers.ASMTransformer;
+import de.geolykt.starloader.transformers.ReversibleAccessSetterTransformer;
 import de.geolykt.starloader.util.JavaInterop;
 
 public class ExtensionManager {
@@ -379,7 +381,7 @@ public class ExtensionManager {
         return new HashMap<>(extensionLoaders);
     }
 
-    @SuppressWarnings("resource")
+    @SuppressWarnings("deprecation")
     private void setupAccessWideners(List<DiscoveredExtension> extensionsToLoad) {
         for (DiscoveredExtension extension : extensionsToLoad) {
             if (extension.getLoadStatus() != LoadStatus.LOAD_SUCCESS || extension.getAccessWidener().equals("")) {
@@ -399,6 +401,56 @@ public class ExtensionManager {
             } catch (IOException e) {
                 e.printStackTrace();
                 LOGGER.warn("Failed to set up an access widener for {}!", extension.getName());
+            }
+        }
+
+        ReversibleAccessSetterTransformer transformer = null;
+        for (ASMTransformer asmTransformer : MinestomRootClassLoader.getInstance().getTransformers()) {
+            if (asmTransformer instanceof ReversibleAccessSetterTransformer) {
+                transformer = (ReversibleAccessSetterTransformer) asmTransformer;
+                break;
+            }
+        }
+        if (transformer == null) {
+            transformer = new ReversibleAccessSetterTransformer();
+            MinestomRootClassLoader.getInstance().addTransformer(transformer);
+        }
+
+        for (DiscoveredExtension extension : extensionsToLoad) {
+            if (extension.getLoadStatus() != LoadStatus.LOAD_SUCCESS || extension.getReversibleAccessSetter().isEmpty()) {
+                continue;
+            }
+
+            URL entry = extension.modifierLoader.findResource(extension.getReversibleAccessSetter());
+            if (entry == null) {
+                LOGGER.warn("Unable to find the reversible access setter file for extension {}!", extension.getName());
+                continue;
+            }
+            try (InputStream rasFile = entry.openStream()) {
+                if (rasFile == null) {
+                    throw new NullPointerException("entry.openStream() yielded null");
+                }
+                try (InputStreamReader isr = new InputStreamReader(rasFile, StandardCharsets.UTF_8);
+                        BufferedReader br = new BufferedReader(isr)) {
+                    transformer.getReverseContext().read(extension.getName(), br, true);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOGGER.warn("Failed to set up the reversed reversible access setter for {}!", extension.getName());
+                continue;
+            }
+            try (InputStream rasFile = entry.openStream()) {
+                if (rasFile == null) {
+                    throw new NullPointerException("entry.openStream() yielded null");
+                }
+                try (InputStreamReader isr = new InputStreamReader(rasFile, StandardCharsets.UTF_8);
+                        BufferedReader br = new BufferedReader(isr)) {
+                    transformer.getMainContext().read(extension.getName(), br, false);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOGGER.warn("Failed to set up the standard reversible access setter for {}!", extension.getName());
+                continue;
             }
         }
     }

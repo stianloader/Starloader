@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
  * <p>Should only be used in a development environment as this transformer is unlikely to work in a production environment,
  * where a remapping step needs to be added on top.
  *
- * @since 4.0.0-20230507
+ * @since 4.0.0
  */
 public class StarplaneAnnotationsInlineTransformer extends ASMTransformer {
 
@@ -245,5 +245,10 @@ public class StarplaneAnnotationsInlineTransformer extends ASMTransformer {
     @Override
     public boolean isValidTarget(@NotNull String internalName) {
         return true;
+    }
+
+    @Override
+    public int getPriority() {
+        return -10_010;
     }
 }

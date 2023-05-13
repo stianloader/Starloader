@@ -8,12 +8,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.objectweb.asm.Opcodes;
 
 import de.geolykt.starloader.deobf.access.AccessFlagModifier.Type;
 
+@Deprecated
+@ScheduledForRemoval(inVersion = "5.0.0")
 public class AccessWidenerReader implements AutoCloseable {
 
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public static class IllegalHeaderException extends IOException {
 
         /**

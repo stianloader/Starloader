@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -27,8 +28,6 @@ import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.geolykt.starloader.deobf.access.AccessTransformInfo;
-import de.geolykt.starloader.deobf.access.AccessWidenerReader;
 import de.geolykt.starloader.transformers.ASMTransformer;
 import de.geolykt.starloader.transformers.RawClassData;
 import de.geolykt.starloader.util.JavaInterop;
@@ -48,7 +47,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
     private static MinestomRootClassLoader INSTANCE;
 
-    private AccessTransformInfo widener = new AccessTransformInfo();
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
+    private de.geolykt.starloader.deobf.access.AccessTransformInfo widener = new de.geolykt.starloader.deobf.access.AccessTransformInfo();
 
     /**
      * Classes that cannot be loaded/modified by this classloader.
@@ -283,7 +284,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
 
             reader.accept(node, 0);
             try {
-                modified = widener.apply(node, true);
+                @SuppressWarnings("deprecation")
+                boolean hack = widener.apply(node, true);
+                modified = hack;
                 synchronized (modifiers) {
                     Iterator<ASMTransformer> transformers = modifiers.iterator();
                     while (transformers.hasNext()) {
@@ -397,8 +400,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         }
     }
 
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public void readAccessWidener(@NotNull InputStream in) throws IOException {
-        try (AccessWidenerReader accessReader = new AccessWidenerReader(widener, in, true)) {
+        try (de.geolykt.starloader.deobf.access.AccessWidenerReader accessReader = new de.geolykt.starloader.deobf.access.AccessWidenerReader(widener, in, true)) {
             accessReader.readHeader();
             while (accessReader.readLn()) {
                 // Continue reading
