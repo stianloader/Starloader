@@ -51,7 +51,7 @@ public class DirectoryExtensionPrototypeList extends ArrayList<@NotNull NamedExt
                     }
                     jsonObj = new JSONObject(new String(JavaInterop.readAllBytes(is), StandardCharsets.UTF_8));
                 }
-                addPrototype(new NamedExtensionPrototype(Collections.singletonList(jarFile.toURI().toURL()), jsonObj.getString("name"), jsonObj.optString("version", "unkown")));
+                this.add(new NamedExtensionPrototype(Collections.singletonList(jarFile.toURI().toURL()), jsonObj.getString("name"), jsonObj.optString("version", "unkown")));
             } catch (IOException e) {
                 LOGGER.warn("Failed to load potential extension {}: {}", jarFile.getPath(), e);
                 continue;
