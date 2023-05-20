@@ -140,6 +140,7 @@ public class IDELauncher {
 
             LoggerFactory.getLogger(IDELauncher.class).info("Using prototypes from following sources:");
             prototypes.forEach((prototype) -> {
+                prototype.enabled = true;
                 if (prototype instanceof NamedExtensionPrototype) {
                     NamedExtensionPrototype namedPrototype = (NamedExtensionPrototype) prototype;
                     LoggerFactory.getLogger(IDELauncher.class).info("- {} v{} (loaded from {})", namedPrototype.name, namedPrototype.version, namedPrototype.originURLs);
