@@ -264,6 +264,7 @@ public class ExtensionManager {
         for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
             extensionMap.put(discoveredExtension.getName().toLowerCase(), discoveredExtension);
         }
+
         for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
 
             @SuppressWarnings("null")
