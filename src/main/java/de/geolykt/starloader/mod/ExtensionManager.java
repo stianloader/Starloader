@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -225,6 +226,10 @@ public class ExtensionManager {
             try (InputStreamReader reader = new InputStreamReader(modifierLoader.getResourceAsStream("extension.json"))) {
                 @SuppressWarnings("null")
                 DiscoveredExtension extension = GSON.fromJson(reader, DiscoveredExtension.class);
+                if (Objects.isNull(extension)) {
+                    LOGGER.error("No mods found for URLs {}", urls);
+                    return null;
+                }
                 extension.files.addAll(urls);
                 extension.modifierLoader = modifierLoader;
 
