@@ -3,7 +3,6 @@ package de.geolykt.starloader;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.jetbrains.annotations.ApiStatus.Internal;
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.launcher.LauncherConfiguration;
-import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
 import de.geolykt.starloader.mod.Extension;
 import de.geolykt.starloader.mod.ExtensionManager;
 import de.geolykt.starloader.mod.ExtensionPrototype;

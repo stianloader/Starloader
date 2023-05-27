@@ -3,7 +3,6 @@ package net.minestom.server.extras.selfmodification;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -41,9 +40,6 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
     private static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
     private static final boolean DUMP = DEBUG || Boolean.getBoolean("classloader.dump");
-    @SuppressWarnings("null") // Yes it can be null, but "path.seperator" should always be present - in theory
-    @NotNull
-    private static final String PATH_SEPARATOR = System.getProperty("path.separator");
 
     private static MinestomRootClassLoader INSTANCE;
 
@@ -84,7 +80,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
     private final Collection<ASMTransformer> modifiers = new OrderedCollection<>();
 
     private MinestomRootClassLoader(ClassLoader parent) {
-        super("Starloader Root ClassLoader", extractURLsFromClasspath(), parent);
+        super("Starloader Root ClassLoader", new URL[0], parent);
         asmClassLoader = newChild();
     }
 
@@ -97,27 +93,6 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             }
         }
         return INSTANCE;
-    }
-
-    private static URL[] extractURLsFromClasspath() {
-        String classpath = System.getProperty("java.class.path");
-        String[] parts = classpath.split(PATH_SEPARATOR);
-        URL[] urls = new URL[parts.length];
-        for (int i = 0; i < urls.length; i++) {
-            try {
-                String part = parts[i];
-                String protocol;
-                if (part.contains("!")) {
-                    protocol = "jar://";
-                } else {
-                    protocol = "file://";
-                }
-                urls[i] = new URL(protocol + part);
-            } catch (MalformedURLException e) {
-                throw new Error(e);
-            }
-        }
-        return urls;
     }
 
     @Override
