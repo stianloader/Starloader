@@ -223,7 +223,11 @@ public class ExtensionManager {
     private DiscoveredExtension discoverFromURLs(List<URL> urls) {
         URLClassLoader modifierLoader = MinestomRootClassLoader.getInstance().newChild(urls.toArray(new @NotNull URL[0]));
         try {
-            try (InputStreamReader reader = new InputStreamReader(modifierLoader.getResourceAsStream("extension.json"))) {
+            URL resource = modifierLoader.findResource("extension.json");
+            if (resource == null) {
+                throw new IOException("Extension does not have an extension.json file: " + urls);
+            }
+            try (InputStreamReader reader = new InputStreamReader(resource.openStream())) {
                 @SuppressWarnings("null")
                 DiscoveredExtension extension = GSON.fromJson(reader, DiscoveredExtension.class);
                 if (Objects.isNull(extension)) {

@@ -105,6 +105,27 @@ public class IDELauncher {
             mods.add(mod);
         }
 
+        List<ExtensionPrototype> prototypes = new ArrayList<>();
+        for (List<URL> mod : mods) {
+            prototypes.add(new ExtensionPrototype(mod, true));
+        }
+        Path modDirectoryPath = Paths.get("extensions");
+        if (modDirectory != null) {
+            modDirectoryPath = Paths.get(modDirectory);
+            prototypes.addAll(new DirectoryExtensionPrototypeList(modDirectoryPath.toFile()));
+        }
+
+        LoggerFactory.getLogger(IDELauncher.class).info("Using prototypes from following sources:");
+        prototypes.forEach((prototype) -> {
+            prototype.enabled = true;
+            if (prototype instanceof NamedExtensionPrototype) {
+                NamedExtensionPrototype namedPrototype = (NamedExtensionPrototype) prototype;
+                LoggerFactory.getLogger(IDELauncher.class).info("- {} v{} (loaded from {})", namedPrototype.name, namedPrototype.version, namedPrototype.originURLs);
+            } else {
+                LoggerFactory.getLogger(IDELauncher.class).info("- {}", prototype.originURLs);
+            }
+        });
+
         MinestomRootClassLoader cl = MinestomRootClassLoader.getInstance();
         bootPaths.forEach(cl::addURL);
 
@@ -122,27 +143,6 @@ public class IDELauncher {
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
             Method init = slClass.getDeclaredMethod("start", List.class, Path.class);
-
-            List<ExtensionPrototype> prototypes = new ArrayList<>();
-            for (List<URL> mod : mods) {
-                prototypes.add(new ExtensionPrototype(mod, true));
-            }
-            Path modDirectoryPath = Paths.get("extensions");
-            if (modDirectory != null) {
-                modDirectoryPath = Paths.get(modDirectory);
-                prototypes.addAll(new DirectoryExtensionPrototypeList(modDirectoryPath.toFile()));
-            }
-
-            LoggerFactory.getLogger(IDELauncher.class).info("Using prototypes from following sources:");
-            prototypes.forEach((prototype) -> {
-                prototype.enabled = true;
-                if (prototype instanceof NamedExtensionPrototype) {
-                    NamedExtensionPrototype namedPrototype = (NamedExtensionPrototype) prototype;
-                    LoggerFactory.getLogger(IDELauncher.class).info("- {} v{} (loaded from {})", namedPrototype.name, namedPrototype.version, namedPrototype.originURLs);
-                } else {
-                    LoggerFactory.getLogger(IDELauncher.class).info("- {}", prototype.originURLs);
-                }
-            });
 
             init.invoke(null, prototypes, modDirectoryPath.toAbsolutePath());
         } catch (Exception e) {
