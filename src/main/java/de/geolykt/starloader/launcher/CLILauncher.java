@@ -9,7 +9,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,10 +25,8 @@ import org.slf4j.LoggerFactory;
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
-import de.geolykt.micromixin.BytecodeProvider;
 import de.geolykt.micromixin.MixinTransformer;
 import de.geolykt.micromixin.supertypes.ClassWrapperPool;
-import de.geolykt.micromixin.supertypes.ReflectionClassWrapperProvider;
 
 public class CLILauncher {
 
@@ -76,9 +73,9 @@ public class CLILauncher {
         });
 
         // Start mixins & load extensions
-        BytecodeProvider<HierarchyClassLoader> provider = new MixinBytecodeProvider();
+        MixinBytecodeProvider provider = new MixinBytecodeProvider();
         ClassWrapperPool cwPool = new ClassWrapperPool();
-        cwPool.addProvider(new ReflectionClassWrapperProvider(URLClassLoader.newInstance(new URL[0], cl)));
+        cwPool.addProvider(provider);
         MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider, cwPool);
         cl.addTransformer(new ASMMixinTransformer(transformer));
         // ensure extensions are loaded when starting the server

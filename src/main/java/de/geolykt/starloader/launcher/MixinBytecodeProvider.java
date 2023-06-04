@@ -4,15 +4,19 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
+import org.slf4j.LoggerFactory;
 
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
+import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.micromixin.BytecodeProvider;
+import de.geolykt.micromixin.supertypes.ASMClassWrapperProvider;
 import de.geolykt.starloader.util.JavaInterop;
 
-class MixinBytecodeProvider implements BytecodeProvider<HierarchyClassLoader> {
+class MixinBytecodeProvider extends ASMClassWrapperProvider implements BytecodeProvider<HierarchyClassLoader> {
 
     @Override
     @NotNull
@@ -32,5 +36,16 @@ class MixinBytecodeProvider implements BytecodeProvider<HierarchyClassLoader> {
         }
         cr.accept(node, 0);
         return node;
+    }
+
+    @Override
+    @Nullable
+    public ClassNode getNode(@NotNull String name) {
+        try {
+            return getClassNode(MinestomRootClassLoader.getInstance(), name);
+        } catch (ClassNotFoundException cnfe) {
+            LoggerFactory.getLogger(getClass()).trace("Cannot resolve node", cnfe);
+            return null;
+        }
     }
 }
