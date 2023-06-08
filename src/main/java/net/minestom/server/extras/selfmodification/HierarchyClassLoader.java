@@ -12,13 +12,17 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class HierarchyClassLoader extends JavaInteropURLClassloader {
     protected final List<MinestomExtensionClassLoader> children = new LinkedList<>();
+    protected final List<HierarchyClassLoader> parents = new LinkedList<>();
 
     public HierarchyClassLoader(String name, URL[] urls, ClassLoader parent) {
         super(name, urls, parent);
     }
 
     public void addChild(@NotNull MinestomExtensionClassLoader loader) {
-        children.add(loader);
+        synchronized (HierarchyClassLoader.class) {
+            this.children.add(loader);
+            loader.parents.add(this);
+        }
     }
 
     public InputStream getResourceAsStreamWithChildren(String name) {
@@ -37,8 +41,10 @@ public abstract class HierarchyClassLoader extends JavaInteropURLClassloader {
     }
 
     public void removeChildInHierarchy(MinestomExtensionClassLoader child) {
-        children.remove(child);
-        children.forEach(c -> c.removeChildInHierarchy(child));
+        synchronized (HierarchyClassLoader.class) {
+            this.children.remove(child);
+            this.children.forEach(c -> c.removeChildInHierarchy(child));
+        }
     }
 
     @Override

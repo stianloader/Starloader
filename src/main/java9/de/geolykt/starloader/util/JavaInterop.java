@@ -1,4 +1,4 @@
-package de.geolykt.starloader.launcher.util;
+package de.geolykt.starloader.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
