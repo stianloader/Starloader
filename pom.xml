@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.geolykt.starloader</groupId>
     <artifactId>launcher</artifactId>
-    <version>4.0.0-20230604</version>
+    <version>4.0.0-20230608</version>
     <name>Starloader Launcher</name>
 
     <properties>

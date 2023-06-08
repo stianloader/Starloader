@@ -2,14 +2,16 @@ package de.geolykt.starloader.mod;
 
 import java.io.IOException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 
 public final class DiscoveredExtension {
 
@@ -31,7 +33,8 @@ public final class DiscoveredExtension {
     public transient List<URL> files = new LinkedList<>();
     @NotNull
     private transient LoadStatus loadStatus = LoadStatus.LOAD_SUCCESS;
-    public transient URLClassLoader modifierLoader;
+    @Internal
+    public transient MinestomExtensionClassLoader loader;
 
     @SuppressWarnings("null")
     @NotNull
@@ -104,13 +107,13 @@ public final class DiscoveredExtension {
 
     void setLoadStatus(@NotNull LoadStatus loadStatus) {
         this.loadStatus = loadStatus;
-        if (loadStatus != LoadStatus.LOAD_SUCCESS && modifierLoader != null) {
+        if (loadStatus != LoadStatus.LOAD_SUCCESS && this.loader != null) {
             try {
-                modifierLoader.close();
+                this.loader.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            modifierLoader = null;
+            this.loader = null;
         }
     }
 

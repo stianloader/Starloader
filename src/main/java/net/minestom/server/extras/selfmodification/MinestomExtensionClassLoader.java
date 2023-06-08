@@ -1,5 +1,6 @@
 package net.minestom.server.extras.selfmodification;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
@@ -7,8 +8,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.util.ArrayList;
+import java.util.Locale;
 
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
+import org.slf4j.LoggerFactory;
 
 import de.geolykt.starloader.util.JavaInterop;
 
@@ -24,6 +28,21 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
     public MinestomExtensionClassLoader(String name, URL[] urls, MinestomRootClassLoader root) {
         super(name, urls, root);
         this.root = root;
+    }
+
+    @Override
+    public void close() throws IOException {
+        synchronized (HierarchyClassLoader.class) {
+            for (HierarchyClassLoader parent : this.parents) {
+                parent.removeChildInHierarchy(this);
+            }
+            this.parents.clear();
+            for (MinestomExtensionClassLoader cl : new ArrayList<>(this.children)) {
+                LoggerFactory.getLogger(MinestomExtensionClassLoader.class).info("Closing classloader {} as it is a child of classloader {}, which is getting closed", cl.getName(), this.getName());
+                cl.close();
+            }
+        }
+        super.close();
     }
 
     @Override
@@ -111,6 +130,11 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
     protected void finalize() throws Throwable {
         super.finalize();
         System.err.println("Class loader " + getName() + " finalized.");
+    }
+
+    @Override
+    public String toString() {
+        return "Extension classloader '" + this.getName() + "'@" + Integer.toHexString(this.hashCode()).toUpperCase(Locale.ROOT);
     }
 
     static {

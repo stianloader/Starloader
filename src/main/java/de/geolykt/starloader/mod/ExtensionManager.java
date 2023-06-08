@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -14,8 +15,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -47,7 +50,6 @@ public class ExtensionManager {
 
     private static final Gson GSON = new Gson();
 
-    private final Map<String, MinestomExtensionClassLoader> extensionLoaders = new ConcurrentHashMap<>();
     private final Map<String, Extension> extensions = new ConcurrentHashMap<>();
     private boolean loaded;
 
@@ -57,6 +59,8 @@ public class ExtensionManager {
     @SuppressWarnings("null")
     @NotNull
     private final List<Extension> immutableExtensionListView = Collections.unmodifiableList(extensionList);
+
+    private final Map<String, MinestomExtensionClassLoader> extensionClassloaders = new WeakHashMap<>();
 
     /**
      * The description of the extension that is currently being loaded.
@@ -81,20 +85,6 @@ public class ExtensionManager {
         assert discoveredExtensions != null;
         discoveredExtensions.removeIf(ext -> ext.getLoadStatus() != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
 
-        for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
-            if (discoveredExtension == null) {
-                continue; // Error safety is better than having to deal with error recovered
-            }
-            try {
-                setupClassLoader(discoveredExtension);
-            } catch (Exception e) {
-                discoveredExtension.setLoadStatus(DiscoveredExtension.LoadStatus.FAILED_TO_SETUP_CLASSLOADER);
-                e.printStackTrace();
-                LOGGER.error("Failed to load extension {}", discoveredExtension.getName());
-                LOGGER.error("Failed to load extension", e);
-            }
-        }
-
         // remove invalid extensions
         discoveredExtensions.removeIf(ext -> ext.getLoadStatus() != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
         setupAccessWideners(discoveredExtensions);
@@ -116,17 +106,6 @@ public class ExtensionManager {
     }
 
     @SuppressWarnings("resource")
-    private void setupClassLoader(@NotNull DiscoveredExtension discoveredExtension) {
-        final String extensionName = discoveredExtension.getName();
-
-        final URL[] urls = discoveredExtension.files.toArray(new URL[0]);
-        @SuppressWarnings("null")
-        final MinestomExtensionClassLoader loader = newClassLoader(discoveredExtension, urls);
-
-        extensionLoaders.put(extensionName.toLowerCase(), loader);
-    }
-
-    @SuppressWarnings("resource")
     @Nullable
     private Extension attemptSingleLoad(@NotNull DiscoveredExtension discoveredExtension) {
         // Create ExtensionDescription (authors, version etc.)
@@ -139,9 +118,9 @@ public class ExtensionManager {
                 discoveredExtension
         );
 
-        MinestomExtensionClassLoader loader = extensionLoaders.get(extensionName.toLowerCase());
+        MinestomExtensionClassLoader loader = discoveredExtension.loader;
 
-        if (extensions.containsKey(extensionName.toLowerCase())) {
+        if (this.extensions.containsKey(extensionName.toLowerCase(Locale.ROOT))) {
             LOGGER.error("An extension called '{}' has already been registered.", extensionName);
             return null;
         }
@@ -222,9 +201,9 @@ public class ExtensionManager {
 
     @Nullable
     private DiscoveredExtension discoverFromURLs(List<URL> urls) {
-        URLClassLoader modifierLoader = MinestomRootClassLoader.getInstance().newChild(urls.toArray(new @NotNull URL[0]));
+        URLClassLoader discardLoader = MinestomRootClassLoader.getInstance().newChild(urls.toArray(new @NotNull URL[0]));
         try {
-            URL resource = modifierLoader.findResource("extension.json");
+            URL resource = discardLoader.findResource("extension.json");
             if (resource == null) {
                 throw new IOException("Extension does not have an extension.json file: " + urls);
             }
@@ -236,26 +215,34 @@ public class ExtensionManager {
                     return null;
                 }
                 extension.files.addAll(urls);
-                extension.modifierLoader = modifierLoader;
 
                 // Verify integrity and ensure defaults
                 DiscoveredExtension.verifyIntegrity(extension);
 
+                if (extension.getLoadStatus() == LoadStatus.LOAD_SUCCESS) {
+                    extension.loader = this.newClassLoader(extension, urls.toArray(new @NotNull URL[0]));
+                }
+
+                discardLoader.close();
                 return extension;
             }
         } catch (IOException e) {
-            e.printStackTrace();
             try {
-                modifierLoader.close();
-            } catch (IOException e1) {
-                // Ignored
+                discardLoader.close();
+            } catch (IOException e2) {
+                UncheckedIOException unchecked = new UncheckedIOException("Cannot close temporary discard classloader", e2);
+                unchecked.addSuppressed(e);
+                throw unchecked;
             }
+            e.printStackTrace();
             return null;
         } catch (Throwable t) {
             try {
-                modifierLoader.close();
-            } catch (Throwable t1) {
-                t.addSuppressed(t1);
+                discardLoader.close();
+            } catch (IOException e) {
+                UncheckedIOException unchecked = new UncheckedIOException("Cannot close temporary discard classloader", e);
+                unchecked.addSuppressed(t);
+                throw unchecked;
             }
             throw t;
         }
@@ -279,8 +266,8 @@ public class ExtensionManager {
                         // Specifies an extension we don't have.
                         if (dependencyExtension == null) {
                             // attempt to see if it is not already loaded (happens with dynamic (re)loading)
-                            if (extensions.containsKey(dependencyName.toLowerCase())) {
-                                return extensions.get(dependencyName.toLowerCase()).getDescription().getOrigin();
+                            if (this.extensions.containsKey(dependencyName.toLowerCase(Locale.ROOT))) {
+                                return this.extensions.get(dependencyName.toLowerCase(Locale.ROOT)).getDescription().getOrigin();
                             }
                             LOGGER.error("Extension {} requires an extension called {}.", discoveredExtension.getName(), dependencyName);
                             LOGGER.error("However the extension {} could not be found.", dependencyName);
@@ -361,9 +348,9 @@ public class ExtensionManager {
             // even though it should always be (due to the order in which extensions are loaders), it is an additional layer of """security"""
             boolean foundOne = false;
             for (String dependency : extension.getDependencies()) {
-                if (extensionLoaders.containsKey(dependency.toLowerCase())) {
-                    MinestomExtensionClassLoader parentLoader = extensionLoaders.get(dependency.toLowerCase());
-                    parentLoader.addChild(loader);
+                MinestomExtensionClassLoader parent = this.extensionClassloaders.get(dependency.toLowerCase(Locale.ROOT));
+                if (parent != null) {
+                    parent.addChild(loader);
                     foundOne = true;
                 }
             }
@@ -373,6 +360,8 @@ public class ExtensionManager {
                 throw new RuntimeException("Could not load extension " + extension.getName() + ", could not find any parent inside classloader hierarchy.");
             }
         }
+
+        this.extensionClassloaders.put(extension.getName().toLowerCase(Locale.ROOT), loader);
         return loader;
     }
 
@@ -386,11 +375,6 @@ public class ExtensionManager {
         return extensions.get(name.toLowerCase());
     }
 
-    @NotNull
-    public Map<String, URLClassLoader> getExtensionLoaders() {
-        return new HashMap<>(extensionLoaders);
-    }
-
     @SuppressWarnings("deprecation")
     private void setupAccessWideners(List<DiscoveredExtension> extensionsToLoad) {
         for (DiscoveredExtension extension : extensionsToLoad) {
@@ -398,7 +382,7 @@ public class ExtensionManager {
                 continue;
             }
 
-            URL entry = extension.modifierLoader.findResource(extension.getAccessWidener());
+            URL entry = extension.loader.findResource(extension.getAccessWidener());
             if (entry == null) {
                 LOGGER.warn("Unable to find the access widener file for extension {}!", extension.getName());
                 continue;
@@ -431,7 +415,7 @@ public class ExtensionManager {
                 continue;
             }
 
-            URL entry = extension.modifierLoader.findResource(extension.getReversibleAccessSetter());
+            URL entry = extension.loader.findResource(extension.getReversibleAccessSetter());
             if (entry == null) {
                 LOGGER.warn("Unable to find the reversible access setter file for extension {}!", extension.getName());
                 continue;
@@ -480,10 +464,8 @@ public class ExtensionManager {
         LOGGER.info("Start loading code modifiers...");
         for (DiscoveredExtension extension : extensions) {
             try {
-                boolean loadedModifier = false;
                 for (String codeModifierClass : extension.getCodeModifiers()) {
-                    loadedModifier = true;
-                    modifiableClassLoader.loadModifier(extension.modifierLoader, codeModifierClass);
+                    modifiableClassLoader.loadModifier(extension.loader, codeModifierClass);
                 }
                 if (!extension.getMixinConfig().isEmpty()) {
                     final String mixinConfigFile = extension.getMixinConfig();
@@ -491,18 +473,16 @@ public class ExtensionManager {
                     for (ASMTransformer transformer : modifiableClassLoader.getTransformers()) {
                         if (transformer instanceof ASMMixinTransformer) {
                             JSONObject mixinConfigJson;
-                            try (InputStream is = extension.modifierLoader.getResourceAsStream(mixinConfigFile)) {
+                            try (InputStream is = extension.loader.getResourceAsStreamWithChildren(mixinConfigFile)) {
                                 if (is == null) {
-                                    throw new IOException("Classloader.getResourceAsStream(mixinConfigFile) yielded null.");
+                                    throw new IOException("HierarchyClassLoader.getResourceAsStreamWithChildren(mixinConfigFile) yielded null.");
                                 }
                                 mixinConfigJson = new JSONObject(new String(JavaInterop.readAllBytes(is), StandardCharsets.UTF_8));
                             } catch (IOException e) {
                                 throw new IOException("Cannot find mixin config " + mixinConfigFile + " in extension " + extension.getName(), e);
                             }
                             MixinConfig mixinConfig = MixinConfig.fromJson(mixinConfigJson);
-                            // TODO Use Classloader futures in order to sandbox different mixins
-                            // This reduces the chance of collision of two mixins
-                            ((ASMMixinTransformer) transformer).transformer.addMixin(modifiableClassLoader, mixinConfig);
+                            ((ASMMixinTransformer) transformer).transformer.addMixin(extension.loader, mixinConfig);
                             added = true;
                             LOGGER.info("Found mixin in extension {}: {}", extension.getName(), mixinConfigFile);
                         }
@@ -510,11 +490,6 @@ public class ExtensionManager {
                     if (!added) {
                         LOGGER.error("Unable to add mixin {} in extension {} as there is no classloader!");
                     }
-                }
-                if (!loadedModifier) {
-                    // Let's free some memory if we can
-                    extension.modifierLoader.close();
-                    extension.modifierLoader = null;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -541,28 +516,28 @@ public class ExtensionManager {
             e.getDescription().getDependents().remove(ext.getDescription().getName());
         }
 
-        String id = ext.getDescription().getName().toLowerCase();
+        String id = ext.getDescription().getName().toLowerCase(Locale.ROOT);
         // remove from loaded extensions
         extensions.remove(id);
         extensionList.remove(ext);
 
         // remove class loader, required to reload the classes
-        MinestomExtensionClassLoader classloader = extensionLoaders.remove(id);
+        MinestomExtensionClassLoader classloader = this.extensionClassloaders.remove(id);
         try {
             // close resources
             classloader.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        MinestomRootClassLoader.getInstance().removeChildInHierarchy(classloader);
-        URLClassLoader modifierLoader =  ext.getDescription().getOrigin().modifierLoader;
-        if (modifierLoader != null) {
+
+        MinestomExtensionClassLoader modifierClassloader =  ext.getDescription().getOrigin().loader;
+        if (modifierClassloader != null) {
             try {
-                modifierLoader.close();
+                modifierClassloader.close();
             } catch (IOException e) {
                 LOGGER.error("Unable to close extension codemodifier classloader", e);
             }
-            ext.getDescription().getOrigin().modifierLoader = null;
+            ext.getDescription().getOrigin().loader = null;
         }
     }
 
@@ -615,12 +590,6 @@ public class ExtensionManager {
             throw new AssertionError();
         }
         loadDependencies(extensionsToLoad);
-
-        // setup new classloaders for the extensions to reload
-        for (DiscoveredExtension toReload : extensionsToLoad) {
-            LOGGER.debug("Setting up classloader for extension {}", toReload.getName());
-            setupClassLoader(toReload);
-        }
 
         setupAccessWideners(extensionsToLoad);
         // setup code modifiers for these extensions
