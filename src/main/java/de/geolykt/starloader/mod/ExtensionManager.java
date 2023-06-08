@@ -505,7 +505,9 @@ public class ExtensionManager {
         MinestomExtensionClassLoader classloader = this.extensionClassloaders.remove(id);
         try {
             // close resources
-            classloader.close();
+            if (classloader != null) {
+                classloader.close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
