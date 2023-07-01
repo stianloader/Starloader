@@ -56,7 +56,7 @@ public abstract class ASMTransformer implements Comparable<ASMTransformer> {
      *  <li>-10_010: {@link StarplaneAnnotationsInlineTransformer}</li>
      *  <li>-10_000: {@link ASMMixinTransformer}</li>
      *  <li>-9_900: Most SLAPI transformers</li>
-     *  <li>100: SLAPI GL transformer (intercepts GL11#glScissor calls)<li>
+     *  <li>100: SLAPI GL transformer (intercepts GL11#glScissor calls)</li>
      * </ul>
      *
      * @return The priority of the transformer

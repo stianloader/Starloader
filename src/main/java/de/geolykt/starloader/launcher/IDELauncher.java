@@ -1,6 +1,7 @@
 package de.geolykt.starloader.launcher;
 
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -144,11 +145,9 @@ public class IDELauncher {
         // ensure extensions are loaded when starting the server
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
-            Method init = slClass.getDeclaredMethod("start", List.class, Path.class);
-
-            init.invoke(null, prototypes, modDirectoryPath.toAbsolutePath());
-        } catch (Exception e) {
-            e.printStackTrace();
+            MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(null, List.class, Path.class)).invokeExact(prototypes, modDirectoryPath.toAbsolutePath());
+        } catch (Throwable t) {
+            t.printStackTrace();
             return;
         }
 

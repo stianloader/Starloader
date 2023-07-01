@@ -4,7 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -81,16 +82,12 @@ public class CLILauncher {
         // ensure extensions are loaded when starting the server
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
-            Method init = slClass.getDeclaredMethod("start", LauncherConfiguration.class);
-
             LauncherConfiguration preferences = new LauncherConfiguration(true);
-
             preferences.setExtensionsFolder(new File("mods"));
             preferences.getExtensionsFolder().mkdir();
-
-            init.invoke(null, preferences);
-        } catch (Exception e) {
-            e.printStackTrace();
+            MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(void.class, LauncherConfiguration.class)).invokeExact(preferences);
+        } catch (Throwable t) {
+            t.printStackTrace();
             return;
         }
 

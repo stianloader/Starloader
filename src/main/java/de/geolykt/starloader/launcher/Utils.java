@@ -6,7 +6,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -243,8 +244,7 @@ public final class Utils {
                 cl.addTransformer(new ASMMixinTransformer(transformer));
                 // ensure extensions are loaded when starting the server
                 Class<?> slClass = Class.forName("de.geolykt.starloader.Starloader", true, cl);
-                Method init = slClass.getDeclaredMethod("start", LauncherConfiguration.class);
-                init.invoke(null, preferences);
+                MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(void.class, LauncherConfiguration.class)).invokeExact(preferences);
             }
 
             URL manifest = null;
@@ -281,19 +281,15 @@ public final class Utils {
 
             LOGGER.info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
             startMain(cl.loadClass(mainClass), args);
-        } catch (Exception e1) {
-            throw new RuntimeException("Something went wrong while bootstrapping.", e1);
+        } catch (Throwable t) {
+            throw new RuntimeException("Something went wrong while bootstrapping.", t);
         }
     }
 
     public static final void startMain(Class<?> className, String[] args) {
         try {
-            Method main = className.getDeclaredMethod("main", String[].class);
-            main.setAccessible(true);
-            // Note to self future : do not attempt to cast the class(es), it won't work well.
-            // This means that the array instantiation is intended
-            main.invoke(null, new Object[] { args });
-        } catch (Exception e) {
+            MethodHandles.publicLookup().findStatic(className, "main", MethodType.methodType(void.class, String[].class)).invokeExact(args);
+        } catch (Throwable e) {
             throw new RuntimeException("Error while invoking main class!", e);
         }
     }
