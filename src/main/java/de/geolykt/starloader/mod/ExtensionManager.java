@@ -85,10 +85,25 @@ public class ExtensionManager {
         assert discoveredExtensions != null;
         discoveredExtensions.removeIf(ext -> ext.getLoadStatus() != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
 
-        // remove invalid extensions
-        discoveredExtensions.removeIf(ext -> ext.getLoadStatus() != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
+        for (DiscoveredExtension extension : discoveredExtensions) {
+            if (extension.loader != null) {
+                try {
+                    extension.loader.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Unable to close leftover classloader for extension {}", extension.getName(), e);
+                }
+                extension.loader = null;
+            }
+            if (extension.getLoadStatus() == LoadStatus.LOAD_SUCCESS) {
+                extension.loader = this.newClassLoader(extension);
+            }
+        }
+
         setupAccessWideners(discoveredExtensions);
         setupCodeModifiers(discoveredExtensions);
+
+        // remove invalid extensions
+        discoveredExtensions.removeIf(ext -> ext.getLoadStatus() != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
 
         for (DiscoveredExtension discoveredExtension : discoveredExtensions) {
             if (discoveredExtension == null) {
@@ -219,9 +234,10 @@ public class ExtensionManager {
                 // Verify integrity and ensure defaults
                 DiscoveredExtension.verifyIntegrity(extension);
 
-                if (extension.getLoadStatus() == LoadStatus.LOAD_SUCCESS) {
+                // FIXME Remove from source
+                /*if (extension.getLoadStatus() == LoadStatus.LOAD_SUCCESS) {
                     extension.loader = this.newClassLoader(extension, urls.toArray(new @NotNull URL[0]));
-                }
+                }*/
 
                 discardLoader.close();
                 return extension;
@@ -333,13 +349,14 @@ public class ExtensionManager {
      * Creates a new class loader for the given extension.
      * Will add the new loader as a child of all its dependencies' loaders.
      *
-     * @param urls {@link URL} (usually a JAR) that should be loaded.
+     * @param extension The extension that should own the classloader
+     * @since 4.0.0-20230701
      */
     @SuppressWarnings("resource")
     @NotNull
-    public MinestomExtensionClassLoader newClassLoader(@NotNull DiscoveredExtension extension, @NotNull URL[] urls) {
+    public MinestomExtensionClassLoader newClassLoader(@NotNull DiscoveredExtension extension) {
         MinestomRootClassLoader root = MinestomRootClassLoader.getInstance();
-        MinestomExtensionClassLoader loader = new MinestomExtensionClassLoader(extension.getName(), urls, root);
+        MinestomExtensionClassLoader loader = new MinestomExtensionClassLoader(extension.getName(), extension.files.toArray(new URL[0]), root);
         if (extension.getDependencies().length == 0) {
             // orphaned extension, we can insert it directly
             root.addChild(loader);
@@ -356,8 +373,8 @@ public class ExtensionManager {
             }
 
             if (!foundOne) {
-                LOGGER.error("Could not load extension {}, could not find any parent inside classloader hierarchy.", extension.getName());
-                throw new RuntimeException("Could not load extension " + extension.getName() + ", could not find any parent inside classloader hierarchy.");
+                LOGGER.error("Could not load extension {} as it was not possible to find any of the following parents in the classloader hierarchy: {}. Following loaders are currently registered: {}", extension.getName(), Arrays.toString(extension.getDependencies()), this.extensionClassloaders.keySet());
+                throw new RuntimeException("Could not load extension " + extension.getName() + " as it was not possible find any of the following parents inside classloader hierarchy (this indicates a likely issue with SLL internals): " + Arrays.toString(extension.getDependencies()));
             }
         }
 
@@ -586,12 +603,22 @@ public class ExtensionManager {
 
     private boolean loadExtensionList(@NotNull List<DiscoveredExtension> extensionsToLoad) {
         // ensure correct order of dependencies
-        LOGGER.debug("Reorder extensions to ensure proper load order");
-        List<DiscoveredExtension> temp = generateLoadOrder(extensionsToLoad);
-        if (temp == null) {
-            throw new AssertionError();
+        this.generateLoadOrder(extensionsToLoad);
+        this.loadDependencies(extensionsToLoad);
+
+        for (DiscoveredExtension extension : extensionsToLoad) {
+            if (extension.loader != null) {
+                try {
+                    extension.loader.close();
+                } catch (IOException e) {
+                    LOGGER.warn("Unable to close leftover classloader for extension {}", extension.getName(), e);
+                }
+                extension.loader = null;
+            }
+            if (extension.getLoadStatus() == LoadStatus.LOAD_SUCCESS) {
+                extension.loader = this.newClassLoader(extension);
+            }
         }
-        loadDependencies(extensionsToLoad);
 
         setupAccessWideners(extensionsToLoad);
         // setup code modifiers for these extensions
