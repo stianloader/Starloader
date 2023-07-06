@@ -4,8 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.geolykt.starloader</groupId>
     <artifactId>launcher</artifactId>
-    <version>4.0.0-20230701</version>
+    <version>4.0.0-20230706</version>
     <name>Starloader Launcher</name>
+    <inceptionYear>2021</inceptionYear>
 
     <properties>
         <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm -->
@@ -13,12 +14,12 @@
         <!-- https://mvnrepository.com/artifact/org.jetbrains/annotations -->
         <annotations-version>24.0.1</annotations-version>
         <!-- https://mvnrepository.com/artifact/org.json/json -->
-        <json-version>20230227</json-version>
+        <json-version>20230618</json-version>
         <mixin-version>0.8.5</mixin-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
         <!-- DO NOT BE FOOLED: 1.4.X does not support Java 8, but 1.3.X does. -->
         <!-- Otherwise both series should be the same to us as consumers. -->
-        <logback-version>1.3.7</logback-version>
+        <logback-version>1.3.8</logback-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gpg.skip>true</gpg.skip>
     </properties>
@@ -83,7 +84,6 @@
             <artifactId>mixin</artifactId>
             <version>${mixin-version}</version>
             <scope>compile</scope>
-            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -91,7 +91,6 @@
             <artifactId>gson</artifactId>
             <version>2.8.9</version>
             <scope>compile</scope>
-            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -114,14 +113,12 @@
             <artifactId>logback-classic</artifactId>
             <version>${logback-version}</version>
             <scope>compile</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
             <version>${logback-version}</version>
             <scope>compile</scope>
-            <optional>true</optional>
         </dependency>
 
         <!-- I think we should fork Mixin again... Reimplementing it isn't nice but this isn't either. -->
@@ -162,6 +159,7 @@
                 <includes>
                     <include>LICENSE.md</include>
                 </includes>
+                <targetPath>META-INF/LICENSES/${project.artifactId}</targetPath>
             </resource>
         </resources>
         <plugins>

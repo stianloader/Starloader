@@ -143,7 +143,7 @@ public class IDELauncher {
         // ensure extensions are loaded when starting the server
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
-            MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(null, List.class, Path.class)).invokeExact(prototypes, modDirectoryPath.toAbsolutePath());
+            MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(void.class, List.class, Path.class)).invokeExact(prototypes, modDirectoryPath.toAbsolutePath());
         } catch (Throwable t) {
             t.printStackTrace();
             return;
