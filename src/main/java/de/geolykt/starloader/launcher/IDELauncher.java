@@ -22,6 +22,7 @@ import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
 import de.geolykt.starloader.mod.ExtensionPrototype;
 import de.geolykt.starloader.mod.NamedExtensionPrototype;
 import de.geolykt.starloader.transformers.StarplaneAnnotationsInlineTransformer;
+import de.geolykt.starloader.util.JavaInterop;
 
 /**
  * An entrypoint that is meant for debugging SLL mods within an IDE.
@@ -154,7 +155,11 @@ public class IDELauncher {
         LoggerFactory.getLogger(IDELauncher.class).info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
 
         try {
-            Utils.startMain(cl.loadClass(mainClass), args);
+            Class<?> mainClassInstance = cl.loadClass(mainClass);
+            if (mainClassInstance.getClassLoader() != cl) {
+                LoggerFactory.getLogger(IDELauncher.class).warn("Main class '{}' loaded by wrong Classloader '{}', expected it to be loaded by '{}'. Some runtime anomalies are to be expected; Did you set up the classpaths correctly?", mainClass, JavaInterop.getClassloaderName(mainClassInstance.getClassLoader()), JavaInterop.getClassloaderName(cl));
+            }
+            Utils.startMain(mainClassInstance, args);
         } catch (Throwable t) {
             t.printStackTrace();
         }

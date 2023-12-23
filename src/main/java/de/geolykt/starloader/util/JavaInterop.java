@@ -24,7 +24,7 @@ public final class JavaInterop {
         return false;
     }
 
-    public static final byte[] readAllBytes(@NotNull InputStream in) throws IOException {
+    public static final byte @NotNull[] readAllBytes(@NotNull InputStream in) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
         for (int read = in.read(buffer); read != -1; read = in.read(buffer)) {
