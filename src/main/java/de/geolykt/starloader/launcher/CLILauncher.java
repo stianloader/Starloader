@@ -28,6 +28,7 @@ import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.micromixin.MixinTransformer;
 import de.geolykt.micromixin.supertypes.ClassWrapperPool;
+import de.geolykt.starloader.util.JavaInterop;
 
 public class CLILauncher {
 
@@ -132,7 +133,11 @@ public class CLILauncher {
         LoggerFactory.getLogger(CLILauncher.class).info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
 
         try {
-            Utils.startMain(cl.loadClass(mainClass), args);
+            Class<?> mainClassInstance = cl.loadClass(mainClass);
+            if (mainClassInstance.getClassLoader() != cl) {
+                LoggerFactory.getLogger(IDELauncher.class).warn("Main class '{}' loaded by wrong Classloader '{}', expected it to be loaded by '{}'. Some runtime anomalies are to be expected; Did you set up the classpaths correctly?", mainClass, JavaInterop.getClassloaderName(mainClassInstance.getClassLoader()), JavaInterop.getClassloaderName(cl));
+            }
+            Utils.startMain(mainClassInstance, args);
         } catch (Throwable t) {
             t.printStackTrace();
         }

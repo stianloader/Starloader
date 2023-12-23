@@ -3,6 +3,7 @@ package net.minestom.server.extras.selfmodification;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -10,17 +11,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jetbrains.annotations.ApiStatus.AvailableSince;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
+import org.jetbrains.annotations.CheckReturnValue;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
@@ -29,13 +36,14 @@ import org.slf4j.LoggerFactory;
 
 import de.geolykt.starloader.transformers.ASMTransformer;
 import de.geolykt.starloader.transformers.RawClassData;
+import de.geolykt.starloader.transformers.TransformableClassloader;
 import de.geolykt.starloader.util.JavaInterop;
 import de.geolykt.starloader.util.OrderedCollection;
 
 /**
  * Class Loader that can modify class bytecode when they are loaded.
  */
-public class MinestomRootClassLoader extends HierarchyClassLoader {
+public class MinestomRootClassLoader extends HierarchyClassLoader implements TransformableClassloader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
     private static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
@@ -77,6 +85,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      */
     private final URLClassLoader asmClassLoader;
 
+    @NotNull
     private final Collection<ASMTransformer> modifiers = new OrderedCollection<>();
 
     private MinestomRootClassLoader(ClassLoader parent) {
@@ -107,7 +116,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             ClassLoader loader = JavaInterop.getPlattformClassloader();
             if (loader != null) {
                 Class<?> systemClass = loader.loadClass(name);
-                LOGGER.trace("System class: {}", systemClass);
+                LOGGER.trace("Loading system class: {}", systemClass);
                 return systemClass;
             }
             throw new ClassNotFoundException("Java 9 " + (JavaInterop.isJava9() ? "capable " : "incapable") + " JavaInterop implementation refused to return the plattform classloader.");
@@ -156,10 +165,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             Class<?> defined;
             byte[] bytes = rawClass.getBytes();
 
-            if (rawClass.getSource() == null) {
+            URL jarURL = rawClass.getSource();
+            if (jarURL == null) {
                 defined = defineClass(name, bytes, 0, bytes.length);
             } else {
-                URL jarURL = rawClass.getSource();
                 String path = jarURL.getPath();
                 int seperatorIndex = path.lastIndexOf('!');
                 if (seperatorIndex != -1) {
@@ -218,9 +227,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         if (input == null) {
             throw new ClassNotFoundException("Could not find resource " + path);
         }
-        byte[] originalBytes = JavaInterop.readAllBytes(input);
+        byte @NotNull[] originalBytes = JavaInterop.readAllBytes(input);
         input.close();
-        byte[] transformedBytes;
+        byte @NotNull[] transformedBytes;
         if (transform) {
             transformedBytes = transformBytes(originalBytes, name);
         } else {
@@ -255,7 +264,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
         return originalBytes;
     }
 
-    synchronized byte[] transformBytes(byte[] classBytecode, @NotNull String qualifiedName) {
+    synchronized byte @NotNull[] transformBytes(byte @NotNull[] classBytecode, @NotNull String qualifiedName) {
         if (!isProtected(qualifiedName)) {
             ClassReader reader = new ClassReader(classBytecode);
             ClassNode node = new ClassNode();
@@ -302,7 +311,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
                         }
                     };
                     node.accept(writer);
-                    classBytecode = writer.toByteArray();
+                    classBytecode = Objects.requireNonNull(writer.toByteArray());
                     LOGGER.trace("Modified {}", qualifiedName);
                 }
             } catch (Throwable t) {
@@ -346,20 +355,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      *
      * @param transformer The transformer to add
      * @since 2.1.0
+     * @deprecated 
      */
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public synchronized void addTransformer(ASMTransformer transformer) {
-        synchronized (modifiers) {
-            if (DEBUG) {
-                LOGGER.info("Adding transformer {}", transformer.getClass().getName());
-            }
-            modifiers.add(transformer);
-            if (DEBUG) {
-                LOGGER.info("Currently registered transformers: ");
-                for (ASMTransformer x :modifiers) {
-                    LOGGER.info("  - {}", x.getClass().getName());
-                }
-            }
-        }
+        this.addASMTransformer(Objects.requireNonNull(transformer));
     }
 
     @Override
@@ -373,6 +374,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
      * @return The ASM transformers in use.
      * @since 2.1.0
      */
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public synchronized List<ASMTransformer> getTransformers() {
         synchronized (modifiers) {
             return new ArrayList<>(modifiers);
@@ -387,6 +390,78 @@ public class MinestomRootClassLoader extends HierarchyClassLoader {
             while (accessReader.readLn()) {
                 // Continue reading
             }
+        }
+    }
+
+    @Override
+    @Contract(pure = false, mutates = "this")
+    @AvailableSince(value = "4.0.0-a20231223")
+    public void addASMTransformer(@NotNull ASMTransformer transformer) {
+        synchronized (this.modifiers) {
+            if (DEBUG) {
+                LOGGER.info("Adding transformer {}", transformer.getClass().getName());
+            }
+            this.modifiers.add(transformer);
+            if (DEBUG) {
+                LOGGER.info("Currently registered transformers: ");
+                for (ASMTransformer x : this.modifiers) {
+                    LOGGER.info("  - {}", x.getClass().getName());
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    @NotNull
+    @Unmodifiable
+    @Contract(pure = true, value = "-> new")
+    @AvailableSince(value = "4.0.0-a20231223")
+    public Collection<@NotNull ASMTransformer> getASMTransformers() {
+        synchronized (this.modifiers) {
+            return Collections.unmodifiableCollection(new ArrayList<>(this.modifiers));
+        }
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    @NotNull
+    @Contract(pure = false)
+    @CheckReturnValue
+    @AvailableSince(value = "4.0.0-a20231223")
+    public Class<?> transformAndDefineClass(@NotNull String className, @NotNull RawClassData data) {
+        if (DEBUG) {
+            LOGGER.info("Forcefully defining class '{}'", className);
+        }
+
+        byte[] transformed = this.transformBytes(data.getBytes(), className);
+        URL jarURL = data.getSource();
+
+        if (DUMP) {
+            try {
+                Path parent = Paths.get("classes", className.replace('.', '/')).getParent();
+                if (parent != null) {
+                    Files.createDirectories(parent);
+                }
+                Files.write(Paths.get("classes", className.replace('.', '/') + ".class"), transformed);
+            } catch (IOException e) {
+                LOGGER.info("Unable to dump forcefully defined class '{}'", className, e);
+            }
+        }
+
+        if (jarURL == null) {
+            return super.defineClass(className, transformed, 0, transformed.length);
+        } else {
+            String path = jarURL.getPath();
+            int seperatorIndex = path.lastIndexOf('!');
+            if (seperatorIndex != -1) {
+                try {
+                    jarURL = new URL(path.substring(0, seperatorIndex));
+                } catch (MalformedURLException e) {
+                    LOGGER.warn("Bumped into a MalformedURLException while forcefully defining a class", e);
+                }
+            }
+            return super.defineClass(className, transformed, 0, transformed.length, new CodeSource(jarURL, (Certificate[]) null));
         }
     }
 }
