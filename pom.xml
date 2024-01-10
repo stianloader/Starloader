@@ -3,7 +3,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.geolykt.starloader</groupId>
-    <artifactId>launcher</artifactId>
+    <artifactId>launcher-sponge</artifactId>
     <version>4.0.0</version>
     <name>Starloader Launcher</name>
     <inceptionYear>2021</inceptionYear>
@@ -16,6 +16,8 @@
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <json-version>20231013</json-version>
         <mixin-version>0.8.5</mixin-version>
+        <!-- https://mvnrepository.com/artifact/io.github.llamalad7/mixinextras-common -->
+        <mixinextras-version>0.3.2</mixinextras-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
         <!-- DO NOT BE FOOLED: 1.4.X does not support Java 8, but 1.3.X does. -->
         <!-- Otherwise both series should be the same to us as consumers. -->
@@ -83,6 +85,12 @@
             <groupId>org.spongepowered</groupId>
             <artifactId>mixin</artifactId>
             <version>${mixin-version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.llamalad7</groupId>
+            <artifactId>mixinextras-common</artifactId>
+            <version>${mixinextras-version}</version>
             <scope>compile</scope>
         </dependency>
 

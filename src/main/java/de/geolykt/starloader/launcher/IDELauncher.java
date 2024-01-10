@@ -15,6 +15,8 @@ import org.json.JSONException;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
 
+import com.llamalad7.mixinextras.MixinExtrasBootstrap;
+
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.launcher.service.SLMixinService;
@@ -138,7 +140,8 @@ public class IDELauncher {
 
         // Start mixins & load extensions
         Utils.startMixin(args);
-        cl.addTransformer(new ASMMixinTransformer(SLMixinService.getInstance()));
+        cl.addASMTransformer(new ASMMixinTransformer(SLMixinService.getInstance()));
+        MixinExtrasBootstrap.init(); // The MixinExtras bootstrap MUST be initialized after the ASM transformer
         SLMixinService.getInstance().getPhaseConsumer().accept(Phase.PREINIT);
 
         // ensure extensions are loaded when starting the server

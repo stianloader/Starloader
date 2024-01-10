@@ -1,45 +1,30 @@
 package de.geolykt.starloader.launcher;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.Locale;
 
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.launch.MixinBootstrap;
-import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
 import org.spongepowered.asm.mixin.Mixins;
 
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
-import de.geolykt.starloader.Starloader;
 import de.geolykt.starloader.UnlikelyEventException;
-import de.geolykt.starloader.launcher.service.SLMixinService;
 import de.geolykt.starloader.util.JavaInterop;
 
 /**
  * Collection of static utility methods.
  */
 public final class Utils {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(Starloader.class);
-
     public static final String OPERATING_SYSTEM = System.getProperty("os.name");
 
     public static final int STEAM_GALIMULATOR_APPID = 808100;
@@ -226,65 +211,6 @@ public final class Utils {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
-        }
-    }
-
-    @SuppressWarnings("resource")
-    public static final void startGalimulator(String[] args, LauncherConfiguration preferences) {
-        MinestomRootClassLoader cl = MinestomRootClassLoader.getInstance();
-        try {
-            cl.addURL(preferences.getTargetJar().toURI().toURL());
-        } catch (MalformedURLException e1) {
-            throw new RuntimeException("Something went wrong while adding the target jar to the Classpath", e1);
-        }
-        try {
-            if (preferences.hasExtensionsEnabled()) {
-                startMixin(args);
-                cl.addTransformer(new ASMMixinTransformer(SLMixinService.getInstance()));
-                SLMixinService.getInstance().getPhaseConsumer().accept(Phase.PREINIT);
-                // ensure extensions are loaded when starting the server
-                Class<?> slClass = Class.forName("de.geolykt.starloader.Starloader", true, cl);
-                MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(void.class, LauncherConfiguration.class)).invokeExact(preferences);
-                SLMixinService.getInstance().getPhaseConsumer().accept(Phase.INIT);
-                SLMixinService.getInstance().getPhaseConsumer().accept(Phase.DEFAULT);
-            }
-
-            URL manifest = null;
-            Enumeration<URL> manifests = cl.findResources("META-INF/MANIFEST.MF");
-
-            while (manifests.hasMoreElements()) {
-                manifest = manifests.nextElement();
-            }
-
-            if (manifest == null) {
-                manifests = cl.getResources("META-INF/MANIFEST.MF");
-
-                while (manifests.hasMoreElements()) {
-                    manifest = manifests.nextElement();
-                }
-
-                if (manifest == null) {
-                    throw new IllegalStateException("Unable to find jar manifest!");
-                }
-            }
-
-            String mainClass = null;
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(manifest.openStream(), StandardCharsets.UTF_8))) {
-                for (String ln = br.readLine(); ln != null; ln = br.readLine()) {
-                    ln = ln.split("#", 2)[0];
-                    if (ln.startsWith("Main-Class:")) {
-                        mainClass = ln.split(":", 2)[1].trim();
-                        break;
-                    }
-                }
-            } catch (IOException e) {
-                throw new IllegalStateException("Unable to find jar manifest!", e);
-            }
-
-            LOGGER.info("Starting main class " + mainClass + " with arguments " + Arrays.toString(args));
-            startMain(cl.loadClass(mainClass), args);
-        } catch (Throwable t) {
-            throw new RuntimeException("Something went wrong while bootstrapping.", t);
         }
     }
 
