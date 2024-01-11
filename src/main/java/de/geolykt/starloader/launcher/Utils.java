@@ -13,11 +13,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 
 import org.jetbrains.annotations.NotNull;
+<<<<<<< HEAD
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.Mixins;
 
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
+=======
+
+>>>>>>> f014bd6 (Move to org.stianloader groupid, update micromixin)
 import de.geolykt.starloader.UnlikelyEventException;
 import de.geolykt.starloader.util.JavaInterop;
 
@@ -25,6 +29,7 @@ import de.geolykt.starloader.util.JavaInterop;
  * Collection of static utility methods.
  */
 public final class Utils {
+
     public static final String OPERATING_SYSTEM = System.getProperty("os.name");
 
     public static final int STEAM_GALIMULATOR_APPID = 808100;
