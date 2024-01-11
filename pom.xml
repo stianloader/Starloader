@@ -2,10 +2,10 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>de.geolykt.starloader</groupId>
-    <artifactId>launcher</artifactId>
+    <groupId>org.stianlaoder</groupId>
+    <artifactId>launcher-micromixin</artifactId>
     <version>4.0.0</version>
-    <name>Starloader Launcher</name>
+    <name>Stianloader Launcher</name>
     <inceptionYear>2021</inceptionYear>
 
     <properties>
@@ -16,7 +16,7 @@
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <json-version>20231013</json-version>
         <!-- https://stianloader.org/maven/de/geolykt/starloader/micromixin-transformer/ -->
-        <micromixin-version>0.1.0-a20231128</micromixin-version>
+        <micromixin-version>0.1.0-a20240111</micromixin-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
         <!-- DO NOT BE FOOLED: 1.4.X does not support Java 8, but 1.3.X does. -->
         <!-- Otherwise both series should be the same to us as consumers. -->
