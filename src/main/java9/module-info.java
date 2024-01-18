@@ -11,8 +11,8 @@ module de.geolykt.starloader.launcher {
     requires java.base;
     requires ch.qos.logback.classic;
     requires ch.qos.logback.core;
-    requires de.geolykt.starloader.micromixin.transform;
-    requires de.geolykt.starloader.micromixin.runtime;
+    requires org.stianloader.micromixin.transform;
+    requires org.stianloader.micromixin.runtime;
 
     exports de.geolykt.starloader.mod;
     exports de.geolykt.starloader.transformers;

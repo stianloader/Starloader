@@ -2,10 +2,10 @@ package de.geolykt.starloader.launcher;
 
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.tree.ClassNode;
+import org.stianloader.micromixin.MixinTransformer;
 
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 
-import de.geolykt.micromixin.MixinTransformer;
 import de.geolykt.starloader.transformers.ASMTransformer;
 
 public final class ASMMixinTransformer extends ASMTransformer {

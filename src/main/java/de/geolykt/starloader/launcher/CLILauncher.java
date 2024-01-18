@@ -22,12 +22,12 @@ import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
+import org.stianloader.micromixin.MixinTransformer;
+import org.stianloader.micromixin.supertypes.ClassWrapperPool;
 
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
-import de.geolykt.micromixin.MixinTransformer;
-import de.geolykt.micromixin.supertypes.ClassWrapperPool;
 import de.geolykt.starloader.util.JavaInterop;
 
 public class CLILauncher {
@@ -79,7 +79,8 @@ public class CLILauncher {
         ClassWrapperPool cwPool = new ClassWrapperPool();
         cwPool.addProvider(provider);
         MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider, cwPool);
-        cl.addTransformer(new ASMMixinTransformer(transformer));
+        transformer.setLogger(new SLF4JLoggingFacade());
+        cl.addASMTransformer(new ASMMixinTransformer(transformer));
         // ensure extensions are loaded when starting the server
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");

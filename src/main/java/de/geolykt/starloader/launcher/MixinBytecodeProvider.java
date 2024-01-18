@@ -8,12 +8,12 @@ import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.LoggerFactory;
+import org.stianloader.micromixin.BytecodeProvider;
+import org.stianloader.micromixin.supertypes.ASMClassWrapperProvider;
 
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
-import de.geolykt.micromixin.BytecodeProvider;
-import de.geolykt.micromixin.supertypes.ASMClassWrapperProvider;
 import de.geolykt.starloader.util.JavaInterop;
 
 class MixinBytecodeProvider extends ASMClassWrapperProvider implements BytecodeProvider<HierarchyClassLoader> {

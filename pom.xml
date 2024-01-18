@@ -15,8 +15,8 @@
         <annotations-version>24.1.0</annotations-version>
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <json-version>20231013</json-version>
-        <!-- https://stianloader.org/maven/de/geolykt/starloader/micromixin-transformer/ -->
-        <micromixin-version>0.1.0-a20240111</micromixin-version>
+        <!-- https://stianloader.org/maven/org/stianloader/micromixin-transformer/ -->
+        <micromixin-version>0.2.0-a20240118</micromixin-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
         <!-- DO NOT BE FOOLED: 1.4.X does not support Java 8, but 1.3.X does. -->
         <!-- Otherwise both series should be the same to us as consumers. -->
@@ -73,7 +73,7 @@
         </dependency>
 
         <dependency>
-            <groupId>de.geolykt.starloader</groupId>
+            <groupId>org.stianloader</groupId>
             <artifactId>micromixin-transformer</artifactId>
             <version>${micromixin-version}</version>
             <scope>compile</scope>
@@ -85,7 +85,7 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>de.geolykt.starloader</groupId>
+            <groupId>org.stianloader</groupId>
             <artifactId>micromixin-runtime</artifactId>
             <version>${micromixin-version}</version>
             <scope>compile</scope>

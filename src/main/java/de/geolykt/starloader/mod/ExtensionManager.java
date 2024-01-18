@@ -29,13 +29,13 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stianloader.micromixin.MixinConfig;
 
 import com.google.gson.Gson;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
-import de.geolykt.micromixin.MixinConfig;
 import de.geolykt.starloader.launcher.ASMMixinTransformer;
 import de.geolykt.starloader.mod.DiscoveredExtension.LoadStatus;
 import de.geolykt.starloader.mod.Extension.ExtensionDescription;
