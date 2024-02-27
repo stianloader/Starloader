@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stianloader.micromixin.MixinConfig;
+import org.stianloader.micromixin.transform.MixinConfig;
 
 import com.google.gson.Gson;
 

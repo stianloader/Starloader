@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.LoggerFactory;
-import org.stianloader.micromixin.BytecodeProvider;
-import org.stianloader.micromixin.supertypes.ASMClassWrapperProvider;
+import org.stianloader.micromixin.transform.BytecodeProvider;
+import org.stianloader.micromixin.transform.supertypes.ASMClassWrapperProvider;
 
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;

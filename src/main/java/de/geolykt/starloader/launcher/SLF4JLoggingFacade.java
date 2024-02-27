@@ -1,7 +1,7 @@
 package de.geolykt.starloader.launcher;
 
 import org.slf4j.LoggerFactory;
-import org.stianloader.micromixin.api.MixinLoggingFacade;
+import org.stianloader.micromixin.transform.api.MixinLoggingFacade;
 
 class SLF4JLoggingFacade implements MixinLoggingFacade {
 
