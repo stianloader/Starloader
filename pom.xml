@@ -10,16 +10,19 @@
 
     <properties>
         <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm -->
-        <asm-version>9.6</asm-version>
+        <asm-version>9.7</asm-version>
         <!-- https://mvnrepository.com/artifact/org.jetbrains/annotations -->
         <annotations-version>24.1.0</annotations-version>
         <!-- https://mvnrepository.com/artifact/org.json/json -->
-        <json-version>20240205</json-version>
+        <json-version>20240303</json-version>
         <!-- https://stianloader.org/maven/org/stianloader/micromixin-transformer/ -->
-        <micromixin-version>0.4.0-a20240227</micromixin-version>
+        <micromixin-version>0.4.0-a20240413</micromixin-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
         <!-- DO NOT BE FOOLED: 1.4.X does not support Java 8, but 1.3.X does. -->
         <!-- Otherwise both series should be the same to us as consumers. -->
+        <!-- That being said we should expect that we will never be able update this dependency
+             again, so looking at alternative logging frameworks would be something to look out
+             for in the long term -->
         <logback-version>1.3.14</logback-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gpg.skip>true</gpg.skip>
