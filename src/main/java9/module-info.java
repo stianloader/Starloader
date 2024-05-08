@@ -2,7 +2,6 @@ module de.geolykt.starloader.launcher {
     requires transitive org.objectweb.asm.commons;
     requires transitive org.objectweb.asm.util;
     requires transitive org.objectweb.asm;
-    requires transitive com.google.gson;
     requires transitive org.jetbrains.annotations;
     requires transitive org.slf4j;
 

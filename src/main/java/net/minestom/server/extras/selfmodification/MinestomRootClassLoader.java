@@ -65,10 +65,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
     {
         this.protectedClasses.add("de.geolykt.starloader.Starloader");
         this.protectedClasses.add("de.geolykt.starloader.UnlikelyEventException");
-        this.protectedPackages.add("com.google");
         this.protectedPackages.add("org.objectweb.asm");
         this.protectedPackages.add("org.slf4j");
-        this.protectedPackages.add("org.spongepowered");
         this.protectedPackages.add("org.json");
         this.protectedPackages.add("net.minestom.server.extras.selfmodification"); // We do not want to load this package ourselves
         this.protectedPackages.add("de.geolykt.starloader.transformers");
@@ -373,6 +371,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
      *
      * @return The ASM transformers in use.
      * @since 2.1.0
+     * @deprecated Use {@link TransformableClassloader#getASMTransformers()} instead.
      */
     @Deprecated
     @ScheduledForRemoval(inVersion = "5.0.0")
