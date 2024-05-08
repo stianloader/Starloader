@@ -20,7 +20,6 @@ open module de.geolykt.starloader.launcher {
     requires java.base;
     requires ch.qos.logback.classic;
     requires ch.qos.logback.core;
-    requires com.google.gson;
 
     exports de.geolykt.starloader.mod;
     exports de.geolykt.starloader.transformers;

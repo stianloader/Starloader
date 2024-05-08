@@ -17,7 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -30,8 +29,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.Mixins;
-
-import com.google.gson.Gson;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
@@ -46,8 +43,6 @@ public class ExtensionManager {
 
     @Internal
     public static final Logger LOGGER = LoggerFactory.getLogger(ExtensionManager.class);
-
-    private static final Gson GSON = new Gson();
 
     private final Map<String, Extension> extensions = new ConcurrentHashMap<>();
     private boolean loaded;
@@ -221,13 +216,8 @@ public class ExtensionManager {
             if (resource == null) {
                 throw new IOException("Extension does not have an extension.json file: " + urls);
             }
-            try (InputStreamReader reader = new InputStreamReader(resource.openStream())) {
-                @SuppressWarnings("null")
-                DiscoveredExtension extension = GSON.fromJson(reader, DiscoveredExtension.class);
-                if (Objects.isNull(extension)) {
-                    LOGGER.error("No mods found for URLs {}", urls);
-                    return null;
-                }
+            try (InputStream is = resource.openStream()) {
+                DiscoveredExtension extension = DiscoveredExtension.fromJSON(is);
                 extension.files.addAll(urls);
 
                 // Verify integrity and ensure defaults

@@ -1,17 +1,27 @@
 package de.geolykt.starloader.mod;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
+
+import de.geolykt.starloader.mod.DiscoveredExtension.ExternalDependencies.Repository;
+import de.geolykt.starloader.util.JavaInterop;
 
 public final class DiscoveredExtension {
 
@@ -214,8 +224,60 @@ public final class DiscoveredExtension {
         String[] artifacts = new String[0];
 
         static class Repository {
+            @NotNull
             String name = "";
+            @NotNull
             String url = "";
+
+            @Deprecated
+            @ScheduledForRemoval(inVersion = "5.0.0")
+            Repository() {
+                // No-args constructor (only there for legacy reasons)
+            }
+
+            public Repository(String name, String url) {
+                this.name = Objects.requireNonNull(name, "name may not be null");
+                this.url = Objects.requireNonNull(url, "url may not be null");
+            }
+        }
+    }
+
+    @NotNull
+    public static DiscoveredExtension fromJSON(@NotNull InputStream in) throws IOException {
+        try {
+            JSONObject json = new JSONObject(new String(JavaInterop.readAllBytes(in), StandardCharsets.UTF_8));
+            DiscoveredExtension extension = new DiscoveredExtension();
+            extension.name = json.optString("name", null);
+            extension.accessWidener = json.optString("accessWidener", null);
+            extension.mixinConfig = json.optString("mixinConfig", null);
+            extension.reversibleAccessSetter = json.optString("reversibleAccessSetter", null);
+            extension.entrypoint = json.optString("entrypoint", null);
+            extension.version = json.optString("version", null);
+            extension.authors = json.optJSONArray("authors", new JSONArray()).toList().toArray(new String[0]);
+            extension.codeModifiers = json.optJSONArray("codeModifiers", new JSONArray()).toList().toArray(new String[0]);
+            extension.dependencies = json.optJSONArray("dependencies", new JSONArray()).toList().toArray(new String[0]);
+
+            if (json.has("externalDependencies")) {
+                JSONObject externalDepsJson = json.getJSONObject("externalDependencies");
+                List<Repository> repositories = new ArrayList<>();
+                JSONArray repositoriesJson = externalDepsJson.getJSONArray("repositories");
+                for (Object repo : repositoriesJson) {
+                    if (!(repo instanceof JSONObject)) {
+                        throw new IOException("Malformed element in repositories: Expected JSONObject, got " + repo.getClass());
+                    }
+
+                    JSONObject repoJson = (JSONObject) repo;
+                    repositories.add(new Repository(repoJson.getString("name"), repoJson.getString("url")));
+                }
+
+                extension.externalDependencies = new ExternalDependencies();
+                extension.externalDependencies.repositories = repositories.toArray(new Repository[0]);
+                extension.externalDependencies.artifacts = externalDepsJson.optJSONArray("artifacts", new JSONArray()).toList().toArray(new String[0]);
+            }
+
+            return extension;
+        } catch (JSONException e) {
+            throw new IOException("The provided json is invalid and thus cannot be parsed as a extension descriptor.", e);
         }
     }
 }
