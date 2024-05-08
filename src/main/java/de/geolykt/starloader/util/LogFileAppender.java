@@ -23,7 +23,7 @@ import de.geolykt.starloader.launcher.Utils;
 public class LogFileAppender extends AppenderBase<ILoggingEvent> {
 
     @NotNull
-    private static DateTimeFormatter timestampFormatter;
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER;
 
     static {
         DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
@@ -35,36 +35,49 @@ public class LogFileAppender extends AppenderBase<ILoggingEvent> {
         if (formatter == null) {
             throw new InternalError();
         }
-        timestampFormatter = formatter;
+        TIMESTAMP_FORMATTER = formatter;
     }
 
     private BufferedWriter bw;
+    private boolean shutdownHookShutdown = false;
+
+    public LogFileAppender() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            this.shutdownHookShutdown = true;
+            this.stop();
+        }));
+    }
 
     @Override
     protected void append(ILoggingEvent eventObject) {
         try {
-            bw.write(timestampFormatter.format(LocalDateTime.now(Clock.systemDefaultZone())));
-            bw.write(eventObject.getThreadName());
-            bw.write(']');
-            bw.write(' ');
-            bw.write('[');
-            bw.write(eventObject.getLevel().toString());
-            bw.write(']');
-            bw.write(':');
-            bw.write(' ');
-            bw.write(eventObject.getFormattedMessage());
-            bw.newLine();
+            this.bw.write(TIMESTAMP_FORMATTER.format(LocalDateTime.now(Clock.systemDefaultZone())));
+            this.bw.write(eventObject.getThreadName());
+            this.bw.write(']');
+            this.bw.write(' ');
+            this.bw.write('[');
+            this.bw.write(eventObject.getLevel().toString());
+            this.bw.write(']');
+            this.bw.write(':');
+            this.bw.write(' ');
+            this.bw.write(eventObject.getFormattedMessage());
+            this.bw.newLine();
         } catch (IOException e) {
             throw new IllegalStateException("Unable to write log entry", e);
         }
     }
 
-    public LogFileAppender() {
-        Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
+    @Override
+    public void doAppend(ILoggingEvent eventObject) {
+        if (this.shutdownHookShutdown && !super.isStarted()) {
+            return; // Avoid polluting the logs when running in logback debug mode
+        }
+        super.doAppend(eventObject);
     }
 
     @Override
     public void start() {
+        this.shutdownHookShutdown = true;
         try {
             DateTimeFormatter formatter = new DateTimeFormatterBuilder()
                     .appendValue(ChronoField.YEAR, 4, 4, SignStyle.NEVER)
@@ -83,7 +96,7 @@ public class LogFileAppender extends AppenderBase<ILoggingEvent> {
             File logsFolder = new File(Utils.getApplicationFolder(), "logs");
             logsFolder.mkdirs();
             File logfile = new File(logsFolder, formatter.format(LocalDateTime.now(Clock.systemDefaultZone())));
-            bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logfile), StandardCharsets.UTF_8));
+            this.bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logfile), StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IllegalStateException("Unable to initalize appender.", e);
         }
