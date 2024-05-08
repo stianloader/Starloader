@@ -3,9 +3,11 @@ package de.geolykt.starloader.mod;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
@@ -15,7 +17,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stianloader.micromixin.transform.internal.util.Objects;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 
@@ -244,7 +245,7 @@ public final class DiscoveredExtension {
     @NotNull
     public static DiscoveredExtension fromJSON(@NotNull InputStream in) throws IOException {
         try {
-            JSONObject json = new JSONObject(JavaInterop.readAllBytes(in));
+            JSONObject json = new JSONObject(new String(JavaInterop.readAllBytes(in), StandardCharsets.UTF_8));
             DiscoveredExtension extension = new DiscoveredExtension();
             extension.name = json.optString("name", null);
             extension.accessWidener = json.optString("accessWidener", null);
