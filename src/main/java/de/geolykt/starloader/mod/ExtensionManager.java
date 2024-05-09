@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stianloader.micromixin.transform.MixinConfig;
+import org.stianloader.micromixin.transform.api.MixinConfig;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;

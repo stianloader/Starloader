@@ -13,8 +13,8 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.LoggerFactory;
-import org.stianloader.micromixin.transform.MixinTransformer;
-import org.stianloader.micromixin.transform.supertypes.ClassWrapperPool;
+import org.stianloader.micromixin.transform.api.MixinTransformer;
+import org.stianloader.micromixin.transform.api.supertypes.ClassWrapperPool;
 
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;

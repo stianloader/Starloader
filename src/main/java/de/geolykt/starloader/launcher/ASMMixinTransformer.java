@@ -2,7 +2,7 @@ package de.geolykt.starloader.launcher;
 
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.tree.ClassNode;
-import org.stianloader.micromixin.transform.MixinTransformer;
+import org.stianloader.micromixin.transform.api.MixinTransformer;
 
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 
