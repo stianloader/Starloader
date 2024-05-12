@@ -72,9 +72,13 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
      * @throws ClassNotFoundException if the class is not found inside this classloader
      */
     public Class<?> loadClassAsChild(String name, boolean resolve) throws ClassNotFoundException {
-        Class<?> loadedClass = findLoadedClass(name);
+        Class<?> loadedClass = this.findLoadedClass(name);
         if (loadedClass != null) {
             return loadedClass;
+        }
+
+        if (this.root.isProtected(name)) {
+            throw new ClassNotFoundException("The MinestomExtensionClassLoader is not permitted to load this class as it is protected by the root classloader.");
         }
 
         try {
@@ -111,7 +115,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
                 throw new ClassNotFoundException("Could not load class " + name, e);
             }
         } catch (ClassNotFoundException e) {
-            for (MinestomExtensionClassLoader child : children) {
+            for (MinestomExtensionClassLoader child : this.children) {
                 try {
                     Class<?> loaded = child.loadClassAsChild(name, resolve);
                     return loaded;
