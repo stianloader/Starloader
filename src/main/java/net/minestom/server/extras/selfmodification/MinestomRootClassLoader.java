@@ -140,9 +140,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         }
     }
 
-    private boolean isProtected(String name) {
-        if (!protectedClasses.contains(name)) {
-            for (String start : protectedPackages) {
+    protected boolean isProtected(String name) {
+        if (!this.protectedClasses.contains(name)) {
+            for (String start : this.protectedPackages) {
                 if (name.startsWith(start)) {
                     return true;
                 }
