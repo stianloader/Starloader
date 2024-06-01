@@ -160,6 +160,14 @@
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>
+
+        <!-- https://stianloader.org/maven/org/stianloader/picoresolve/ -->
+        <dependency>
+            <groupId>org.stianloader</groupId>
+            <artifactId>picoresolve</artifactId>
+            <version>1.0.0-a20240601</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

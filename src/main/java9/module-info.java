@@ -20,6 +20,7 @@ open module de.geolykt.starloader.launcher {
     requires java.base;
     requires ch.qos.logback.classic;
     requires ch.qos.logback.core;
+    requires org.stianloader.picoresolve;
 
     exports de.geolykt.starloader.mod;
     exports de.geolykt.starloader.transformers;
