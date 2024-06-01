@@ -12,6 +12,7 @@ module de.geolykt.starloader.launcher {
     requires ch.qos.logback.core;
     requires org.stianloader.micromixin.transform;
     requires org.stianloader.micromixin.runtime;
+    requires org.stianloader.picoresolve;
 
     exports de.geolykt.starloader.mod;
     exports de.geolykt.starloader.transformers;

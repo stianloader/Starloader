@@ -228,6 +228,8 @@ public final class DiscoveredExtension {
             String name = "";
             @NotNull
             String url = "";
+            boolean mirrorable = true;
+            boolean mirrorOnly = false;
 
             @Deprecated
             @ScheduledForRemoval(inVersion = "5.0.0")
@@ -267,7 +269,10 @@ public final class DiscoveredExtension {
                     }
 
                     JSONObject repoJson = (JSONObject) repo;
-                    repositories.add(new Repository(repoJson.getString("name"), repoJson.getString("url")));
+                    Repository repository = new Repository(repoJson.getString("name"), repoJson.getString("url"));
+                    repository.mirrorable = repoJson.optBoolean("mirrorable", true);
+                    repository.mirrorOnly = repoJson.optBoolean("mirrorOnly", false);
+                    repositories.add(repository);
                 }
 
                 extension.externalDependencies = new ExternalDependencies();

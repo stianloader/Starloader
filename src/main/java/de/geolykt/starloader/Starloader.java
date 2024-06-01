@@ -32,8 +32,8 @@ public final class Starloader {
 
     private Starloader(LauncherConfiguration config) {
         this.extensionSource = config.getExtensionList();
-        this.extensions = new ExtensionManager();
         this.modDirectory = config.getExtensionList().getFolder().toPath();
+        this.extensions = new ExtensionManager(this.modDirectory.resolve(".picoresolve-cache"));
     }
 
     private Starloader(@NotNull List<@NotNull ? extends ExtensionPrototype> extensionSource, ExtensionManager extensions, @NotNull Path modDir) {
@@ -43,61 +43,60 @@ public final class Starloader {
     }
 
     private void start() {
-        extensions.loadExtensions(extensionSource);
-        LOGGER.info("From {} prototypes, {} extensions were loaded.", extensionSource.size(), extensions.getExtensions().size());
+        this.extensions.loadExtensions( this.extensionSource);
+        Starloader.LOGGER.info("From {} prototypes, {} extensions were loaded.",  this.extensionSource.size(),  this.extensions.getExtensions().size());
         long start = System.currentTimeMillis();
-        LOGGER.info("Initializing extension: preinit");
-        extensions.getExtensions().forEach(Extension::preInitialize);
-        LOGGER.info("Initializing extension: init");
-        extensions.getExtensions().forEach(extension -> {
+        Starloader.LOGGER.info("Initializing extension: preinit");
+        this.extensions.getExtensions().forEach(Extension::preInitialize);
+        Starloader.LOGGER.info("Initializing extension: init");
+        this.extensions.getExtensions().forEach(extension -> {
             extension.initialize();
-            LOGGER.info("Initialized extension {}.", extension.getDescription().getName());
+            Starloader.LOGGER.info("Initialized extension {}.", extension.getDescription().getName());
         });
-        LOGGER.info("Initializing extension: postinit");
-        extensions.getExtensions().forEach(Extension::postInitialize);
-        LOGGER.info("All Extensions initialized within {}ms", (System.currentTimeMillis() - start));
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> { // FIXME don't use shutdown hooks and/or have them deadlock-proof.
-            extensions.shutdown();
-        }, "ExtensionsShutdownThread"));
+        Starloader.LOGGER.info("Initializing extension: postinit");
+        this.extensions.getExtensions().forEach(Extension::postInitialize);
+        Starloader.LOGGER.info("All Extensions initialized within {}ms", (System.currentTimeMillis() - start));
+        // FIXME don't use shutdown hooks and/or have them deadlock-proof.
+        Runtime.getRuntime().addShutdownHook(new Thread(this.extensions::shutdown, "ExtensionsShutdownThread"));
     }
 
     @Internal
     public static void start(@NotNull List<@NotNull ExtensionPrototype> extensionSource, @NotNull Path modDir) {
-        if (instance != null) {
+        if (Starloader.instance != null) {
             throw new IllegalStateException("Starloader initialized twice!");
         }
-        LOGGER.info("Java version: {}. JavaInterop J9: {}", System.getProperty("java.version"), JavaInterop.isJava9());
-        instance = new Starloader(extensionSource, new ExtensionManager(), modDir);
-        instance.start();
+        Starloader.LOGGER.info("Java version: {}. JavaInterop J9: {}", System.getProperty("java.version"), JavaInterop.isJava9());
+        Starloader.instance = new Starloader(extensionSource, new ExtensionManager(modDir.resolve(".picoresolve-cache")), modDir);
+        Starloader.instance.start();
     }
 
     @Internal
     public static void start(LauncherConfiguration config) {
-        if (instance != null) {
+        if (Starloader.instance != null) {
             throw new IllegalStateException("Starloader initialized twice!");
         }
-        LOGGER.info("Java version: {}. JavaInterop J9: {}", System.getProperty("java.version"), JavaInterop.isJava9());
-        instance = new Starloader(config);
-        instance.start();
+        Starloader.LOGGER.info("Java version: {}. JavaInterop J9: {}", System.getProperty("java.version"), JavaInterop.isJava9());
+        Starloader.instance = new Starloader(config);
+        Starloader.instance.start();
     }
 
     public static ExtensionManager getExtensionManager() {
-        return instance.extensions;
+        return Starloader.instance.extensions;
     }
 
     @NotNull
     @Deprecated
     public static File getExtensionDir() {
-        return instance.getModDirectory().toFile();
+        return Starloader.instance.getModDirectory().toFile();
     }
 
     @NotNull
     public Path getModDirectory() {
-        return modDirectory;
+        return this.modDirectory;
     }
 
     public static Starloader getInstance() {
-        return instance;
+        return Starloader.instance;
     }
 
     static {

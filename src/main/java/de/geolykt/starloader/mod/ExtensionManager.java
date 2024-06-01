@@ -7,9 +7,14 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,45 +22,55 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import org.jetbrains.annotations.ApiStatus.AvailableSince;
 import org.jetbrains.annotations.ApiStatus.Internal;
+import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stianloader.micromixin.transform.api.MixinConfig;
+import org.stianloader.picoresolve.DependencyLayer;
+import org.stianloader.picoresolve.DependencyLayer.DependencyEdge;
+import org.stianloader.picoresolve.DependencyLayer.DependencyLayerElement;
+import org.stianloader.picoresolve.GAV;
+import org.stianloader.picoresolve.MavenResolver;
+import org.stianloader.picoresolve.Scope;
+import org.stianloader.picoresolve.exclusion.ExclusionContainer;
+import org.stianloader.picoresolve.repo.MavenRepository;
+import org.stianloader.picoresolve.repo.RepositoryAttachedValue;
+import org.stianloader.picoresolve.version.MavenVersion;
+import org.stianloader.picoresolve.version.VersionRange;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.launcher.ASMMixinTransformer;
+import de.geolykt.starloader.mod.DiscoveredExtension.ExternalDependencies;
+import de.geolykt.starloader.mod.DiscoveredExtension.ExternalDependencies.Repository;
 import de.geolykt.starloader.mod.DiscoveredExtension.LoadStatus;
 import de.geolykt.starloader.mod.Extension.ExtensionDescription;
 import de.geolykt.starloader.transformers.ASMTransformer;
 import de.geolykt.starloader.transformers.ReversibleAccessSetterTransformer;
 import de.geolykt.starloader.util.JavaInterop;
+import de.geolykt.starloader.util.MirroringURIMavenRepository;
 
 public class ExtensionManager {
-
-    @Internal
-    public static final Logger LOGGER = LoggerFactory.getLogger(ExtensionManager.class);
-
-    private final Map<String, Extension> extensions = new ConcurrentHashMap<>();
-    private boolean loaded;
-
-    @NotNull
-    private final List<Extension> extensionList = new CopyOnWriteArrayList<>();
-
-    @SuppressWarnings("null")
-    @NotNull
-    private final List<Extension> immutableExtensionListView = Collections.unmodifiableList(extensionList);
-
-    private final Map<String, MinestomExtensionClassLoader> extensionClassloaders = new WeakHashMap<>();
 
     /**
      * The description of the extension that is currently being loaded.
@@ -64,18 +79,46 @@ public class ExtensionManager {
      */
     static final ThreadLocal<ExtensionDescription> CURRENTLY_LOADED_EXTENSION = new ThreadLocal<>();
 
+    @Internal
+    public static final Logger LOGGER = LoggerFactory.getLogger(ExtensionManager.class);
+
+    /**
+     * Whether to dump ALL data retrieved using {@link MirroringURIMavenRepository} as-is.
+     *
+     * @since 4.0.0-a20240601
+     */
+    @AvailableSince("4.0.0-a20240601")
+    private static final boolean MIRROR_MAVEN_REQUESTS = Boolean.getBoolean("org.stianloader.sll.log.MIRROR_MAVEN_REQUESTS");
+
+    private final Map<String, MinestomExtensionClassLoader> extensionClassloaders = new WeakHashMap<>();
+    @NotNull
+    private final List<Extension> extensionList = new CopyOnWriteArrayList<>();
+    private final Map<String, Extension> extensions = new ConcurrentHashMap<>();
+    @NotNull
+    private final List<Extension> immutableExtensionListView = Collections.unmodifiableList(this.extensionList);
+    private boolean loaded;
+    @NotNull
+    @AvailableSince("4.0.0-a20240601")
+    private final Path mavenCacheDir;
+
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
     public ExtensionManager() {
+        this(Paths.get(".picoresolve-cache"));
+    }
+
+    public ExtensionManager(@NotNull Path mavenCacheDir) {
+        this.mavenCacheDir = mavenCacheDir;
     }
 
     public void loadExtensions(List<@NotNull ? extends ExtensionPrototype> extensionCandidates) {
-        if (loaded) {
+        if (this.loaded) {
             throw new IllegalStateException("Extensions are already loaded!");
         }
         this.loaded = true;
 
-        List<DiscoveredExtension> discoveredExtensions = discoverExtensions(extensionCandidates);
-        discoveredExtensions = generateLoadOrder(discoveredExtensions);
-        loadDependencies(discoveredExtensions);
+        List<DiscoveredExtension> discoveredExtensions = this.discoverExtensions(extensionCandidates);
+        discoveredExtensions = this.generateLoadOrder(discoveredExtensions);
         // remove invalid extensions
         assert discoveredExtensions != null;
         discoveredExtensions.removeIf(ext -> ext.getLoadStatus() != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
@@ -94,8 +137,8 @@ public class ExtensionManager {
             }
         }
 
-        setupAccessWideners(discoveredExtensions);
-        setupCodeModifiers(discoveredExtensions);
+        this.setupAccessWideners(discoveredExtensions);
+        this.setupCodeModifiers(discoveredExtensions);
 
         // remove invalid extensions
         discoveredExtensions.removeIf(ext -> ext.getLoadStatus() != DiscoveredExtension.LoadStatus.LOAD_SUCCESS);
@@ -105,7 +148,7 @@ public class ExtensionManager {
                 continue;
             }
             try {
-                attemptSingleLoad(discoveredExtension);
+                this.attemptSingleLoad(discoveredExtension);
             } catch (Exception e) {
                 discoveredExtension.setLoadStatus(DiscoveredExtension.LoadStatus.LOAD_FAILED);
                 e.printStackTrace();
@@ -224,11 +267,6 @@ public class ExtensionManager {
                 // Verify integrity and ensure defaults
                 DiscoveredExtension.verifyIntegrity(extension);
 
-                // FIXME Remove from source
-                /*if (extension.getLoadStatus() == LoadStatus.LOAD_SUCCESS) {
-                    extension.loader = this.newClassLoader(extension, urls.toArray(new @NotNull URL[0]));
-                }*/
-
                 discardLoader.close();
                 return extension;
             }
@@ -330,11 +368,6 @@ public class ExtensionManager {
         return dependencies.isEmpty() || dependencies.stream().allMatch(ext -> extensions.containsKey(ext.getName().toLowerCase()));
     }
 
-    private void loadDependencies(List<DiscoveredExtension> extensions) {
-        List<DiscoveredExtension> allLoadedExtensions = new LinkedList<>(extensions);
-        extensionList.stream().map(ext -> ext.getDescription().getOrigin()).forEach(allLoadedExtensions::add);
-    }
-
     /**
      * Creates a new class loader for the given extension.
      * Will add the new loader as a child of all its dependencies' loaders.
@@ -347,6 +380,94 @@ public class ExtensionManager {
     public MinestomExtensionClassLoader newClassLoader(@NotNull DiscoveredExtension extension) {
         MinestomRootClassLoader root = MinestomRootClassLoader.getInstance();
         MinestomExtensionClassLoader loader = new MinestomExtensionClassLoader(extension.getName(), extension.files.toArray(new URL[0]), root);
+
+        ExternalDependencies dependencies = extension.getExternalDependencies();
+        resolveDependencies:
+        if (dependencies != null) {
+            // Resolve maven dependencies
+
+            List<DependencyEdge> dependencyEdges = new ArrayList<>();
+
+            for (String gavString : dependencies.artifacts) {
+                @NotNull String[] gavParts = gavString.split(":");
+                if (gavParts.length != 3) {
+                    ExtensionManager.LOGGER.error("Skipping malformed dependency artifact '{}' of extension '{}'. The expected format is 'group:artifact:version'. Note: At this point in time only GAV but not GAVCE notations are supported.", gavString, extension.getName());
+                    continue;
+                }
+
+                VersionRange requestedVersion = VersionRange.parse(gavParts[2]);
+                dependencyEdges.add(new DependencyEdge(gavParts[0], gavParts[1], null, "jar", requestedVersion, Scope.RUNTIME, ExclusionContainer.empty()));
+            }
+
+            if (dependencyEdges.isEmpty()) {
+                break resolveDependencies;
+            }
+
+            MavenResolver resolver = new MavenResolver(this.mavenCacheDir);
+            for (Repository repo : dependencies.repositories) {
+                Path mirrorOut = (repo.mirrorable && ExtensionManager.MIRROR_MAVEN_REQUESTS) ? this.mavenCacheDir.resolve(".mirror-out") : null;
+                if (!repo.mirrorOnly || ExtensionManager.MIRROR_MAVEN_REQUESTS) {
+                    resolver.addRepository(new MirroringURIMavenRepository(repo.name, URI.create(repo.url), mirrorOut));
+                }
+            }
+
+            GAV virtualGAV = new GAV("sll-virtual-dependency", extension.getName(), MavenVersion.parse(extension.getVersion()));
+            DependencyLayerElement virtualElement = new DependencyLayerElement(virtualGAV, null, null, ExclusionContainer.empty(), dependencyEdges);
+            DependencyLayer layer = new DependencyLayer(null, Collections.singletonList(virtualElement));
+
+            Executor executor = Objects.requireNonNull(ForkJoinPool.commonPool());
+
+            try {
+                resolver.resolveAllChildren(layer, executor).get(60, TimeUnit.SECONDS);
+            } catch (CompletionException | ExecutionException e) {
+                ExtensionManager.LOGGER.error("Unable to fetch remote dependencies of extension {} v{}.", extension.getName(), extension.getVersion());
+                throw new RuntimeException("Unable to fetch remote dependencies of extension " + extension.getName() + ", version " + extension.getVersion(), e);
+            } catch (TimeoutException | InterruptedException e) {
+                ExtensionManager.LOGGER.error("Unable to fetch remote dependencies of extension {} v{} (timed out. Extensions have a maximum of 60 seconds to resolve remove dependencies).", extension.getName(), extension.getVersion());
+                throw new RuntimeException("Unable to fetch remote dependencies of extension " + extension.getName() + ", version " + extension.getVersion() + ": Timed out", e);
+            }
+
+            CompletableFuture<Set<RepositoryAttachedValue<Path>>> combined = CompletableFuture.completedFuture(ConcurrentHashMap.newKeySet());
+
+            List<GAV> dependencyGAVs = new ArrayList<>();
+            for (layer = layer.getChild(); layer != null; layer = layer.getChild()) {
+                for (DependencyLayerElement element : layer.elements) {
+                    dependencyGAVs.add(element.gav);
+                    CompletableFuture<RepositoryAttachedValue<Path>> download = resolver.download(element.gav, element.classifier, element.type, executor);
+                    combined = combined.thenCombine(download, (set, downloadResult) -> {
+                        set.add(downloadResult);
+                        return set;
+                    });
+                }
+            }
+
+            Set<RepositoryAttachedValue<Path>> paths;
+
+            try {
+                paths = combined.get(60, TimeUnit.SECONDS);
+            } catch (CompletionException | ExecutionException e) {
+                ExtensionManager.LOGGER.error("Unable to download remote dependencies of extension {} v{}. Requested GAVs: {}", extension.getName(), extension.getVersion(), dependencyGAVs);
+                throw new RuntimeException("Unable to download remote dependencies of extension " + extension.getName() + ", version " + extension.getVersion(), e);
+            } catch (TimeoutException | InterruptedException e) {
+                ExtensionManager.LOGGER.error("Unable to download remote dependencies of extension {} v{} (timed out. Extensions have a maximum of 60 seconds to resolve remove dependencies). Requested GAVs: {}", extension.getName(), extension.getVersion(), dependencyGAVs);
+                throw new RuntimeException("Unable to download remote dependencies of extension " + extension.getName() + ", version " + extension.getVersion() + ": Timed out", e);
+            }
+
+            for (RepositoryAttachedValue<Path> value : paths) {
+                String repoId = "null (cached in maven local, but without a known maven repository)";
+                MavenRepository repo = value.getRepository();
+                if (repo != null) {
+                    repoId = repo.getRepositoryId();
+                }
+                ExtensionManager.LOGGER.debug("Adding {} to the classpath of extension '{}' v{}. The dependency was found in repository '{}'", value.getValue(), extension.getName(), extension.getVersion(), repoId);
+                try {
+                    loader.addURL(value.getValue().toUri().toURL());
+                } catch (MalformedURLException e) {
+                    ExtensionManager.LOGGER.warn("Failed to add {} to the classpath of extension '{}' v{}. The dependency was found in repository '{}'", value.getValue(), extension.getName(), extension.getVersion(), repoId, e);
+                }
+            }
+        }
+
         if (extension.getDependencies().length == 0) {
             // orphaned extension, we can insert it directly
             root.addChild(loader);
@@ -363,7 +484,7 @@ public class ExtensionManager {
             }
 
             if (!foundOne) {
-                LOGGER.error("Could not load extension {} as it was not possible to find any of the following parents in the classloader hierarchy: {}. Following loaders are currently registered: {}", extension.getName(), Arrays.toString(extension.getDependencies()), this.extensionClassloaders.keySet());
+                ExtensionManager.LOGGER.error("Could not load extension {} as it was not possible to find any of the following parents in the classloader hierarchy: {}. Following loaders are currently registered: {}", extension.getName(), Arrays.toString(extension.getDependencies()), this.extensionClassloaders.keySet());
                 throw new RuntimeException("Could not load extension " + extension.getName() + " as it was not possible find any of the following parents inside classloader hierarchy (this indicates a likely issue with SLL internals): " + Arrays.toString(extension.getDependencies()));
             }
         }
@@ -594,7 +715,6 @@ public class ExtensionManager {
     private boolean loadExtensionList(@NotNull List<DiscoveredExtension> extensionsToLoad) {
         // ensure correct order of dependencies
         this.generateLoadOrder(extensionsToLoad);
-        this.loadDependencies(extensionsToLoad);
 
         for (DiscoveredExtension extension : extensionsToLoad) {
             if (extension.loader != null) {

@@ -31,6 +31,11 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
     }
 
     @Override
+    public void addURL(URL url) {
+        super.addURL(url);
+    }
+
+    @Override
     public void close() throws IOException {
         synchronized (HierarchyClassLoader.class) {
             for (HierarchyClassLoader parent : this.parents) {
