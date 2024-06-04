@@ -1,3 +1,10 @@
+**Note: This is the branch for the variant of SLL that uses sponge's mixin implementation
+to process mixins.** Compared to the launcher-micromixin variant of SLL, the launcher-sponge
+variant has a slower release cycle, meaning that not all features will be present.
+This variant mostly exists in order to be able to test the compliance of micromixin.
+Developers should use the micromixin variant whereever possible, unless a mod demands more
+powerful features only present in the spongeian variant.
+
 # Starloader
 
 ## Starloader vs Starloader-API
@@ -7,11 +14,10 @@ to loader secondary jars (extensions) as well as providing mixins and a bytecode
 manipulation framework. As such most extensions should make use of Starloader-API
 to avoid conflicts.
 
-## Usage
+## Maven
 
-A german guide explaining how you can use Starloader with the Starloader-API can
-be found here [here](https://files.geolykt.de/starloader-guide_de.pdf).
-It might be ported to the english language later on.
+Nightly builds of this application are provided on our maven repository,
+https://stianloader.org/maven/ .
 
 ## IRC Chat
 
@@ -25,7 +31,7 @@ Feel free to take a look at it at #galimulator-modding @ irc.esper.net
   building SLL requires Java 16 or higher. Running SLL works with Java 1.8
   and beyond regardless.</b>
 
-The project can be built via maven and a JDK 11 or higher (JDK 17 is recommended).
+The project can be built via maven and a JDK 16 or higher (JDK 17 is recommended).
 This can be easily done via `mvn install` on most systems.
 The built jar is located in the target folder. (Note: you probably
 don't want the jar prefixed with "original-")
