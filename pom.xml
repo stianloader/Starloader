@@ -17,7 +17,7 @@
         <json-version>20240303</json-version>
         <mixin-version>0.8.6</mixin-version>
         <!-- https://mvnrepository.com/artifact/io.github.llamalad7/mixinextras-common -->
-        <mixinextras-version>0.4.0-beta.2</mixinextras-version>
+        <mixinextras-version>0.5.0-beta.1</mixinextras-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
         <!-- DO NOT BE FOOLED: 1.4.X does not support Java 8, but 1.3.X does. -->
         <!-- Otherwise both series should be the same to us as consumers. -->
@@ -119,7 +119,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.9</version>
+            <version>2.0.13</version>
             <scope>compile</scope>
         </dependency>
 
@@ -165,7 +165,7 @@
         <dependency>
             <groupId>org.stianloader</groupId>
             <artifactId>picoresolve</artifactId>
-            <version>1.0.0-a20240601</version>
+            <version>1.0.0-a20240617</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -244,7 +244,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -293,7 +293,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.3</version>
+                <version>3.7.0</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>

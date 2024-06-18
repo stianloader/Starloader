@@ -13,3 +13,6 @@ target/
 
 # File produced by the maven-shade-plugin
 dependency-reduced-pom.xml
+
+classes
+mods
