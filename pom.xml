@@ -126,7 +126,7 @@
         <dependency>
             <groupId>org.stianloader</groupId>
             <artifactId>picoresolve</artifactId>
-            <version>1.0.0-a20240617</version>
+            <version>1.0.0-a20240618</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
