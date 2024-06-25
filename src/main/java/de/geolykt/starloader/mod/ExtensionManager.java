@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -89,7 +88,7 @@ public class ExtensionManager {
     @AvailableSince("4.0.0-a20240601")
     private static final boolean MIRROR_MAVEN_REQUESTS = Boolean.getBoolean("org.stianloader.sll.log.MIRROR_MAVEN_REQUESTS");
 
-    private final Map<String, MinestomExtensionClassLoader> extensionClassloaders = new WeakHashMap<>();
+    private final Map<String, MinestomExtensionClassLoader> extensionClassloaders = new HashMap<>();
     @NotNull
     private final List<Extension> extensionList = new CopyOnWriteArrayList<>();
     private final Map<String, Extension> extensions = new ConcurrentHashMap<>();
@@ -127,7 +126,7 @@ public class ExtensionManager {
                 try {
                     extension.loader.close();
                 } catch (IOException e) {
-                    LOGGER.warn("Unable to close leftover classloader for extension {}", extension.getName(), e);
+                    ExtensionManager.LOGGER.warn("Unable to close leftover classloader for extension {}", extension.getName(), e);
                 }
                 extension.loader = null;
             }
@@ -473,17 +472,18 @@ public class ExtensionManager {
         } else {
             // we need to keep track that it has actually been inserted
             // even though it should always be (due to the order in which extensions are loaders), it is an additional layer of """security"""
-            boolean foundOne = false;
+            boolean missedOne = false;
             for (String dependency : extension.getDependencies()) {
                 MinestomExtensionClassLoader parent = this.extensionClassloaders.get(dependency.toLowerCase(Locale.ROOT));
                 if (parent != null) {
                     parent.addChild(loader);
-                    foundOne = true;
+                } else {
+                    missedOne = true;
                 }
             }
 
-            if (!foundOne) {
-                ExtensionManager.LOGGER.error("Could not load extension {} as it was not possible to find any of the following parents in the classloader hierarchy: {}. Following loaders are currently registered: {}", extension.getName(), Arrays.toString(extension.getDependencies()), this.extensionClassloaders.keySet());
+            if (missedOne) {
+                ExtensionManager.LOGGER.error("Could not load extension '{}' as it was not possible to find any of the following parents in the classloader hierarchy: {}. Following classloaders are currently registered: {}", extension.getName(), Arrays.toString(extension.getDependencies()), this.extensionClassloaders.keySet());
                 throw new RuntimeException("Could not load extension " + extension.getName() + " as it was not possible find any of the following parents inside classloader hierarchy (this indicates a likely issue with SLL internals): " + Arrays.toString(extension.getDependencies()));
             }
         }
@@ -683,13 +683,13 @@ public class ExtensionManager {
         extensionsToReload.add(rediscoveredExtension);
 
         for (List<URL> dependentUrls : originalURLsOfDependents) {
-            // rediscover dependent extension to reload
-            LOGGER.info("Rediscover dependent extension (depends on {})", extensionName);
-            extensionsToReload.add(discoverFromURLs(dependentUrls));
+            // re-discover dependent extension to reload
+            ExtensionManager.LOGGER.info("Rediscover dependent extension (depends on {})", extensionName);
+            extensionsToReload.add(this.discoverFromURLs(dependentUrls));
         }
 
         // ensure correct order of dependencies
-        loadExtensionList(extensionsToReload);
+        this.loadExtensionList(extensionsToReload);
     }
 
     private boolean loadExtensionList(@NotNull List<DiscoveredExtension> extensionsToLoad) {
@@ -701,7 +701,7 @@ public class ExtensionManager {
                 try {
                     extension.loader.close();
                 } catch (IOException e) {
-                    LOGGER.warn("Unable to close leftover classloader for extension {}", extension.getName(), e);
+                    ExtensionManager.LOGGER.warn("Unable to close leftover classloader for extension {}", extension.getName(), e);
                 }
                 extension.loader = null;
             }
@@ -710,17 +710,17 @@ public class ExtensionManager {
             }
         }
 
-        setupAccessWideners(extensionsToLoad);
+        this.setupAccessWideners(extensionsToLoad);
         // setup code modifiers for these extensions
         // TODO: it is possible that the new modifiers cannot be applied (because the targeted classes are already loaded), should we issue a warning?
         // If so, how?
-        setupCodeModifiers(extensionsToLoad);
+        this.setupCodeModifiers(extensionsToLoad);
 
         List<Extension> newExtensions = new LinkedList<>();
         for (DiscoveredExtension toReload : extensionsToLoad) {
             // reload extensions
             LOGGER.info("Actually load extension {}", toReload.getName());
-            Extension loadedExtension = attemptSingleLoad(toReload);
+            Extension loadedExtension = this.attemptSingleLoad(toReload);
             if (loadedExtension != null) {
                 newExtensions.add(loadedExtension);
             }
