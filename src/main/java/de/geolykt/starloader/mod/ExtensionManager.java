@@ -54,14 +54,14 @@ import org.stianloader.picoresolve.exclusion.ExclusionContainer;
 import org.stianloader.picoresolve.repo.MavenRepository;
 import org.stianloader.picoresolve.repo.RepositoryAttachedValue;
 import org.stianloader.picoresolve.version.MavenVersion;
-import org.stianloader.picoresolve.version.VersionRange;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.launcher.ASMMixinTransformer;
 import de.geolykt.starloader.mod.DiscoveredExtension.ExternalDependencies;
-import de.geolykt.starloader.mod.DiscoveredExtension.ExternalDependencies.Repository;
+import de.geolykt.starloader.mod.DiscoveredExtension.ExternalDependencyArtifact;
+import de.geolykt.starloader.mod.DiscoveredExtension.ExternalRepository;
 import de.geolykt.starloader.mod.DiscoveredExtension.LoadStatus;
 import de.geolykt.starloader.mod.Extension.ExtensionDescription;
 import de.geolykt.starloader.transformers.ASMTransformer;
@@ -231,8 +231,8 @@ public class ExtensionManager {
             }
         }
 
-        extensionList.add(extension); // add to a list, as lists preserve order
-        extensions.put(extensionName.toLowerCase(), extension);
+        this.extensionList.add(extension); // add to a list, as lists preserve order
+        this.extensions.put(extensionName.toLowerCase(), extension);
 
         return extension;
     }
@@ -364,7 +364,7 @@ public class ExtensionManager {
     }
 
     private boolean areAllDependenciesLoaded(List<DiscoveredExtension> dependencies) {
-        return dependencies.isEmpty() || dependencies.stream().allMatch(ext -> extensions.containsKey(ext.getName().toLowerCase()));
+        return dependencies.isEmpty() || dependencies.stream().allMatch(ext -> this.extensions.containsKey(ext.getName().toLowerCase()));
     }
 
     /**
@@ -387,15 +387,8 @@ public class ExtensionManager {
 
             List<DependencyEdge> dependencyEdges = new ArrayList<>();
 
-            for (String gavString : dependencies.artifacts) {
-                @NotNull String[] gavParts = gavString.split(":");
-                if (gavParts.length != 3) {
-                    ExtensionManager.LOGGER.error("Skipping malformed dependency artifact '{}' of extension '{}'. The expected format is 'group:artifact:version'. Note: At this point in time only GAV but not GAVCE notations are supported.", gavString, extension.getName());
-                    continue;
-                }
-
-                VersionRange requestedVersion = VersionRange.parse(gavParts[2]);
-                dependencyEdges.add(new DependencyEdge(gavParts[0], gavParts[1], null, "jar", requestedVersion, Scope.RUNTIME, ExclusionContainer.empty()));
+            for (ExternalDependencyArtifact artifact : dependencies.getArtifacts()) {
+                dependencyEdges.add(new DependencyEdge(artifact.getGroup(), artifact.getArtifact(), artifact.getClassifier(), artifact.getExtension(), artifact.getVersion(), Scope.RUNTIME, artifact.getExclusions()));
             }
 
             if (dependencyEdges.isEmpty()) {
@@ -403,10 +396,10 @@ public class ExtensionManager {
             }
 
             MavenResolver resolver = new MavenResolver(this.mavenCacheDir);
-            for (Repository repo : dependencies.repositories) {
-                Path mirrorOut = (repo.mirrorable && ExtensionManager.MIRROR_MAVEN_REQUESTS) ? this.mavenCacheDir.resolve(".mirror-out") : null;
-                if (!repo.mirrorOnly || ExtensionManager.MIRROR_MAVEN_REQUESTS) {
-                    resolver.addRepository(new MirroringURIMavenRepository(repo.name, URI.create(repo.url), mirrorOut));
+            for (ExternalRepository repo : dependencies.getRepositories()) {
+                Path mirrorOut = (repo.isMirrorable() && ExtensionManager.MIRROR_MAVEN_REQUESTS) ? this.mavenCacheDir.resolve(".mirror-out") : null;
+                if (!repo.isMirrorOnly() || ExtensionManager.MIRROR_MAVEN_REQUESTS) {
+                    resolver.addRepository(new MirroringURIMavenRepository(repo.getName(), URI.create(repo.getUrl()), mirrorOut));
                 }
             }
 
@@ -495,12 +488,12 @@ public class ExtensionManager {
 
     @NotNull
     public List<Extension> getExtensions() {
-        return immutableExtensionListView;
+        return this.immutableExtensionListView;
     }
 
     @Nullable
     public Extension getExtension(@NotNull String name) {
-        return extensions.get(name.toLowerCase());
+        return this.extensions.get(name.toLowerCase());
     }
 
     @SuppressWarnings("deprecation")
