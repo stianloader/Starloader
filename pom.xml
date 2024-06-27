@@ -264,6 +264,14 @@
                 <configuration>
                     <!-- I have no idea what I'm doing but it's working -->
                     <sourcepath>${project.build.sourceDirectory}</sourcepath>
+                    <!-- "Custom" javadoc tags (defined by https://openjdk.org/jeps/8068562 although draft, the JDK does use it still) -->
+                    <tags>
+                        <tag>
+                            <name>implNote</name>
+                            <placement>a</placement>
+                            <head>Implementation Note:</head>
+                        </tag>
+                    </tags>
                 </configuration>
             </plugin>
             <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-gpg-plugin -->
