@@ -16,7 +16,7 @@ import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.util.JavaInterop;
 
-class MixinBytecodeProvider extends ASMClassWrapperProvider implements BytecodeProvider<HierarchyClassLoader> {
+final class MixinBytecodeProvider extends ASMClassWrapperProvider implements BytecodeProvider<HierarchyClassLoader> {
 
     @Override
     @NotNull
@@ -42,9 +42,9 @@ class MixinBytecodeProvider extends ASMClassWrapperProvider implements BytecodeP
     @Nullable
     public ClassNode getNode(@NotNull String name) {
         try {
-            return getClassNode(MinestomRootClassLoader.getInstance(), name);
+            return this.getClassNode(MinestomRootClassLoader.getInstance(), name);
         } catch (ClassNotFoundException cnfe) {
-            LoggerFactory.getLogger(getClass()).trace("Cannot resolve node", cnfe);
+            LoggerFactory.getLogger(MixinBytecodeProvider.class).trace("Cannot resolve node", cnfe);
             return null;
         }
     }
