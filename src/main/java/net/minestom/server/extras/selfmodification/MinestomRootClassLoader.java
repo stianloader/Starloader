@@ -320,7 +320,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                 try {
                     StringWriter disassembledClass = new StringWriter();
                     TraceClassVisitor traceVisitor = new TraceClassVisitor(new PrintWriter(disassembledClass));
-                    CheckClassAdapter checkAdapter = new CheckClassAdapter(Opcodes.ASM9, traceVisitor, false) {
+                    CheckClassAdapter checkAdapter = new CheckClassAdapter(Opcodes.ASM9, traceVisitor, true) {
                         @Override
                         public void visitInnerClass(String name, String outerName, String innerName, int access) {
                             super.visitInnerClass(name, outerName, innerName, access & ~Opcodes.ACC_SUPER);
