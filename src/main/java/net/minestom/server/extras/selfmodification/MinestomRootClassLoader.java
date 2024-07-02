@@ -2,6 +2,8 @@ package net.minestom.server.extras.selfmodification;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -30,7 +32,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.util.CheckClassAdapter;
+import org.objectweb.asm.util.TraceClassVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,7 +125,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             throw new ClassNotFoundException("Java 9 " + (JavaInterop.isJava9() ? "capable " : "incapable") + " JavaInterop implementation refused to return the plattform classloader.");
         } catch (ClassNotFoundException e) {
             try {
-                if (isProtected(name)) {
+                if (this.isProtected(name)) {
                     LOGGER.trace("Protected: {}", name);
                     return super.loadClass(name, resolve);
                 }
@@ -271,10 +276,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             reader.accept(node, 0);
             try {
                 @SuppressWarnings("deprecation")
-                boolean hack = widener.apply(node, true);
+                boolean hack = this.widener.apply(node, true);
                 modified = hack;
-                synchronized (modifiers) {
-                    Iterator<ASMTransformer> transformers = modifiers.iterator();
+                synchronized (this.modifiers) {
+                    Iterator<ASMTransformer> transformers = this.modifiers.iterator();
                     while (transformers.hasNext()) {
                         ASMTransformer transformer = transformers.next();
                         String internalName = node.name;
@@ -297,7 +302,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                 }
             } catch (Throwable t) {
                 // Apparently errors would get absorbed otherwise.
-                LOGGER.error("Error within ASM transforming process. CLASS {} WILL NOT BE MODIFIED - THIS MAY BE LETHAL.", qualifiedName, t);
+                MinestomRootClassLoader.LOGGER.error("Error within ASM transforming process. CLASS {} WILL NOT BE MODIFIED - THIS MAY BE LETHAL.", qualifiedName, t);
                 throw new RuntimeException("Error within ASM transforming process.", t);
             }
             try {
@@ -305,15 +310,42 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
                         @Override
                         protected ClassLoader getClassLoader() {
-                            return asmClassLoader;
+                            return MinestomRootClassLoader.this.asmClassLoader;
                         }
                     };
                     node.accept(writer);
                     classBytecode = Objects.requireNonNull(writer.toByteArray());
-                    LOGGER.trace("Modified {}", qualifiedName);
                 }
             } catch (Throwable t) {
-                LOGGER.error("Unable to write ASM Classnode to bytecode (bork transformer?)", t);
+                try {
+                    StringWriter disassembledClass = new StringWriter();
+                    TraceClassVisitor traceVisitor = new TraceClassVisitor(new PrintWriter(disassembledClass));
+                    CheckClassAdapter checkAdapter = new CheckClassAdapter(Opcodes.ASM9, traceVisitor, false) {
+                        @Override
+                        public void visitInnerClass(String name, String outerName, String innerName, int access) {
+                            super.visitInnerClass(name, outerName, innerName, access & ~Opcodes.ACC_SUPER);
+                        }
+                    };
+                    node.accept(checkAdapter);
+
+                    throw new RuntimeException("The class seems to be intact, but ASM does not like it anyways. In order to help on your debugging journey, take this:\n" + disassembledClass.toString());
+                } catch (Throwable t0) {
+                    if (t0 instanceof ThreadDeath) {
+                        throw (ThreadDeath) t0;
+                    } else if (t0 instanceof OutOfMemoryError) {
+                        throw (OutOfMemoryError) t0;
+                    }
+                    t.addSuppressed(t0);
+                }
+
+                MinestomRootClassLoader.LOGGER.error("Unable to write ASM Classnode to bytecode for class '{}' (bork transformer?)", qualifiedName, t);
+
+                if (t instanceof ThreadDeath) {
+                    throw (ThreadDeath) t;
+                } else if (t instanceof OutOfMemoryError) {
+                    throw (OutOfMemoryError) t;
+                }
+
                 throw new RuntimeException("Unable to write ASM Classnode to bytecode", t);
             }
         }
