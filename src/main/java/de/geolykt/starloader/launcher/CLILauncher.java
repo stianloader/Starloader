@@ -28,6 +28,7 @@ import org.stianloader.micromixin.transform.api.supertypes.ClassWrapperPool;
 import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
+import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
 import de.geolykt.starloader.util.JavaInterop;
 
 public class CLILauncher {
@@ -85,10 +86,8 @@ public class CLILauncher {
         // ensure extensions are loaded when starting the server
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
-            LauncherConfiguration preferences = new LauncherConfiguration(true);
-            preferences.setExtensionsFolder(new File("mods"));
-            preferences.getExtensionsFolder().mkdir();
-            MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(void.class, LauncherConfiguration.class)).invokeExact(preferences);
+            DirectoryExtensionPrototypeList modSource = new DirectoryExtensionPrototypeList(new File("mods"));
+            MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(void.class, DirectoryExtensionPrototypeList.class)).invokeExact(modSource);
         } catch (Throwable t) {
             t.printStackTrace();
             return;
