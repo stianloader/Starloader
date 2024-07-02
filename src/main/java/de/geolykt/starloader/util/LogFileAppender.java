@@ -105,12 +105,12 @@ public class LogFileAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     public void stop() {
-        if (!isStarted()) {
+        if (!this.isStarted()) {
             return;
         }
         super.stop();
         try {
-            bw.close();
+            this.bw.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
+import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.Opcodes;
 
 import de.geolykt.starloader.deobf.access.AccessFlagModifier.Type;
@@ -77,11 +78,11 @@ public class AccessWidenerReader implements AutoCloseable {
         if (trimLine.isEmpty()) {
             return true;
         }
-        String[] blocks = trimLine.split("\\s+");
+        @NotNull String[] blocks = trimLine.split("\\s+");
 
         boolean compileOnly = false;
         if (blocks.length != 0 && (compileOnly = blocks[0].equalsIgnoreCase("compileOnly"))) {
-            String[] copy = new String[blocks.length - 1];
+            @NotNull String[] copy = new @NotNull String[blocks.length - 1];
             System.arraycopy(blocks, 1, copy, 0, copy.length);
             blocks = copy;
         }

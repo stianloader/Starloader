@@ -591,7 +591,7 @@ public class ExtensionManager {
                 if (!extension.getMixinConfig().isEmpty()) {
                     final String mixinConfigFile = extension.getMixinConfig();
                     boolean added = false;
-                    for (ASMTransformer transformer : modifiableClassLoader.getTransformers()) {
+                    for (ASMTransformer transformer : modifiableClassLoader.getASMTransformers()) {
                         if (transformer instanceof ASMMixinTransformer) {
                             JSONObject mixinConfigJson;
                             try (InputStream is = extension.loader.getResourceAsStreamWithChildren(mixinConfigFile)) {

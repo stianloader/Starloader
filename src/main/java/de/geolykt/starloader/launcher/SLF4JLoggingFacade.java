@@ -7,7 +7,7 @@ class SLF4JLoggingFacade implements MixinLoggingFacade {
 
     @Override
     public void debug(Class<?> clazz, String message, Object... args) {
-        LoggerFactory.getLogger(clazz).debug(message, args);
+        LoggerFactory.getLogger(clazz).trace(message, args);
     }
 
     @Override

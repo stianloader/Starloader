@@ -142,6 +142,7 @@ public class IDELauncher {
         ClassWrapperPool cwPool = new ClassWrapperPool();
         cwPool.addProvider(provider);
         MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider, cwPool);
+        transformer.setLogger(new SLF4JLoggingFacade());
         cl.addASMTransformer(new ASMMixinTransformer(transformer));
         // ensure extensions are loaded when starting the server
         try {
