@@ -241,10 +241,16 @@ public class ExtensionManager {
         List<DiscoveredExtension> extensions = new LinkedList<>();
         for (ExtensionPrototype prototype : extensionCandidates) {
             if (prototype.enabled) {
-                DiscoveredExtension extension = discoverFromURLs(prototype.originURLs);
-                if (extension != null && extension.getLoadStatus() == DiscoveredExtension.LoadStatus.LOAD_SUCCESS) {
+                DiscoveredExtension extension = this.discoverFromURLs(prototype.originURLs);
+                if (extension == null) {
+                    ExtensionManager.LOGGER.debug("Ignoring prototype {} as no extension could be discovered from it's registered URLs.", prototype);
+                } else if (extension.getLoadStatus() == DiscoveredExtension.LoadStatus.LOAD_SUCCESS) {
                     extensions.add(extension);
+                } else {
+                    ExtensionManager.LOGGER.debug("Ignoring prototype {} as discovered failed (load status = " + extension.getLoadStatus() + ").", prototype);
                 }
+            } else {
+                ExtensionManager.LOGGER.trace("Ignoring prototype {} as it is disabled.", prototype);
             }
         }
         return extensions;
