@@ -19,4 +19,9 @@ public class ExtensionPrototype {
         this.originURLs = originURLs;
         this.enabled = enabled;
     }
+
+    @Override
+    public String toString() {
+        return "ExtensionPrototype[URLs=" + this.originURLs + "]";
+    }
 }

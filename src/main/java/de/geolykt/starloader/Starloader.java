@@ -43,7 +43,7 @@ public final class Starloader {
     }
 
     private void start() {
-        this.extensions.loadExtensions( this.extensionSource);
+        this.extensions.loadExtensions(this.extensionSource);
         Starloader.LOGGER.info("From {} prototypes, {} extensions were loaded.",  this.extensionSource.size(),  this.extensions.getExtensions().size());
         long start = System.currentTimeMillis();
         Starloader.LOGGER.info("Initializing extension: preinit");

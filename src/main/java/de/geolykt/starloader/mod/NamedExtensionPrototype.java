@@ -12,4 +12,9 @@ public class NamedExtensionPrototype extends ExtensionPrototype {
         this.name = name;
         this.version = version;
     }
+
+    @Override
+    public String toString() {
+        return "NamedExtensionPrototype[URLs=" + this.originURLs + ", name=" + this.name + ", version=" + this.version + "]";
+    }
 }

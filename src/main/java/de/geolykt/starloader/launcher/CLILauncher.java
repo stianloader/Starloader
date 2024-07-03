@@ -29,6 +29,7 @@ import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
+import de.geolykt.starloader.mod.NamedExtensionPrototype;
 import de.geolykt.starloader.util.JavaInterop;
 
 public class CLILauncher {
@@ -87,6 +88,18 @@ public class CLILauncher {
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
             DirectoryExtensionPrototypeList modSource = new DirectoryExtensionPrototypeList(new File("mods"));
+
+            LoggerFactory.getLogger(CLILauncher.class).info("Using prototypes from following sources:");
+            modSource.forEach((prototype) -> {
+                prototype.enabled = true;
+                if (prototype instanceof NamedExtensionPrototype) {
+                    NamedExtensionPrototype namedPrototype = (NamedExtensionPrototype) prototype;
+                    LoggerFactory.getLogger(CLILauncher.class).info("- {} v{} (loaded from {})", namedPrototype.name, namedPrototype.version, namedPrototype.originURLs);
+                } else {
+                    LoggerFactory.getLogger(CLILauncher.class).info("- {}", prototype.originURLs);
+                }
+            });
+
             MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(void.class, DirectoryExtensionPrototypeList.class)).invokeExact(modSource);
         } catch (Throwable t) {
             t.printStackTrace();
