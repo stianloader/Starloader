@@ -7,12 +7,18 @@ import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.Mixins;
 
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
+
+import de.geolykt.starloader.mod.ExtensionPrototype;
 
 /**
  * Collection of static utility methods.
@@ -20,6 +26,43 @@ import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 public final class Utils {
 
    private static final byte[] SHARED_DUMMY_ARRAY = new byte[4096];
+
+   /**
+    * Expand placeholders as defined by {@link ExtensionPrototype#getDefinedProperties()}.
+    * This method will recursively replace placeholders.
+    *
+    * @param sourceResource The resource from which the input string comes from, used when logging unknown keys. Logged as-is,
+    * so the {@link Object#toString()} method of the value passed as this argument should be human-readable.
+    * @param string The input string which may contain placeholders to expand.
+    * @param startIndex The index from which the expansion should start from. When calling this method directly,
+    * it usually can be set to 0 to replace the entire string.
+    * @param placeholders The placeholders to apply.
+    * @return The returned string with all relevant properties being expanded.
+    * @since 4.0.0-a20240711
+    */
+   @NotNull
+   @ApiStatus.AvailableSince("4.0.0-a20240711")
+   @Contract(pure = true)
+   public static final String applyPlaceholders(@NotNull Object sourceResource, @NotNull String string, int startIndex, @NotNull Map<String, String> placeholders) {
+       int indexStart = string.indexOf("${", startIndex);
+       if (indexStart == -1) {
+           return string;
+       }
+       int indexEnd = string.indexOf('}', indexStart);
+       String property = string.substring(indexStart + 2, indexEnd);
+       String replacement = placeholders.get(property);
+       if (replacement == null) {
+           LoggerFactory.getLogger(Utils.class).warn("Could not expand resource '{}': Unknown property (or a null value for said property): '{}'", sourceResource, property);
+           return Utils.applyPlaceholders(sourceResource, string, indexEnd, placeholders);
+       }
+
+       string = string.substring(0, indexStart) + replacement + string.substring(indexEnd + 1);
+       return Utils.applyPlaceholders(sourceResource, string, indexStart, placeholders);
+   }
+
+    public static final void fastExhaust(@NotNull InputStream in) throws IOException {
+        while (in.read(Utils.SHARED_DUMMY_ARRAY) != -1);
+    }
 
     /**
      * Obtains the directory where SLL puts its logs.
@@ -102,10 +145,6 @@ public final class Utils {
         MixinBootstrap.init();
         MixinBootstrap.getPlatform().inject();
         Mixins.getConfigs().forEach(c -> MinestomRootClassLoader.getInstance().protectedPackages.add(c.getConfig().getMixinPackage()));
-    }
-
-    public static final void fastExhaust(@NotNull InputStream in) throws IOException {
-        while (in.read(Utils.SHARED_DUMMY_ARRAY) != -1);
     }
 
     /**

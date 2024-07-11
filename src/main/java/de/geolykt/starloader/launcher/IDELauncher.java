@@ -1,14 +1,21 @@
 package de.geolykt.starloader.launcher;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,6 +44,7 @@ import de.geolykt.starloader.util.JavaInterop;
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modURLs</b>: A JSON-array of JSON-arrays that specify the URLs used for each mod. That is each array is it's own mod "unit" and may point to a directory or a JAR-file. Mods from the specified mod directory will also be added, should the mod directory be defined via a system property.</li>
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modDirectory</b>: Fully qualified path to the mod directory to use.</li>
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.inlineStarplaneAnnotations</b>: Whether the {@link StarplaneAnnotationsInlineTransformer} should be used.</li>
+ *  <li><b>org.stianloader.sll.IDELauncher.propertyExpansionSource</b> (optional): The path to a .properties file from which property expansions within the extension.json file should occur. Only affects mods declared via the 'modURLs' system property.</li>
  * </ul>
  *
  * @since 4.0.0
@@ -71,6 +79,34 @@ public class IDELauncher {
 
         List<URL> bootPaths = new ArrayList<>();
         List<List<URL>> mods = new ArrayList<>();
+        Map<String, String> expansionProperties = null;
+
+        readExpansionProperties: {
+            String expansionPropertiesPath = System.getProperty("org.stianloader.sll.IDELauncher.propertyExpansionSource");
+            if (expansionPropertiesPath == null) {
+                break readExpansionProperties;
+            }
+
+            Path propertiesPath = Paths.get(expansionPropertiesPath);
+            if (Files.notExists(propertiesPath)) {
+                LoggerFactory.getLogger(IDELauncher.class).error("The propertyExpansionSource system property points to a non-existent file: '{}'", propertiesPath);
+                break readExpansionProperties;
+            }
+
+            Properties properties = new Properties();
+            try (Reader reader = Files.newBufferedReader(propertiesPath, StandardCharsets.UTF_8)) {
+                properties.load(reader);
+            } catch (IOException e) {
+                LoggerFactory.getLogger(IDELauncher.class).error("Cannot read properties clared by the propertyExpansionSource system property defined as path '{}'", propertiesPath, e);
+                break readExpansionProperties;
+            }
+
+            expansionProperties = new HashMap<>();
+            for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+                String value = entry.getValue() == null ? null : entry.getValue().toString();
+                expansionProperties.put(entry.getKey().toString(), value);
+            }
+        }
 
         try {
             for (Object o : new JSONArray(bootURLs)) {
@@ -88,6 +124,7 @@ public class IDELauncher {
             LoggerFactory.getLogger(IDELauncher.class).error("Invalid bootURLs system property: {}", bootURLs);
             e.printStackTrace();
         }
+
         for (Object o0 : new JSONArray(modURLs)) {
             if (!(o0 instanceof JSONArray)) {
                 LoggerFactory.getLogger(IDELauncher.class).error("Invalid mod {}", o0);
@@ -111,9 +148,10 @@ public class IDELauncher {
 
         List<ExtensionPrototype> prototypes = new ArrayList<>();
         for (List<URL> mod : mods) {
-            prototypes.add(new ExtensionPrototype(mod, true));
+            prototypes.add(new ExtensionPrototype(mod, true, expansionProperties));
         }
-        Path modDirectoryPath = Paths.get("extensions");
+
+        Path modDirectoryPath = Paths.get("mods");
         if (modDirectory != null) {
             modDirectoryPath = Paths.get(modDirectory);
             prototypes.addAll(new DirectoryExtensionPrototypeList(modDirectoryPath.toFile()));

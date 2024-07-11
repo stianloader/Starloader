@@ -9,10 +9,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -27,6 +30,7 @@ import org.stianloader.picoresolve.version.VersionRange;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 
+import de.geolykt.starloader.launcher.Utils;
 import de.geolykt.starloader.util.JavaInterop;
 
 public final class DiscoveredExtension {
@@ -167,10 +171,17 @@ public final class DiscoveredExtension {
     public static final String NAME_REGEX = "[A-Za-z][_A-Za-z0-9\\-]+";
 
     @NotNull
-    public static DiscoveredExtension fromJSON(@NotNull InputStream in) throws IOException {
+    @ApiStatus.AvailableSince("4.0.0-a20240711")
+    public static DiscoveredExtension fromJSON(@NotNull InputStream in, @NotNull ExtensionPrototype prototype) throws IOException {
         try {
-            JSONObject json = new JSONObject(new String(JavaInterop.readAllBytes(in), StandardCharsets.UTF_8));
-            DiscoveredExtension extension = new DiscoveredExtension();
+            String readInput = new String(JavaInterop.readAllBytes(in), StandardCharsets.UTF_8);
+            Map<String, String> properties = prototype.getDefinedProperties();
+            if (properties != null) {
+                readInput = Utils.applyPlaceholders(prototype, readInput, 0, properties);
+            }
+
+            JSONObject json = new JSONObject(readInput);
+            DiscoveredExtension extension = new DiscoveredExtension(prototype);
             extension.name = json.optString("name", null);
             extension.accessWidener = json.optString("accessWidener", null);
             extension.mixinConfig = json.optString("mixinConfig", null);
@@ -354,7 +365,18 @@ public final class DiscoveredExtension {
     private String mixinConfig;
     private String name;
     private String reversibleAccessSetter;
+
+    @NotNull
+    @ApiStatus.AvailableSince("4.0.0-a20240711")
+    private final ExtensionPrototype sourcePrototype;
+
     private String version;
+
+    @ApiStatus.AvailableSince("4.0.0-a20240711")
+    @Contract(pure = true)
+    private DiscoveredExtension(@NotNull ExtensionPrototype prototype) {
+        this.sourcePrototype = prototype;
+    }
 
     @SuppressWarnings("null")
     @NotNull
@@ -422,6 +444,13 @@ public final class DiscoveredExtension {
     @NotNull
     public String getReversibleAccessSetter() {
         return this.reversibleAccessSetter;
+    }
+
+    @NotNull
+    @ApiStatus.AvailableSince("4.0.0-a20240711")
+    @Contract(pure = true)
+    public ExtensionPrototype getSourcePrototype() {
+        return this.sourcePrototype;
     }
 
     @SuppressWarnings("null")

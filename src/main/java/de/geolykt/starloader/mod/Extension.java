@@ -21,7 +21,7 @@ public abstract class Extension {
         } else {
             throw new IllegalStateException("Unable to obtain extension description from extension manager");
         }
-        logger = LoggerFactory.getLogger(this.getClass());
+        this.logger = LoggerFactory.getLogger(this.getClass());
     }
 
     public void preInitialize() { }
