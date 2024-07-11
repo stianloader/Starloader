@@ -242,7 +242,7 @@ public class ExtensionManager {
         List<DiscoveredExtension> extensions = new LinkedList<>();
         for (ExtensionPrototype prototype : extensionCandidates) {
             if (prototype.enabled) {
-                DiscoveredExtension extension = this.discoverFromURLs(prototype.originURLs);
+                DiscoveredExtension extension = this.discoverFromPrototype(prototype);
                 if (extension == null) {
                     ExtensionManager.LOGGER.debug("Ignoring prototype {} as no extension could be discovered from it's registered URLs.", prototype);
                 } else if (extension.getLoadStatus() == DiscoveredExtension.LoadStatus.LOAD_SUCCESS) {
@@ -258,7 +258,8 @@ public class ExtensionManager {
     }
 
     @Nullable
-    private DiscoveredExtension discoverFromURLs(List<URL> urls) {
+    private DiscoveredExtension discoverFromPrototype(@NotNull ExtensionPrototype prototype) {
+        List<URL> urls = prototype.originURLs;
         URLClassLoader discardLoader = MinestomRootClassLoader.getInstance().newChild(urls.toArray(new @NotNull URL[0]));
         try {
             URL resource = discardLoader.findResource("extension.json");
@@ -266,7 +267,7 @@ public class ExtensionManager {
                 throw new IOException("Extension does not have an extension.json file: " + urls);
             }
             try (InputStream is = resource.openStream()) {
-                DiscoveredExtension extension = DiscoveredExtension.fromJSON(is);
+                DiscoveredExtension extension = DiscoveredExtension.fromJSON(is, prototype);
                 extension.files.addAll(urls);
 
                 // Verify integrity and ensure defaults
@@ -356,8 +357,8 @@ public class ExtensionManager {
 
         // Check if there are cyclic extensions.
         if (!dependencyMap.isEmpty()) {
-            LOGGER.error("Minestom found {} cyclic extensions.", dependencyMap.size());
-            LOGGER.error("Cyclic extensions depend on each other and can therefore not be loaded.");
+            LOGGER.error("SLL found {} cyclic mods.", dependencyMap.size());
+            LOGGER.error("Cyclic mods depend on each other and can therefore not be loaded.");
             for (Map.Entry<DiscoveredExtension, List<DiscoveredExtension>> entry : dependencyMap.entrySet()) {
                 DiscoveredExtension discoveredExtension = entry.getKey();
                 LOGGER.error("{} could not be loaded, as it depends on: {}.",
@@ -664,7 +665,7 @@ public class ExtensionManager {
             try {
                 modifierClassloader.close();
             } catch (IOException e) {
-                LOGGER.error("Unable to close extension codemodifier classloader", e);
+                ExtensionManager.LOGGER.error("Unable to close extension codemodifier classloader", e);
             }
             ext.getDescription().getOrigin().loader = null;
         }
@@ -676,35 +677,32 @@ public class ExtensionManager {
             throw new IllegalArgumentException("Extension " + extensionName + " is not currently loaded.");
         }
 
-        LOGGER.info("Reload extension {}", extensionName);
+        ExtensionManager.LOGGER.info("Reload extension {}", extensionName);
         List<String> dependents = new LinkedList<>(ext.getDescription().getDependents()); // copy dependents list
-        List<List<URL>> originalURLsOfDependents = new LinkedList<>();
+        List<@NotNull ExtensionPrototype> dependentsPrototypes = new LinkedList<>();
 
         for (String dependentID : dependents) {
             Extension dependentExt = extensions.get(dependentID.toLowerCase());
-            originalURLsOfDependents.add(dependentExt.getDescription().getOrigin().files);
+            dependentsPrototypes.add(dependentExt.getDescription().getOrigin().getSourcePrototype());
 
-            LOGGER.info("Unloading dependent extension {} (because it depends on {})", dependentID, extensionName);
-            unload(dependentExt);
+            ExtensionManager.LOGGER.info("Unloading dependent extension {} (because it depends on {})", dependentID, extensionName);
+            this.unload(dependentExt);
         }
 
-        LOGGER.info("Unloading extension {}", extensionName);
-        unload(ext);
-
-        System.gc();
-
-        // ext and its dependents should no longer be referenced from now on
+        ExtensionManager.LOGGER.info("Unloading extension {}", extensionName);
+        this.unload(ext);
+        // Hint: 'ext' and its dependents should no longer be referenced from now on
 
         // rediscover extension to reload. We allow dependency changes, so we need to fully reload it
         List<DiscoveredExtension> extensionsToReload = new LinkedList<>();
-        LOGGER.info("Rediscovering extension {}", extensionName);
-        DiscoveredExtension rediscoveredExtension = discoverFromURLs(ext.getDescription().getOrigin().files);
+        ExtensionManager.LOGGER.info("Rediscovering extension {}", extensionName);
+        DiscoveredExtension rediscoveredExtension = this.discoverFromPrototype(ext.getDescription().getOrigin().getSourcePrototype());
         extensionsToReload.add(rediscoveredExtension);
 
-        for (List<URL> dependentUrls : originalURLsOfDependents) {
+        for (ExtensionPrototype dependentPrototype : dependentsPrototypes) {
             // re-discover dependent extension to reload
-            ExtensionManager.LOGGER.info("Rediscover dependent extension (depends on {})", extensionName);
-            extensionsToReload.add(this.discoverFromURLs(dependentUrls));
+            ExtensionManager.LOGGER.info("Rediscover dependent extension prototype '{}' (depends on {})", dependentPrototype, extensionName);
+            extensionsToReload.add(this.discoverFromPrototype(dependentPrototype));
         }
 
         // ensure correct order of dependencies

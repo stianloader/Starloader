@@ -136,7 +136,7 @@ public class CLILauncher {
                 throw new IOException("Unable to find jar manifest!", e);
             }
         } catch (IOException t) {
-            t.printStackTrace();
+            LoggerFactory.getLogger(CLILauncher.class).warn("Unable to find manifest.", t);
         }
 
         if (mainClass == null) {
