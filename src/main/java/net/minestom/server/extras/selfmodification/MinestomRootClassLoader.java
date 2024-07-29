@@ -51,8 +51,8 @@ import de.geolykt.starloader.util.OrderedCollection;
 public class MinestomRootClassLoader extends HierarchyClassLoader implements TransformableClassloader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
-    private static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
-    private static final boolean DUMP = DEBUG || Boolean.getBoolean("classloader.dump");
+    public static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
+    private static final boolean DUMP = MinestomRootClassLoader.DEBUG || Boolean.getBoolean("classloader.dump");
 
     private static MinestomRootClassLoader INSTANCE;
 
@@ -220,10 +220,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             throw new ClassNotFoundException("Name may not be null.");
         }
         String path = name.replace(".", "/") + ".class";
-        URL url = findResource(path);
+        URL url = this.findResource(path);
         InputStream input;
         if (url == null) {
-            input = getResourceAsStream(name);
+            input = this.getResourceAsStream(name);
         } else {
             input = url.openStream();
         }
@@ -234,12 +234,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         input.close();
         byte @NotNull[] transformedBytes;
         if (transform) {
-            transformedBytes = transformBytes(originalBytes, name);
+            transformedBytes = this.transformBytes(originalBytes, name);
         } else {
             transformedBytes = originalBytes;
         }
 
-        if (DUMP) {
+        if (MinestomRootClassLoader.DUMP) {
             Path parent = Paths.get("classes", path).getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
@@ -255,20 +255,20 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             throw new ClassNotFoundException();
         }
         String path = name.replace(".", "/") + ".class";
-        InputStream input = getResourceAsStreamWithChildren(path);
+        InputStream input = this.getResourceAsStreamWithChildren(path);
         if (input == null) {
             throw new ClassNotFoundException("Could not find resource " + path);
         }
         byte[] originalBytes = JavaInterop.readAllBytes(input);
         input.close();
         if (transform) {
-            return transformBytes(originalBytes, name);
+            return this.transformBytes(originalBytes, name);
         }
         return originalBytes;
     }
 
     synchronized byte @NotNull[] transformBytes(byte @NotNull[] classBytecode, @NotNull String qualifiedName) {
-        if (!isProtected(qualifiedName)) {
+        if (!this.isProtected(qualifiedName)) {
             ClassReader reader = new ClassReader(classBytecode);
             ClassNode node = new ClassNode();
             boolean modified = false;
