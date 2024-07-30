@@ -50,11 +50,18 @@ import de.geolykt.starloader.util.OrderedCollection;
  */
 public class MinestomRootClassLoader extends HierarchyClassLoader implements TransformableClassloader {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
-    private static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
-    private static final boolean DUMP = DEBUG || Boolean.getBoolean("classloader.dump");
+    @Internal
+    public static final boolean DEBUG = Boolean.getBoolean("classloader.debug");
+    private static final boolean DUMP = MinestomRootClassLoader.DEBUG || Boolean.getBoolean("classloader.dump");
 
     private static MinestomRootClassLoader INSTANCE;
+
+    @NotNull
+    @Internal
+    @AvailableSince(value = "4.0.0-a20240730")
+    private static final ThreadLocal<Boolean> LOG_CLASSLOADING_FAILURES = Objects.requireNonNull(ThreadLocal.withInitial(() -> true));
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
 
     @Deprecated
     @ScheduledForRemoval(inVersion = "5.0.0")
@@ -93,23 +100,23 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
 
     private MinestomRootClassLoader(ClassLoader parent) {
         super("Starloader Root ClassLoader", new URL[0], parent);
-        asmClassLoader = newChild();
+        this.asmClassLoader = this.newChild();
     }
 
     public static MinestomRootClassLoader getInstance() {
-        if (INSTANCE == null) {
+        if (MinestomRootClassLoader.INSTANCE == null) {
             synchronized (MinestomRootClassLoader.class) {
-                if (INSTANCE == null) {
-                    INSTANCE = new MinestomRootClassLoader(MinestomRootClassLoader.class.getClassLoader());
+                if (MinestomRootClassLoader.INSTANCE == null) {
+                    MinestomRootClassLoader.INSTANCE = new MinestomRootClassLoader(MinestomRootClassLoader.class.getClassLoader());
                 }
             }
         }
-        return INSTANCE;
+        return MinestomRootClassLoader.INSTANCE;
     }
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        Class<?> loadedClass = findLoadedClass(Objects.requireNonNull(name, "name must not be null"));
+        Class<?> loadedClass = this.findLoadedClass(Objects.requireNonNull(name, "name must not be null"));
         if (loadedClass != null) {
             return loadedClass;
         }
@@ -119,20 +126,20 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             ClassLoader loader = JavaInterop.getPlattformClassloader();
             if (loader != null) {
                 Class<?> systemClass = loader.loadClass(name);
-                LOGGER.trace("Loading system class: {}", systemClass);
+                MinestomRootClassLoader.LOGGER.trace("Loading system class: {}", systemClass);
                 return systemClass;
             }
             throw new ClassNotFoundException("Java 9 " + (JavaInterop.isJava9() ? "capable " : "incapable") + " JavaInterop implementation refused to return the plattform classloader.");
         } catch (ClassNotFoundException e) {
             try {
                 if (this.isProtected(name)) {
-                    LOGGER.trace("Protected: {}", name);
+                    MinestomRootClassLoader.LOGGER.trace("Protected: {}", name);
                     return super.loadClass(name, resolve);
                 }
 
                 return define(name, resolve);
             } catch (Throwable ex) {
-                LOGGER.trace("Failed to load class \""+ name + "\", resorting to parent loader. Code modifications forbidden. {}", ex);
+                MinestomRootClassLoader.LOGGER.trace("Failed to load class \""+ name + "\", resorting to parent loader. Code modifications forbidden. {}", ex);
                 // fail to load class, let parent load
                 // this forbids code modification, but at least it will load
                 try {
@@ -155,6 +162,13 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             return false;
         }
         return true;
+    }
+
+    @Override
+    @Contract(pure = true)
+    @AvailableSince(value = "4.0.0-a20240730")
+    public boolean isThreadLoggingClassloadingFailures() {
+        return MinestomRootClassLoader.LOG_CLASSLOADING_FAILURES.get();
     }
 
     private Class<?> define(String name, boolean resolve) throws IOException, ClassNotFoundException {
@@ -180,7 +194,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                 defined = defineClass(name, bytes, 0, bytes.length, new CodeSource(jarURL, (CodeSigner[]) null));
             }
 
-            LOGGER.trace("Loaded with code modifiers: {}", name);
+            MinestomRootClassLoader.LOGGER.trace("Loaded with code modifiers: {}", name);
             if (resolve) {
                 resolveClass(defined);
             }
@@ -194,7 +208,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             for (MinestomExtensionClassLoader subloader : children) {
                 try {
                     defined = subloader.loadClassAsChild(name, resolve);
-                    LOGGER.trace("Loaded from child {}: {}", subloader, name);
+                    MinestomRootClassLoader.LOGGER.trace("Loaded from child {}: {}", subloader, name);
                     return defined;
                 } catch (ClassNotFoundException e1) {
                     // not found inside this child, move on to next
@@ -286,12 +300,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                         if (internalName == null) {
                             throw new NullPointerException();
                         }
-                        if (DEBUG) {
-                            LOGGER.info("{} could be able to transform {}", transformer.getClass().getSimpleName(), internalName);
+                        if (MinestomRootClassLoader.DEBUG) {
+                            MinestomRootClassLoader.LOGGER.info("{} could be able to transform {}", transformer.getClass().getSimpleName(), internalName);
                         }
                         if (transformer.isValidTarget(internalName) && transformer.accept(node)) {
-                            if (DEBUG) {
-                                LOGGER.info("{} was transformed by a {}", internalName, transformer.getClass().getSimpleName());
+                            if (MinestomRootClassLoader.DEBUG) {
+                                MinestomRootClassLoader.LOGGER.info("{} was transformed by a {}", internalName, transformer.getClass().getSimpleName());
                             }
                             if (!transformer.isValid()) {
                                 transformers.remove();
@@ -302,9 +316,13 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                 }
             } catch (Throwable t) {
                 // Apparently errors would get absorbed otherwise.
-                MinestomRootClassLoader.LOGGER.error("Error within ASM transforming process. CLASS {} WILL NOT BE MODIFIED - THIS MAY BE LETHAL.", qualifiedName, t);
-                throw new RuntimeException("Error within ASM transforming process.", t);
+                if (this.isThreadLoggingClassloadingFailures()) {
+                    MinestomRootClassLoader.LOGGER.error("Error within ASM transforming process. CLASS {} WILL NOT BE MODIFIED - THIS MAY BE LETHAL.", qualifiedName, t);
+                }
+
+                throw new RuntimeException("Error within ASM transforming process for class " + qualifiedName, t);
             }
+
             try {
                 if (modified) {
                     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
@@ -338,7 +356,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                     t.addSuppressed(t0);
                 }
 
-                MinestomRootClassLoader.LOGGER.error("Unable to write ASM Classnode to bytecode for class '{}' (bork transformer?)", qualifiedName, t);
+                if (this.isThreadLoggingClassloadingFailures()) {
+                    MinestomRootClassLoader.LOGGER.error("Unable to write ASM Classnode to bytecode for class '{}' (bork transformer?)", qualifiedName, t);
+                }
 
                 if (t instanceof ThreadDeath) {
                     throw (ThreadDeath) t;
@@ -346,7 +366,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                     throw (OutOfMemoryError) t;
                 }
 
-                throw new RuntimeException("Unable to write ASM Classnode to bytecode", t);
+                throw new RuntimeException("Unable to write ASM Classnode to bytecode for class " + qualifiedName, t);
             }
         }
         return classBytecode;
@@ -361,11 +381,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
     @NotNull
     @Internal
     public URLClassLoader newChild(@NotNull URL... urls) {
-        URLClassLoader instance = URLClassLoader.newInstance(urls, this);
-        if (instance == null) {
-            throw new IllegalStateException();
-        }
-        return instance;
+        return Objects.requireNonNull(URLClassLoader.newInstance(urls, this));
     }
 
     @Internal
@@ -408,8 +424,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
     @Deprecated
     @ScheduledForRemoval(inVersion = "5.0.0")
     public synchronized List<ASMTransformer> getTransformers() {
-        synchronized (modifiers) {
-            return new ArrayList<>(modifiers);
+        synchronized (this.modifiers) {
+            return new ArrayList<>(this.modifiers);
         }
     }
 
@@ -425,18 +441,26 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
     }
 
     @Override
+    @Contract(pure = false, value = "_ -> this")
+    @AvailableSince(value = "4.0.0-a20240730")
+    public MinestomRootClassLoader setThreadLoggingClassloadingFailures(boolean logFailures) {
+        MinestomRootClassLoader.LOG_CLASSLOADING_FAILURES.set(logFailures);
+        return this;
+    }
+
+    @Override
     @Contract(pure = false, mutates = "this")
     @AvailableSince(value = "4.0.0-a20231223")
     public void addASMTransformer(@NotNull ASMTransformer transformer) {
         synchronized (this.modifiers) {
-            if (DEBUG) {
-                LOGGER.info("Adding transformer {}", transformer.getClass().getName());
+            if (MinestomRootClassLoader.DEBUG) {
+                MinestomRootClassLoader.LOGGER.info("Adding transformer {}", transformer.getClass().getName());
             }
             this.modifiers.add(transformer);
-            if (DEBUG) {
-                LOGGER.info("Currently registered transformers: ");
+            if (MinestomRootClassLoader.DEBUG) {
+                MinestomRootClassLoader.LOGGER.info("Currently registered transformers: ");
                 for (ASMTransformer x : this.modifiers) {
-                    LOGGER.info("  - {}", x.getClass().getName());
+                    MinestomRootClassLoader.LOGGER.info("  - {}", x.getClass().getName());
                 }
             }
         }
@@ -461,14 +485,14 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
     @CheckReturnValue
     @AvailableSince(value = "4.0.0-a20231223")
     public Class<?> transformAndDefineClass(@NotNull String className, @NotNull RawClassData data) {
-        if (DEBUG) {
-            LOGGER.info("Forcefully defining class '{}'", className);
+        if (MinestomRootClassLoader.DEBUG) {
+            MinestomRootClassLoader.LOGGER.info("Forcefully defining class '{}'", className);
         }
 
         byte[] transformed = this.transformBytes(data.getBytes(), className);
         URL jarURL = data.getSource();
 
-        if (DUMP) {
+        if (MinestomRootClassLoader.DUMP) {
             try {
                 Path parent = Paths.get("classes", className.replace('.', '/')).getParent();
                 if (parent != null) {
@@ -476,7 +500,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                 }
                 Files.write(Paths.get("classes", className.replace('.', '/') + ".class"), transformed);
             } catch (IOException e) {
-                LOGGER.info("Unable to dump forcefully defined class '{}'", className, e);
+                MinestomRootClassLoader.LOGGER.info("Unable to dump forcefully defined class '{}'", className, e);
             }
         }
 
@@ -489,7 +513,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                 try {
                     jarURL = new URL(path.substring(0, seperatorIndex));
                 } catch (MalformedURLException e) {
-                    LOGGER.warn("Bumped into a MalformedURLException while forcefully defining a class", e);
+                    MinestomRootClassLoader.LOGGER.warn("Bumped into a MalformedURLException while forcefully defining a class", e);
                 }
             }
             return super.defineClass(className, transformed, 0, transformed.length, new CodeSource(jarURL, (Certificate[]) null));
