@@ -87,6 +87,8 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         this.protectedPackages.add("de.geolykt.starloader.mod");
         this.protectedPackages.add("de.geolykt.starloader.util");
         this.protectedPackages.add("ch.qos.logback");
+        this.protectedPackages.add("org.stianloader.micromixin.annotations");
+        this.protectedPackages.add("org.stianloader.micromixin.backports");
     }
 
     /**

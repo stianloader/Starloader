@@ -13,6 +13,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.launch.platform.container.ContainerHandleVirtual;
 import org.spongepowered.asm.launch.platform.container.IContainerHandle;
+import org.spongepowered.asm.logging.ILogger;
 import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
 import org.spongepowered.asm.service.IClassBytecodeProvider;
 import org.spongepowered.asm.service.IClassProvider;
@@ -29,62 +30,22 @@ import de.geolykt.starloader.util.JavaInterop;
 
 public class SLMixinService extends MixinServiceAbstract {
 
-    private static SLMixinService instance;
-
     private static final MinestomRootClassLoader CLASSLOADER = MinestomRootClassLoader.getInstance();
-    private IConsumer<Phase> wiredPhaseConsumer;
 
-    private final IClassProvider classprovider = new IClassProvider() {
-
-        @Override
-        public URL[] getClassPath() {
-            return SLMixinService.CLASSLOADER.getURLs();
-        }
-
-        @Override
-        public Class<?> findClass(String name, boolean initialize) throws ClassNotFoundException {
-            try {
-                return Class.forName(name, initialize, Thread.currentThread().getContextClassLoader());
-            } catch (ClassNotFoundException cnfe) {
-                try {
-                    return Class.forName(name, initialize, SLMixinService.class.getClassLoader());
-                } catch (ClassNotFoundException cnfe2) {
-                    cnfe2.addSuppressed(cnfe);
-                    if (MinestomRootClassLoader.DEBUG) {
-                        LoggerFactory.getLogger(SLMixinService.class).warn("#findClass(String, boolean): Unable to find class '{}'", name, cnfe2);
-                    }
-                    throw cnfe2;
-                }
-            }
-        }
-
-        @Override
-        public Class<?> findAgentClass(String name, boolean initialize) throws ClassNotFoundException {
-            return this.findAgentClass(name, initialize);
-        }
-
-        @Override
-        public Class<?> findClass(String name) throws ClassNotFoundException {
-            try {
-                return SLMixinService.CLASSLOADER.findClass(name);
-            } catch (ClassNotFoundException cnfe) {
-                if (MinestomRootClassLoader.DEBUG) {
-                    LoggerFactory.getLogger(SLMixinService.class).warn("#findClass(String): Unable to find class '{}'", name, cnfe);
-                }
-                throw cnfe;
-            }
-        }
-    };
+    private static SLMixinService instance;
+    public static SLMixinService getInstance() {
+        return SLMixinService.instance;
+    }
 
     private final IClassBytecodeProvider bytecodeProvider = new IClassBytecodeProvider() {
         @Override
-        public ClassNode getClassNode(String name, boolean runTransformers) throws ClassNotFoundException, IOException {
-            return this.getClassNode(name, runTransformers, 0);
+        public ClassNode getClassNode(String name) throws ClassNotFoundException, IOException {
+            return this.getClassNode(name, false);
         }
 
         @Override
-        public ClassNode getClassNode(String name) throws ClassNotFoundException, IOException {
-            return this.getClassNode(name, false);
+        public ClassNode getClassNode(String name, boolean runTransformers) throws ClassNotFoundException, IOException {
+            return this.getClassNode(name, runTransformers, 0);
         }
 
         @Override
@@ -129,25 +90,58 @@ public class SLMixinService extends MixinServiceAbstract {
         }
     };
 
+    private final IClassProvider classprovider = new IClassProvider() {
+
+        @Override
+        public Class<?> findAgentClass(String name, boolean initialize) throws ClassNotFoundException {
+            return this.findAgentClass(name, initialize);
+        }
+
+        @Override
+        public Class<?> findClass(String name) throws ClassNotFoundException {
+            try {
+                return SLMixinService.CLASSLOADER.findClass(name);
+            } catch (ClassNotFoundException cnfe) {
+                if (MinestomRootClassLoader.DEBUG) {
+                    LoggerFactory.getLogger(SLMixinService.class).warn("#findClass(String): Unable to find class '{}'", name, cnfe);
+                }
+                throw cnfe;
+            }
+        }
+
+        @Override
+        public Class<?> findClass(String name, boolean initialize) throws ClassNotFoundException {
+            try {
+                return Class.forName(name, initialize, Thread.currentThread().getContextClassLoader());
+            } catch (ClassNotFoundException cnfe) {
+                try {
+                    return Class.forName(name, initialize, SLMixinService.class.getClassLoader());
+                } catch (ClassNotFoundException cnfe2) {
+                    cnfe2.addSuppressed(cnfe);
+                    if (MinestomRootClassLoader.DEBUG) {
+                        LoggerFactory.getLogger(SLMixinService.class).warn("#findClass(String, boolean): Unable to find class '{}'", name, cnfe2);
+                    }
+                    throw cnfe2;
+                }
+            }
+        }
+
+        @Override
+        public URL[] getClassPath() {
+            return SLMixinService.CLASSLOADER.getURLs();
+        }
+    };
+
+    private IConsumer<Phase> wiredPhaseConsumer;
+
     @Override
-    public void init() {
-        SLMixinService.instance = this;
-        super.init();
+    protected ILogger createLogger(String name) {
+        return new SLMixinLogger(Objects.requireNonNull(name, "logger may not have a null name"));
     }
 
     @Override
-    public String getName() {
-        return "Starloader Bootstrap";
-    }
-
-    @Override
-    public boolean isValid() {
-        return true;
-    }
-
-    @Override
-    public IClassProvider getClassProvider() {
-        return this.classprovider;
+    public IMixinAuditTrail getAuditTrail() {
+        return null; // unsupported
     }
 
     @Override
@@ -156,8 +150,8 @@ public class SLMixinService extends MixinServiceAbstract {
     }
 
     @Override
-    public ITransformerProvider getTransformerProvider() {
-        return null; // unsupported
+    public IClassProvider getClassProvider() {
+        return this.classprovider;
     }
 
     @Override
@@ -165,9 +159,18 @@ public class SLMixinService extends MixinServiceAbstract {
         return null; // unsupported
     }
 
+    @Nullable
+    public final <T extends IMixinInternal> T getMixinInternal(Class<T> type) {
+        return this.getInternal(type);
+    }
+
     @Override
-    public IMixinAuditTrail getAuditTrail() {
-        return null; // unsupported
+    public String getName() {
+        return "Starloader Bootstrap";
+    }
+
+    public IConsumer<Phase> getPhaseConsumer() {
+        return this.wiredPhaseConsumer;
     }
 
     @Override
@@ -185,15 +188,20 @@ public class SLMixinService extends MixinServiceAbstract {
         return SLMixinService.CLASSLOADER.getResourceAsStreamWithChildren(Objects.requireNonNull(name, "name may not be null"));
     }
 
-    public IConsumer<Phase> getPhaseConsumer() {
-        return this.wiredPhaseConsumer;
+    @Override
+    public ITransformerProvider getTransformerProvider() {
+        return null; // unsupported
     }
 
     @Override
-    @Deprecated
-    public void wire(Phase phase, IConsumer<Phase> phaseConsumer) {
-        super.wire(phase, phaseConsumer);
-        this.wiredPhaseConsumer = phaseConsumer;
+    public void init() {
+        SLMixinService.instance = this;
+        super.init();
+    }
+
+    @Override
+    public boolean isValid() {
+        return true;
     }
 
     @Override
@@ -203,12 +211,10 @@ public class SLMixinService extends MixinServiceAbstract {
         this.wiredPhaseConsumer = null;
     }
 
-    public static SLMixinService getInstance() {
-        return SLMixinService.instance;
-    }
-
-    @Nullable
-    public final <T extends IMixinInternal> T getMixinInternal(Class<T> type) {
-        return this.getInternal(type);
+    @Override
+    @Deprecated
+    public void wire(Phase phase, IConsumer<Phase> phaseConsumer) {
+        super.wire(phase, phaseConsumer);
+        this.wiredPhaseConsumer = phaseConsumer;
     }
 }
