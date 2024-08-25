@@ -16,7 +16,7 @@
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <json-version>20240303</json-version>
         <!-- https://stianloader.org/maven/org/stianloader/micromixin-transformer/ -->
-        <micromixin-version>0.6.3-a20240808.1</micromixin-version>
+        <micromixin-version>0.6.4-a20240825</micromixin-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
         <!-- DO NOT BE FOOLED: 1.4.X does not support Java 8, but 1.3.X does. -->
         <!-- Otherwise both series should be the same to us as consumers. -->
