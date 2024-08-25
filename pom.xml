@@ -16,7 +16,7 @@
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <json-version>20240303</json-version>
         <mixin-version>0.8.7</mixin-version>
-        <micromixin-version>0.6.4-a20240824.1</micromixin-version>
+        <micromixin-version>0.6.4-a20240825</micromixin-version>
         <!-- https://mvnrepository.com/artifact/io.github.llamalad7/mixinextras-common -->
         <mixinextras-version>0.5.0-beta.1</mixinextras-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
