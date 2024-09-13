@@ -3,7 +3,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.stianloader</groupId>
-    <artifactId>launcher-sponge</artifactId>
+    <artifactId>launcher-mixin-fabric</artifactId>
     <version>4.0.0</version>
     <name>Stianloader Launcher</name>
     <inceptionYear>2021</inceptionYear>
@@ -15,7 +15,7 @@
         <annotations-version>24.1.0</annotations-version>
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <json-version>20240303</json-version>
-        <mixin-version>0.8.7</mixin-version>
+        <mixin-version>0.15.3+mixin.0.8.7</mixin-version>
         <micromixin-version>0.6.4-a20240825</micromixin-version>
         <!-- https://mvnrepository.com/artifact/io.github.llamalad7/mixinextras-common -->
         <mixinextras-version>0.5.0-beta.1</mixinextras-version>
@@ -36,8 +36,8 @@
             <url>https://stianloader.org/maven/</url>
         </repository>
         <repository>
-            <id>sponge</id>
-            <url>https://repo.spongepowered.org/repository/maven-public/</url>
+            <id>fabric</id>
+            <url>https://maven.fabricmc.net/</url>
         </repository>
         <repository>
             <id>internal-repo</id>
@@ -86,8 +86,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.spongepowered</groupId>
-            <artifactId>mixin</artifactId>
+            <groupId>net.fabricmc</groupId>
+            <artifactId>sponge-mixin</artifactId>
             <version>${mixin-version}</version>
             <scope>compile</scope>
         </dependency>
@@ -102,6 +102,12 @@
             <artifactId>micromixin-backports</artifactId>
             <version>${micromixin-version}</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.spongepowered</groupId>
+                    <artifactId>mixin</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
