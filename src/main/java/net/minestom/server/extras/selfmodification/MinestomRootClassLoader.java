@@ -77,6 +77,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
     {
         this.protectedClasses.add("de.geolykt.starloader.Starloader");
         this.protectedClasses.add("de.geolykt.starloader.UnlikelyEventException");
+        this.protectedClasses.add("org.spongepowered.asm.mixin.injection.callback.CallbackInfo");
+        this.protectedClasses.add("org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable");
+        this.protectedClasses.add("org.spongepowered.asm.mixin.injection.callback.CancellationException");
         this.protectedPackages.add("org.objectweb.asm");
         this.protectedPackages.add("org.slf4j");
         this.protectedPackages.add("org.json");
@@ -87,6 +90,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         this.protectedPackages.add("de.geolykt.starloader.mod");
         this.protectedPackages.add("de.geolykt.starloader.util");
         this.protectedPackages.add("ch.qos.logback");
+        this.protectedPackages.add("org.stianloader.micromixin.transform");
     }
 
     /**
