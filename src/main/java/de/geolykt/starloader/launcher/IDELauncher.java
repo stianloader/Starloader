@@ -120,29 +120,30 @@ public class IDELauncher {
                 }
             }
         } catch (JSONException e) {
-            LoggerFactory.getLogger(IDELauncher.class).error("Invalid bootURLs system property: {}", bootURLs);
-            e.printStackTrace();
+            LoggerFactory.getLogger(IDELauncher.class).error("Invalid bootURLs system property: {}", bootURLs, e);
         }
 
-        for (Object o0 : new JSONArray(modURLs)) {
-            if (!(o0 instanceof JSONArray)) {
-                LoggerFactory.getLogger(IDELauncher.class).error("Invalid mod {}", o0);
-                throw new IllegalStateException("Encountered invalid object in mods URL property (it should be an array): " + o0);
-            }
-            List<URL> mod = new ArrayList<>();
-            for (Object o : (JSONArray) o0) {
-                if (!(o instanceof String)) {
-                    LoggerFactory.getLogger(IDELauncher.class).error("Invalid URL {}", o);
-                    throw new IllegalStateException("Invalid URL: " + o);
+        if (modURLs != null) {
+            for (Object o0 : new JSONArray(modURLs)) {
+                if (!(o0 instanceof JSONArray)) {
+                    LoggerFactory.getLogger(IDELauncher.class).error("Invalid mod {}", o0);
+                    throw new IllegalStateException("Encountered invalid object in mods URL property (it should be an array): " + o0);
                 }
-                try {
-                    mod.add(new URL((String) o));
-                } catch (MalformedURLException e) {
-                    LoggerFactory.getLogger(IDELauncher.class).error("Invalid URL {}", o);
-                    throw new IllegalStateException("Encountered invalid URL in boot URL property: " + o, e);
+                List<URL> mod = new ArrayList<>();
+                for (Object o : (JSONArray) o0) {
+                    if (!(o instanceof String)) {
+                        LoggerFactory.getLogger(IDELauncher.class).error("Invalid URL {}", o);
+                        throw new IllegalStateException("Invalid URL: " + o);
+                    }
+                    try {
+                        mod.add(new URL((String) o));
+                    } catch (MalformedURLException e) {
+                        LoggerFactory.getLogger(IDELauncher.class).error("Invalid URL {}", o);
+                        throw new IllegalStateException("Encountered invalid URL in boot URL property: " + o, e);
+                    }
                 }
+                mods.add(mod);
             }
-            mods.add(mod);
         }
 
         List<ExtensionPrototype> prototypes = new ArrayList<>();
@@ -150,9 +151,8 @@ public class IDELauncher {
             prototypes.add(new ExtensionPrototype(mod, true, expansionProperties));
         }
 
-        Path modDirectoryPath = Paths.get("mods");
-        if (modDirectory != null) {
-            modDirectoryPath = Paths.get(modDirectory);
+        Path modDirectoryPath = Paths.get(modDirectory == null ? "mods" : modDirectory);
+        if (!Files.notExists(modDirectoryPath)) {
             prototypes.addAll(new DirectoryExtensionPrototypeList(modDirectoryPath.toFile()));
         }
 
@@ -172,7 +172,7 @@ public class IDELauncher {
 
         if (inlineSPAnnotations) {
             LoggerFactory.getLogger(IDELauncher.class).info("Making use of the StarplaneAnnotationsInlineTransformer.");
-            cl.addTransformer(new StarplaneAnnotationsInlineTransformer());
+            cl.addASMTransformer(new StarplaneAnnotationsInlineTransformer());
         }
 
         // Start mixins & load extensions
