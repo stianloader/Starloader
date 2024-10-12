@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,6 +15,7 @@ import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.Mixins;
@@ -141,18 +145,50 @@ public final class Utils {
         }
     }
 
+    @SuppressWarnings("resource")
     protected static final void startMixin(String[] args) {
         MixinBootstrap.init();
         MixinBootstrap.getPlatform().inject();
         Mixins.getConfigs().forEach(c -> MinestomRootClassLoader.getInstance().protectedPackages.add(c.getConfig().getMixinPackage()));
     }
 
-    /**
-     * The constructor.
-     * DO NOT CALL THE CONSTRUCTOR.
-     */
-    private Utils() {
-        // Do not construct classes for absolutely no reason at all
-        throw new RuntimeException("Didn't the javadoc tell you to NOT call the constructor of this class?");
+    @Nullable
+    public static final URI toCodeSourceURI(@Nullable URL url, @NotNull String internalClassName) {
+        if (url == null) {
+            return null;
+        }
+
+        String urlPath = url.getPath();
+        if (urlPath.endsWith(".class")) {
+            String urlProtocol = url.getProtocol();
+            if (urlProtocol.equals("jar")) {
+                int index0 = urlPath.indexOf('!');
+                if (index0 >= 0) {
+                    try {
+                        return new URI(urlPath.substring(0, index0));
+                    } catch (URISyntaxException e) {
+                        LoggerFactory.getLogger(Utils.class).warn("Unable to assimilate jar-protocol-URL: '{}'", url, e);
+                    }
+                }
+            } else if (urlProtocol.equals("file")) {
+                String expectedSuffix = internalClassName.replace('.', '/') + ".class";
+                if (urlPath.endsWith(expectedSuffix)) {
+                    try {
+                        return new URI("file", null, url.getHost(), url.getPort(), urlPath.substring(0, urlPath.length() - expectedSuffix.length()), null, null);
+                    } catch (URISyntaxException e) {
+                        LoggerFactory.getLogger(Utils.class).warn("Unable to assimilate file-protocol-URL: '{}'", url, e);
+                    }
+                }
+            }
+        }
+
+        try {
+            return url.toURI();
+        } catch (URISyntaxException e) {
+            LoggerFactory.getLogger(Utils.class).debug("Cannot convert URL {} to a URI.", url, e);
+            return null;
+        }
     }
+
+    private Utils() {}
 }

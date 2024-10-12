@@ -14,6 +14,7 @@ import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.slf4j.LoggerFactory;
 
+import de.geolykt.starloader.launcher.Utils;
 import de.geolykt.starloader.util.JavaInterop;
 
 public class MinestomExtensionClassLoader extends HierarchyClassLoader {
@@ -98,8 +99,8 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
                     throw new AssertionError();
                 }
                 byte[] bytes = JavaInterop.readAllBytes(in);
-                bytes = root.transformBytes(bytes, name);
-                if (DUMP) {
+                bytes = this.root.transformBytes(bytes, name, Utils.toCodeSourceURI(url, name));
+                if (MinestomExtensionClassLoader.DUMP) {
                     Path parent = Paths.get("classes", path).getParent();
                     if (parent != null) {
                         Files.createDirectories(parent);
@@ -138,7 +139,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
     @ScheduledForRemoval
     protected void finalize() throws Throwable {
         super.finalize();
-        System.err.println("Class loader " + getName() + " finalized.");
+        System.err.println("Class loader " + this.getName() + " finalized.");
     }
 
     @Override
