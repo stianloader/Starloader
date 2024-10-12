@@ -5,11 +5,14 @@ import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -19,6 +22,7 @@ import java.util.Properties;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
 import org.stianloader.micromixin.transform.api.MixinTransformer;
 import org.stianloader.micromixin.transform.api.supertypes.ClassWrapperPool;
@@ -44,6 +48,7 @@ import de.geolykt.starloader.util.JavaInterop;
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modDirectory</b>: Fully qualified path to the mod directory to use.</li>
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.inlineStarplaneAnnotations</b>: Whether the {@link StarplaneAnnotationsInlineTransformer} should be used.</li>
  *  <li><b>org.stianloader.sll.IDELauncher.propertyExpansionSource</b> (optional): The path to a .properties file from which property expansions within the extension.json file should occur. Only affects mods declared via the 'modURLs' system property.</li>
+ *  <li><b>org.stianloader.sll.IDELauncher.smapURIAliases</b> (optional, micromixin exclusive): A JSON-encoded map which maps the {@link CodeSource} URI of classes as they appear on the classpath to the URI as is used by micromixin for generating SMAPs. There is probably no good reason to have this, but perhaps you can find a good use for it.</li>
  * </ul>
  *
  * @since 4.0.0
@@ -104,6 +109,32 @@ public class IDELauncher {
             for (Map.Entry<Object, Object> entry : properties.entrySet()) {
                 String value = entry.getValue() == null ? null : entry.getValue().toString();
                 expansionProperties.put(entry.getKey().toString(), value);
+            }
+        }
+
+        Map<String, String> smapURIAliases = new HashMap<>();
+
+        readSmapURIAliases: {
+            String smapURIAliasesJSONString = System.getProperty("org.stianloader.sll.IDELauncher.smapURIAliases");
+            if (smapURIAliasesJSONString == null) {
+                break readSmapURIAliases;
+            }
+
+            JSONObject jsonObject;
+            try {
+                jsonObject = new JSONObject(smapURIAliasesJSONString);
+            } catch (JSONException e) {
+                LoggerFactory.getLogger(IDELauncher.class).warn("Unable to interpret property 'org.stianloader.sll.IDELauncher.smapURIAliases': JSON decode error.", e);
+                break readSmapURIAliases;
+            }
+
+            for (String key : jsonObject.keySet()) {
+                try {
+                    new URI(key);
+                } catch (URISyntaxException e) {
+                    LoggerFactory.getLogger(IDELauncher.class).warn("Stumbled on potentially erroneous key '{}' while interpreting property 'org.stianloader.sll.IDELauncher.smapURIAliases'. Ensure that the key is a valid URI.", key, e);
+                }
+                smapURIAliases.put(key, jsonObject.getString(key));
             }
         }
 
@@ -176,7 +207,7 @@ public class IDELauncher {
         }
 
         // Start mixins & load extensions
-        MixinBytecodeProvider provider = new MixinBytecodeProvider();
+        MixinBytecodeProvider provider = new MixinBytecodeProvider(smapURIAliases);
         ClassWrapperPool cwPool = new ClassWrapperPool();
         cwPool.addProvider(provider);
         MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider, cwPool);

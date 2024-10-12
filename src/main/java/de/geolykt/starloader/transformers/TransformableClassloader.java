@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Unmodifiable;
  * <p>When implementing your own classloader, you are encouraged to implement this interface for compatibility
  * reasons.
  *
- * @since 4.0.0
+ * @since 4.0.0-a20231223
  */
 @AvailableSince(value = "4.0.0-a20231223")
 public interface TransformableClassloader {

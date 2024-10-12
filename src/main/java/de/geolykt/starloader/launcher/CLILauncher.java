@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -78,7 +79,7 @@ public class CLILauncher {
         });
 
         // Start mixins & load extensions
-        MixinBytecodeProvider provider = new MixinBytecodeProvider();
+        MixinBytecodeProvider provider = new MixinBytecodeProvider(new HashMap<>());
         ClassWrapperPool cwPool = new ClassWrapperPool();
         cwPool.addProvider(provider);
         MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider, cwPool);

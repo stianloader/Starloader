@@ -6,6 +6,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -29,6 +31,7 @@ import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -38,7 +41,9 @@ import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stianloader.sll.transform.CodeTransformer;
 
+import de.geolykt.starloader.launcher.Utils;
 import de.geolykt.starloader.transformers.ASMTransformer;
 import de.geolykt.starloader.transformers.RawClassData;
 import de.geolykt.starloader.transformers.TransformableClassloader;
@@ -238,10 +243,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             throw new ClassNotFoundException("Name may not be null.");
         }
         String path = name.replace(".", "/") + ".class";
-        URL url = findResource(path);
+        URL url = this.findResource(path);
         InputStream input;
         if (url == null) {
-            input = getResourceAsStream(name);
+            input = this.getResourceAsStream(name);
         } else {
             input = url.openStream();
         }
@@ -252,12 +257,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         input.close();
         byte @NotNull[] transformedBytes;
         if (transform) {
-            transformedBytes = transformBytes(originalBytes, name);
+            transformedBytes = this.transformBytes(originalBytes, name, Utils.toCodeSourceURI(url, name));
         } else {
             transformedBytes = originalBytes;
         }
 
-        if (DUMP) {
+        if (MinestomRootClassLoader.DUMP) {
             Path parent = Paths.get("classes", path).getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
@@ -268,25 +273,26 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         return new RawClassData(url, transformedBytes);
     }
 
+    @Deprecated
     public byte[] loadBytesWithChildren(String name, boolean transform) throws IOException, ClassNotFoundException {
         if (name == null) {
             throw new ClassNotFoundException();
         }
         String path = name.replace(".", "/") + ".class";
-        InputStream input = getResourceAsStreamWithChildren(path);
+        InputStream input = this.getResourceAsStreamWithChildren(path);
         if (input == null) {
             throw new ClassNotFoundException("Could not find resource " + path);
         }
         byte[] originalBytes = JavaInterop.readAllBytes(input);
         input.close();
         if (transform) {
-            return transformBytes(originalBytes, name);
+            return this.transformBytes(originalBytes, name, null);
         }
         return originalBytes;
     }
 
-    synchronized byte @NotNull[] transformBytes(byte @NotNull[] classBytecode, @NotNull String qualifiedName) {
-        if (!isProtected(qualifiedName)) {
+    synchronized byte @NotNull[] transformBytes(byte @NotNull[] classBytecode, @NotNull String qualifiedName, @Nullable URI codeSourceURI) {
+        if (!this.isProtected(qualifiedName)) {
             ClassReader reader = new ClassReader(classBytecode);
             ClassNode node = new ClassNode();
             boolean modified = false;
@@ -307,7 +313,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                         if (MinestomRootClassLoader.DEBUG) {
                             MinestomRootClassLoader.LOGGER.info("{} could be able to transform {}", transformer.getClass().getSimpleName(), internalName);
                         }
-                        if (transformer.isValidTarget(internalName) && transformer.accept(node)) {
+                        if (!transformer.isValidTarget(internalName)) {
+                            continue;
+                        }
+                        if (transformer instanceof CodeTransformer ? ((CodeTransformer) transformer).transformClass(node, codeSourceURI) : transformer.accept(node)) {
                             if (MinestomRootClassLoader.DEBUG) {
                                 MinestomRootClassLoader.LOGGER.info("{} was transformed by a {}", internalName, transformer.getClass().getSimpleName());
                             }
@@ -493,8 +502,15 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             MinestomRootClassLoader.LOGGER.info("Forcefully defining class '{}'", className);
         }
 
-        byte[] transformed = this.transformBytes(data.getBytes(), className);
         URL jarURL = data.getSource();
+        URI jarURI;
+        try {
+            jarURI = jarURL == null ? null : jarURL.toURI();
+        } catch (URISyntaxException e) {
+            LoggerFactory.getLogger(MinestomRootClassLoader.class).debug("Cannot convert URL {} to a URI.", jarURL, e);
+            jarURI = null;
+        }
+        byte[] transformed = this.transformBytes(data.getBytes(), className, jarURI);
 
         if (MinestomRootClassLoader.DUMP) {
             try {
