@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
@@ -39,8 +40,8 @@ public abstract class HierarchyClassLoader extends JavaInteropURLClassloader {
     }
 
     /**
-     * Find a resource under the given name within this classloader, or if that
-     * fails, in any of it's children. If the resource is found, the resource is
+     * Finds a resource under the given name within this classloader, or if that
+     * fails, in any of its children. If the resource is found, the resource is
      * opened as an {@link InputStream}, otherwise {@code null} is returned.
      *
      * <p>This method distinguishes itself from {@link #getResourceAsStream(String)},
@@ -74,6 +75,37 @@ public abstract class HierarchyClassLoader extends JavaInteropURLClassloader {
             InputStream childInput = child.getResourceAsStreamWithChildren(name);
             if (childInput != null) {
                 return childInput;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds a resource under the given name within this classloader, or if that
+     * fails, in any of its children. If the resource is found, the resource is
+     * returned as an URL, otherwise {@code null} is returned.
+     *
+     * <p>This method distinguishes itself from {@link #getResource(String)},
+     * which will first query the parent classloader and only then this classloader.
+     * Further, {@link #getResource(String)} does not query children classloaders.
+     *
+     * @param name The pathname of the resource.
+     * @return The {@link URL} of the corresponding found resource, or null if such a resource does not exist.
+     * @implNote Search occurs depth-first, which means that registration order can matter quite a lot.
+     * @since 4.0.0-a20241006
+     */
+    @Nullable
+    @ApiStatus.AvailableSince(value = "4.0.0-a20241006")
+    public URL getResourceAsURLWithChildren(@NotNull String name) {
+        URL url = this.findResource(name);
+        if (url != null) {
+            return url;
+        }
+
+        for (MinestomExtensionClassLoader child : this.children) {
+            URL childURL = child.getResourceAsURLWithChildren(name);
+            if (childURL != null) {
+                return childURL;
             }
         }
         return null;

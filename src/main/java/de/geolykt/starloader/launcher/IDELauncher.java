@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,6 +46,7 @@ import de.geolykt.starloader.util.JavaInterop;
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.modDirectory</b>: Fully qualified path to the mod directory to use.</li>
  *  <li><b>de.geolykt.starloader.launcher.IDELauncher.inlineStarplaneAnnotations</b>: Whether the {@link StarplaneAnnotationsInlineTransformer} should be used.</li>
  *  <li><b>org.stianloader.sll.IDELauncher.propertyExpansionSource</b> (optional): The path to a .properties file from which property expansions within the extension.json file should occur. Only affects mods declared via the 'modURLs' system property.</li>
+ *  <li><del>org.stianloader.sll.IDELauncher.smapURIAliases</del> (optional, micromixin exclusive): A JSON-encoded map which maps the {@link CodeSource} URI of classes as they appear on the classpath to the URI as is used by micromixin for generating SMAPs. There is probably no good reason to have this, but perhaps you can find a good use for it.</li>
  * </ul>
  *
  * @since 4.0.0
