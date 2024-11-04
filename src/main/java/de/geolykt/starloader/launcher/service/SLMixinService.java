@@ -3,10 +3,15 @@ package de.geolykt.starloader.launcher.service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
@@ -50,10 +55,20 @@ public class SLMixinService extends MixinServiceAbstract {
 
         @Override
         public ClassNode getClassNode(String name, boolean runTransformers, int readerFlags) throws ClassNotFoundException, IOException {
-            ClassNode node = new ClassNode();
-            ClassReader reader;
+            List<Exception> caughtExceptions = new ArrayList<>();
 
-            try {
+            @SuppressWarnings("unchecked")
+            Callable<@NotNull ClassReader>[] suppliers = new Callable[4];
+
+            int i = 0;
+            int systemClassLoaderIndex;
+            if (JavaInterop.isJava9() || SLMixinService.CLASSLOADER.isProtected(name)) {
+                systemClassLoaderIndex = i++;
+            } else {
+                systemClassLoaderIndex = suppliers.length - 1;
+            }
+
+            suppliers[systemClassLoaderIndex] = () -> {
                 ClassLoader cl = JavaInterop.getPlattformClassloader();
                 InputStream is;
                 if (cl == null) {
@@ -61,32 +76,52 @@ public class SLMixinService extends MixinServiceAbstract {
                 } else {
                     is = cl.getResourceAsStream(name.replace('.', '/') + ".class");
                 }
-                reader = new ClassReader(is);
-            } catch (Exception e) {
+                return new ClassReader(is);
+            };
+
+            suppliers[i++] = () -> {
+                return new ClassReader(SLMixinService.CLASSLOADER.loadClassBytes(name, false).getBytes());
+            };
+
+            suppliers[i++] = () -> {
+                return new ClassReader(SLMixinService.CLASSLOADER.loadBytesWithChildren(name, false));
+            };
+
+            suppliers[i++] = () -> {
+                return new ClassReader(SLMixinService.CLASSLOADER.getResourceAsStream(name.replace('.', '/') + ".class"));
+            };
+
+            for (Callable<@NotNull ClassReader> supplier : suppliers) {
                 try {
-                    reader = new ClassReader(SLMixinService.CLASSLOADER.loadClassBytes(name, false).getBytes());
-                } catch (Exception e2) {
-                    try {
-                        reader = new ClassReader(SLMixinService.CLASSLOADER.loadBytesWithChildren(name, false));
-                    } catch (Exception e3) {
-                        // Final hail-mary. It'll not be transformed but it should find it now with all the edge cases
-                        try {
-                            reader = new ClassReader(SLMixinService.CLASSLOADER.getResourceAsStream(name.replace('.', '/') + ".class"));
-                        } catch (Exception e4) {
-                            e4.addSuppressed(e3);
-                            e4.addSuppressed(e2);
-                            e4.addSuppressed(e);
-                            if (MinestomRootClassLoader.DEBUG) {
-                                LoggerFactory.getLogger(SLMixinService.class).warn("Unable to call #getClassNode(): Couldn't load ClassNode for class with name '{}'.", name, e4);
-                            }
-                            throw new ClassNotFoundException("Could not load ClassNode with name " + name, e4);
-                        }
-                    }
+                    @SuppressWarnings("null")
+                    ClassReader reader = supplier.call();
+                    ClassNode node = new ClassNode();
+                    reader.accept(node, readerFlags);
+                    return node;
+                } catch (Exception e) {
+                    caughtExceptions.add(e);
                 }
             }
 
-            reader.accept(node, readerFlags);
-            return node;
+            Exception causedBy;
+            ListIterator<Exception> it = caughtExceptions.listIterator(caughtExceptions.size());
+            if (it.hasPrevious()) {
+                causedBy = it.previous();
+                while (it.hasPrevious()) {
+                    causedBy.addSuppressed(it.previous());
+                }
+            } else {
+                causedBy = null;
+            }
+
+            ClassNotFoundException thrownException = new ClassNotFoundException("Could not load ClassNode with name " + name, causedBy);
+
+            if (MinestomRootClassLoader.DEBUG) {
+                thrownException.fillInStackTrace();
+                LoggerFactory.getLogger(SLMixinService.class).warn("Unable to call #getClassNode(): Couldn't load ClassNode for class with name '{}'.", name, thrownException);
+            }
+
+            throw thrownException;
         }
     };
 
