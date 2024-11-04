@@ -159,7 +159,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         }
     }
 
-    protected boolean isProtected(String name) {
+    @Contract(pure = true)
+    @AvailableSince(value = "4.0.0-a20241104.1") // Note: protected since 4.0.0-a20240512, was private before that.
+    public boolean isProtected(String name) {
         if (!this.protectedClasses.contains(name)) {
             for (String start : this.protectedPackages) {
                 if (name.startsWith(start)) {
