@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
+import de.geolykt.starloader.launcher.Utils;
 import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
 import de.geolykt.starloader.mod.Extension;
 import de.geolykt.starloader.mod.ExtensionManager;
@@ -66,6 +67,7 @@ public final class Starloader {
             throw new IllegalStateException("Starloader initialized twice!");
         }
         Starloader.LOGGER.info("Java version: {}. JavaInterop J9: {}", System.getProperty("java.version"), JavaInterop.isJava9());
+        Starloader.LOGGER.info("Storing log files in {}", Utils.getLogDirectory().toAbsolutePath().toString());
         Starloader.instance = new Starloader(extensionSource, new ExtensionManager(modDir.resolve(".picoresolve-cache")), modDir);
         Starloader.instance.start();
     }
@@ -76,6 +78,7 @@ public final class Starloader {
             throw new IllegalStateException("Starloader initialized twice!");
         }
         Starloader.LOGGER.info("Java version: {}. JavaInterop J9: {}", System.getProperty("java.version"), JavaInterop.isJava9());
+        Starloader.LOGGER.info("Storing log files in {}", Utils.getLogDirectory().toAbsolutePath().toString());
         Starloader.instance = new Starloader(modSource);
         Starloader.instance.start();
     }
