@@ -46,9 +46,21 @@ public final class ASMMixinTransformer extends ASMTransformer implements CodeTra
         return this.transformClass(source, null);
     }
 
+    public boolean isValidTarget(@NotNull String internalName, @Nullable URI codeSourceURI) {
+        return true; // TODO check whether we can evaluate whether a class is a target of a mixin or not
+    }
+
     @Override
     public boolean isValidTarget(@NotNull String internalName) {
-        return true; // TODO check whether we can evaluate whether a class is a target of a mixin or not
+        if (MinestomRootClassLoader.getInstance().isThreadLoggingClassloadingFailures()) {
+            try {
+                throw new RuntimeException("Stacktrace");
+            } catch (RuntimeException e) {
+                LoggerFactory.getLogger(ASMMixinTransformer.class).warn("ASMMixinTransformer implements CodeTransformer, meaning that CodeTransformer#isValidTarget(String, URI) should be called instead of ASMTransformer#isValidTarget(String). Please report this issue to the caller. Note: This is not a fatal issue, but should be handled in due time.", e);
+            }
+        }
+
+        return this.isValidTarget(internalName, null);
     }
 
     @Override

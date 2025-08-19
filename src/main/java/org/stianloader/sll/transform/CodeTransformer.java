@@ -6,6 +6,7 @@ import java.security.CodeSource;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 
 import de.geolykt.starloader.transformers.ASMTransformer;
@@ -28,6 +29,41 @@ import de.geolykt.starloader.transformers.ASMTransformer;
 @ApiStatus.Experimental
 @ApiStatus.AvailableSince("4.0.0-a20241012")
 public interface CodeTransformer {
+
+    /**
+     * Obtains whether this {@link CodeTransformer} instance is interested in transforming the given class.
+     * Returns <code>true</code> if the class with the given internal name is of interest to this transformer,
+     * <code>false</code> otherwise.
+     *
+     * <p>The caller of this method <b>must not</b> call {@link #transformClass(ClassNode, URI)} for
+     * classes with the same name as the one used in a call to this method if that call returned <code>false</code>.
+     * This is a performance-saving measure and is very much akin to {@link ASMTransformer#isValidTarget(String)},
+     * except that is also exposes the codeSourceURI of the class.
+     *
+     * <p>If no transformers mark a class as a valid target, then the bytecode of the class does not need to be
+     * transformed into a ClassNode, saving some CPU cycles (meaning faster startup times).
+     *
+     * <p>The code source property ought not be confused with the {@link ClassNode#sourceFile} property
+     * of a class. Instead it corresponds to {@link CodeSource#getLocation()}, hinting at the location
+     * of the compiled bytecode.
+     *
+     * @param internalName The internal name of the class, as per {@link Type#getInternalName()}.
+     * @param codeSourceURI A URI representing the location of the class source code. This URI will
+     * correspond to the JAR in which the class is located in, or the "base" directory of the class
+     * as per the classpath. This argument may be <code>null</code> if the caller
+     * does not know (or rather - cannot determine) the location of the class bytecode.
+     * @return True if the target is to be transformed, false otherwise.
+     * @see CodeSource
+     * @implSpec By default, if the class implementing this interface also extends {@link ASMTransformer},
+     * then {@link ASMTransformer#isValidTarget(String)} will be called, otherwise <code>true</code> will be
+     * returned.
+     * @since 4.0.0-a20250819
+     */
+    @ApiStatus.Experimental
+    @ApiStatus.AvailableSince("4.0.0-a20250819")
+    default boolean isValidTarget(@NotNull String internalName, @Nullable URI codeSourceURI) {
+        return (this instanceof ASMTransformer) ? ((ASMTransformer) this).isValidTarget(internalName) : true;
+    }
 
     /**
      * Optionally transforms a class, returning <code>true</code> if the input

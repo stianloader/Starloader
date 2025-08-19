@@ -112,9 +112,9 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
                 if (seperatorIndex != -1) {
                     url = new URL(urlPath.substring(0, seperatorIndex));
                 }
-                Class<?> clazz = defineClass(name, bytes, 0, bytes.length, new CodeSource(url, (CodeSigner[]) null));
+                Class<?> clazz = super.defineClass(name, bytes, 0, bytes.length, new CodeSource(url, (CodeSigner[]) null));
                 if (resolve) {
-                    resolveClass(clazz);
+                    super.resolveClass(clazz);
                 }
                 return clazz;
             } catch (Throwable e) {

@@ -15,17 +15,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.CodeSigner;
 import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.ApiStatus.AvailableSince;
+import org.jetbrains.annotations.ApiStatus.Experimental;
 import org.jetbrains.annotations.ApiStatus.Internal;
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
 import org.jetbrains.annotations.CheckReturnValue;
@@ -36,6 +39,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -68,9 +72,17 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MinestomRootClassLoader.class);
 
-    @Deprecated
-    @ScheduledForRemoval(inVersion = "5.0.0")
-    private de.geolykt.starloader.deobf.access.AccessTransformInfo widener = new de.geolykt.starloader.deobf.access.AccessTransformInfo();
+    /**
+     * Used to let ASM find out common super types, without actually committing to loading them
+     * Otherwise ASM would accidentally load classes we might want to modify.
+     */
+    private final URLClassLoader asmClassLoader;
+
+    @NotNull
+    private final Map<String, URI> classCodeSourceURIs = new ConcurrentHashMap<>();
+
+    @NotNull
+    private final Collection<ASMTransformer> modifiers = new OrderedCollection<>();
 
     /**
      * Classes that cannot be loaded/modified by this classloader.
@@ -78,6 +90,10 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
      */
     private final Set<String> protectedClasses = ConcurrentHashMap.newKeySet();
     public final Set<String> protectedPackages = ConcurrentHashMap.newKeySet();
+
+    @Deprecated
+    @ScheduledForRemoval(inVersion = "5.0.0")
+    private de.geolykt.starloader.deobf.access.AccessTransformInfo widener = new de.geolykt.starloader.deobf.access.AccessTransformInfo();
 
     {
         this.protectedClasses.add("de.geolykt.starloader.Starloader");
@@ -95,15 +111,6 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         this.protectedPackages.add("org.stianloader.micromixin.annotations");
         this.protectedPackages.add("org.stianloader.micromixin.backports");
     }
-
-    /**
-     * Used to let ASM find out common super types, without actually committing to loading them
-     * Otherwise ASM would accidentally load classes we might want to modify.
-     */
-    private final URLClassLoader asmClassLoader;
-
-    @NotNull
-    private final Collection<ASMTransformer> modifiers = new OrderedCollection<>();
 
     private MinestomRootClassLoader(ClassLoader parent) {
         super("Starloader Root ClassLoader", new URL[0], parent);
@@ -298,6 +305,11 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
             boolean modified = false;
 
             reader.accept(node, 0);
+
+            if (codeSourceURI != null) {
+                this.classCodeSourceURIs.putIfAbsent(node.name, codeSourceURI);
+            }
+
             try {
                 @SuppressWarnings("deprecation")
                 boolean hack = this.widener.apply(node, true);
@@ -313,10 +325,9 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                         if (MinestomRootClassLoader.DEBUG) {
                             MinestomRootClassLoader.LOGGER.info("{} could be able to transform {}", transformer.getClass().getSimpleName(), internalName);
                         }
-                        if (!transformer.isValidTarget(internalName)) {
-                            continue;
-                        }
-                        if (transformer instanceof CodeTransformer ? ((CodeTransformer) transformer).transformClass(node, codeSourceURI) : transformer.accept(node)) {
+                        if (transformer instanceof CodeTransformer ?
+                                ((CodeTransformer) transformer).isValidTarget(internalName, codeSourceURI) && ((CodeTransformer) transformer).transformClass(node, codeSourceURI)
+                                : transformer.isValidTarget(internalName) && transformer.accept(node)) {
                             if (MinestomRootClassLoader.DEBUG) {
                                 MinestomRootClassLoader.LOGGER.info("{} was transformed by a {}", internalName, transformer.getClass().getSimpleName());
                             }
@@ -489,6 +500,43 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         synchronized (this.modifiers) {
             return Collections.unmodifiableCollection(new ArrayList<>(this.modifiers));
         }
+    }
+
+    /**
+     * Obtain the code source URI of the class, as per {@link CodeSource#getLocation()}.
+     * If the location is unknown, or if the class was not defined by this classloader,
+     * nor by any of it's children, then the returned value may be <code>null</code>.
+     *
+     * <p>This method is mainly intended to be used for debugging purposes, or in more
+     * concrete terms, to aid tools used for debugging, such as IDEs or profilers. Perhaps however
+     * you will find a different use for this method, who knows?
+     *
+     * <p>This method is experimental. It was added for a rather narrow usecase, which
+     * might vanish or prove to be irrelevant in the future. Handle with care, and be more
+     * keen on sharing feedback with the SLL developers when using this method.
+     *
+     * <p>If multiple classes declare multiple classes with the same name, then the
+     * result is undefined. This may especially impact shaded libraries. If needed,
+     * it may be beneficial to instead obtain the source through the
+     * {@link Class#getProtectionDomain() protection domain} of a class via {@link ProtectionDomain#getCodeSource()}
+     * and then {@link CodeSource#getLocation()}. That approach however would involve reflection
+     * and would be slower and may have different usecases compared to
+     * this method as it implies that the classloader is already precisely known.
+     *
+     * @param internalName The internal name of the class, as per {@link Type#getInternalName()}.
+     * @return The {@link URI} where the given class is located in, following the
+     * paradigms of {@link CodeSource#getLocation()}. For classes located inside JARs, the
+     * URI of the jar will be used. For classes within directories, the URI of the directory
+     * is used (i.e. <code>file://bin/</code> for <code>file://bin/com/example/Main.class</code>).
+     * If the location of the class file is unknown or cannot be represented as an {@link URI},
+     * <code>null</code> is used.
+     */
+    @Nullable
+    @Contract(pure = true)
+    @AvailableSince("4.0.0-a20250819")
+    @Experimental
+    public URI getClassCodeSourceURI(@NotNull String internalName) {
+        return this.classCodeSourceURIs.get(internalName);
     }
 
     @SuppressWarnings("null")
