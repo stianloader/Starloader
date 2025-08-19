@@ -10,20 +10,20 @@
 
     <properties>
         <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm -->
-        <asm-version>9.7.1</asm-version>
+        <asm-version>9.8</asm-version>
         <!-- https://mvnrepository.com/artifact/org.jetbrains/annotations -->
-        <annotations-version>26.0.1</annotations-version>
+        <annotations-version>26.0.2</annotations-version>
         <!-- https://mvnrepository.com/artifact/org.json/json -->
-        <json-version>20240303</json-version>
+        <json-version>20250517</json-version>
         <!-- https://stianloader.org/maven/org/stianloader/micromixin-transformer/ -->
-        <micromixin-version>0.7.1-a20241021</micromixin-version>
+        <micromixin-version>0.7.1-a20241104</micromixin-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
         <!-- DO NOT BE FOOLED: 1.4.X does not support Java 8, but 1.3.X does. -->
         <!-- Otherwise both series should be the same to us as consumers. -->
         <!-- That being said we should expect that we will never be able update this dependency
              again, so looking at alternative logging frameworks would be something to look out
              for in the long term -->
-        <logback-version>1.3.14</logback-version>
+        <logback-version>1.3.15</logback-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gpg.skip>true</gpg.skip>
     </properties>
@@ -98,7 +98,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.13</version>
+            <version>2.0.17</version>
             <scope>compile</scope>
         </dependency>
 
@@ -126,7 +126,7 @@
         <dependency>
             <groupId>org.stianloader</groupId>
             <artifactId>picoresolve</artifactId>
-            <version>1.0.0-a20240618</version>
+            <version>1.0.0-a20241022</version>
             <scope>compile</scope>
         </dependency>
 
@@ -135,7 +135,7 @@
         <dependency>
             <groupId>org.fusesource.jansi</groupId>
             <artifactId>jansi</artifactId>
-            <version>2.4.1</version>
+            <version>2.4.2</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -178,7 +178,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.14.0</version>
                 <configuration>
                     <release>8</release>
                 </configuration>
@@ -261,7 +261,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.11.3</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -280,6 +280,11 @@
                             <placement>a</placement>
                             <head>Implementation Note:</head>
                         </tag>
+                        <tag>
+                            <name>implSpec</name>
+                            <placement>a</placement>
+                            <head>Implementation Specification:</head>
+                        </tag>
                     </tags>
                 </configuration>
             </plugin>
@@ -287,7 +292,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.2.7</version>
+                <version>3.2.8</version>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
