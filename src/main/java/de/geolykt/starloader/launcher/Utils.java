@@ -26,6 +26,7 @@ import de.geolykt.starloader.mod.ExtensionPrototype;
 public final class Utils {
 
    private static final byte[] SHARED_DUMMY_ARRAY = new byte[4096];
+   private static final boolean LOCAL_LOGS = Boolean.getBoolean("org.stianloader.launcher.Utils.localLogs");
 
    /**
     * Expand placeholders as defined by {@link ExtensionPrototype#getDefinedProperties()}.
@@ -76,6 +77,18 @@ public final class Utils {
      * @return The directory in which the logs of SLL are stored.
      */
     public static final Path getLogDirectory() {
+        if (Utils.LOCAL_LOGS) {
+            Path logDir = Paths.get("logs");
+            try {
+                if (Files.notExists(logDir)) {
+                    Files.createDirectory(logDir);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return logDir;
+        }
+
         // XDG base directory specification: https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
         String xdgStateHome = System.getenv("XDG_STATE_HOME");
         if (xdgStateHome != null && !xdgStateHome.isEmpty()) {
