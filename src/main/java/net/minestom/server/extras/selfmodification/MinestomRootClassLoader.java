@@ -137,13 +137,17 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
 
         try {
             // we do not load system classes by ourselves
-            ClassLoader loader = JavaInterop.getPlattformClassloader();
+            ClassLoader loader = JavaInterop.getPlatformClassLoader();
             if (loader != null) {
                 Class<?> systemClass = loader.loadClass(name);
-                MinestomRootClassLoader.LOGGER.trace("Loading system class: {}", systemClass);
-                return systemClass;
+                if (systemClass.getClassLoader() != loader) {
+                    throw new ClassNotFoundException("When loading the class with a platform classloader returned by a Java 9 " + (JavaInterop.isJava9() ? "capable " : "incapable") + " JavaInterop implementation, the class was loaded by a different classloader. Presuming the class to be on the boot module layer - ignoring it.");
+                } else {
+                    MinestomRootClassLoader.LOGGER.trace("Loading system class: {}", systemClass);
+                    return systemClass;
+                }
             }
-            throw new ClassNotFoundException("Java 9 " + (JavaInterop.isJava9() ? "capable " : "incapable") + " JavaInterop implementation refused to return the plattform classloader.");
+            throw new ClassNotFoundException("Java 9 " + (JavaInterop.isJava9() ? "capable " : "incapable") + " JavaInterop implementation refused to return the platform classloader.");
         } catch (ClassNotFoundException e) {
             try {
                 if (this.isProtected(name)) {
@@ -151,7 +155,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                     return super.loadClass(name, resolve);
                 }
 
-                return define(name, resolve);
+                return this.define(name, resolve);
             } catch (Throwable ex) {
                 MinestomRootClassLoader.LOGGER.trace("Failed to load class \""+ name + "\", resorting to parent loader. Code modifications forbidden. {}", ex);
                 // fail to load class, let parent load

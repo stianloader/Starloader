@@ -12,11 +12,11 @@
         <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm -->
         <asm-version>9.8</asm-version>
         <!-- https://mvnrepository.com/artifact/org.jetbrains/annotations -->
-        <annotations-version>26.0.2</annotations-version>
+        <annotations-version>26.0.2-1</annotations-version>
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <json-version>20250517</json-version>
         <mixin-version>0.8.7</mixin-version>
-        <micromixin-version>0.7.1-a20241104</micromixin-version>
+        <micromixin-version>0.8.0-a20250906</micromixin-version>
         <!-- https://mvnrepository.com/artifact/io.github.llamalad7/mixinextras-common -->
         <mixinextras-version>0.5.0</mixinextras-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
@@ -102,6 +102,12 @@
             <artifactId>micromixin-backports</artifactId>
             <version>${micromixin-version}</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.stianloader</groupId>
+                    <artifactId>sponge-mixin</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

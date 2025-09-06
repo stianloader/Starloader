@@ -2,8 +2,8 @@ package net.minestom.server.extras.selfmodification.mixins;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.service.IGlobalPropertyService;
 import org.spongepowered.asm.service.IPropertyKey;
 
@@ -14,28 +14,30 @@ public class GlobalPropertyServiceMinestom implements IGlobalPropertyService {
 
     private static class BasicProperty implements IPropertyKey {
 
+        @NotNull
         private final String name;
 
-        public BasicProperty(String name) {
+        public BasicProperty(@NotNull String name) {
             this.name = name;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            BasicProperty that = (BasicProperty) o;
-            return Objects.equals(name, that.name);
+            if (!(o instanceof BasicProperty)) {
+                return false;
+            }
+
+            return this.name.equals(((BasicProperty) o).name);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name);
+            return this.name.hashCode();
         }
 
         @Override
         public String toString() {
-            return String.format("BasicProperty{name='%s'}", name);
+            return "BasicProperty{name='" + this.name + "'}";
         }
     }
 
@@ -44,28 +46,39 @@ public class GlobalPropertyServiceMinestom implements IGlobalPropertyService {
 
     @Override
     public IPropertyKey resolveKey(String name) {
-        return keys.computeIfAbsent(name, BasicProperty::new);
+        if (name == null) {
+            throw new NullPointerException("Argument 'name' should not be null as this implementation does not support keys with null names.");
+        }
+
+        IPropertyKey key = this.keys.get(name);
+
+        if (key == null) {
+            key = new BasicProperty(name);
+            this.keys.put(name, key);
+        }
+
+        return key;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getProperty(IPropertyKey key) {
-        return (T) values.get(key);
+        return (T) this.values.get(key);
     }
 
     @Override
     public void setProperty(IPropertyKey key, Object value) {
-        values.put(key, value);
+        this.values.put(key, value);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getProperty(IPropertyKey key, T defaultValue) {
-        return (T) values.getOrDefault(key, defaultValue);
+        return (T) this.values.getOrDefault(key, defaultValue);
     }
 
     @Override
     public String getPropertyString(IPropertyKey key, String defaultValue) {
-        return (String) values.getOrDefault(key, defaultValue);
+        return (String) this.values.getOrDefault(key, defaultValue);
     }
 }

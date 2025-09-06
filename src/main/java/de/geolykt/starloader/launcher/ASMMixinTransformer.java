@@ -46,6 +46,7 @@ public final class ASMMixinTransformer extends ASMTransformer implements CodeTra
         return this.transformClass(source, null);
     }
 
+    @Override
     public boolean isValidTarget(@NotNull String internalName, @Nullable URI codeSourceURI) {
         return true; // TODO check whether we can evaluate whether a class is a target of a mixin or not
     }
