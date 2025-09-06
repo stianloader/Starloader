@@ -14,19 +14,26 @@ open module de.geolykt.starloader.launcher {
     requires transitive org.spongepowered.mixin;
     requires transitive org.jetbrains.annotations;
     requires transitive org.slf4j;
+    requires transitive org.stianloader.micromixin.backports;
+    requires transitive java.base;
+
+    // requires on filename-based module name
+    requires static mixinextras.common;
+    requires static reversible.access.setter;
 
     // Stuff we use but don't expose to everyone
     requires org.json;
-    requires java.base;
     requires ch.qos.logback.classic;
     requires ch.qos.logback.core;
     requires org.stianloader.picoresolve;
 
+    // Exports
+    exports de.geolykt.starloader;
+    exports de.geolykt.starloader.launcher;
     exports de.geolykt.starloader.mod;
     exports de.geolykt.starloader.transformers;
-
+    exports org.stianloader.sll.transform;
     exports net.minestom.server.extras.selfmodification;
-    exports net.minestom.server.extras.selfmodification.mixins;
 
     // Services
     provides IGlobalPropertyService with GlobalPropertyServiceMinestom;
@@ -34,4 +41,6 @@ open module de.geolykt.starloader.launcher {
     provides IMixinServiceBootstrap with SLMixinBootstrap;
 
     exports de.geolykt.starloader.launcher.service to org.spongepowered.mixin;
+    exports de.geolykt.starloader.util to ch.qos.logback.core;
+    exports net.minestom.server.extras.selfmodification.mixins to org.spongepowered.mixin;
 }

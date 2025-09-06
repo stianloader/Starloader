@@ -69,7 +69,7 @@ public class SLMixinService extends MixinServiceAbstract {
             }
 
             suppliers[systemClassLoaderIndex] = () -> {
-                ClassLoader cl = JavaInterop.getPlattformClassloader();
+                ClassLoader cl = JavaInterop.getPlatformClassLoader();
                 InputStream is;
                 if (cl == null) {
                    is = ClassLoader.getSystemResourceAsStream(name.replace('.', '/') + ".class");
