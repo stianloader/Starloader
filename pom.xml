@@ -164,10 +164,11 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/de.geolykt.starloader/reversible-access-setter -->
         <dependency>
             <groupId>de.geolykt.starloader</groupId>
             <artifactId>reversible-access-setter</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
             <scope>compile</scope>
         </dependency>
 
@@ -175,7 +176,7 @@
         <dependency>
             <groupId>org.stianloader</groupId>
             <artifactId>picoresolve</artifactId>
-            <version>1.0.0-a20241022</version>
+            <version>1.0.0-a20250903</version>
             <scope>compile</scope>
         </dependency>
 
