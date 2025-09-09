@@ -131,18 +131,22 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
     }
 
     @Override
-    public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    @NotNull
+    public Class<?> loadClass(@NotNull String name, boolean resolve) throws ClassNotFoundException {
         Class<?> loadedClass = this.findLoadedClass(Objects.requireNonNull(name, "name must not be null"));
         if (loadedClass != null) {
             return loadedClass;
         }
 
+        boolean skippedPlatformCL = false;
+
+        ClassLoader platformClassLoader = JavaInterop.getPlatformClassLoader();
         try {
             // we do not load system classes by ourselves
-            ClassLoader loader = JavaInterop.getPlatformClassLoader();
-            if (loader != null) {
-                Class<?> systemClass = loader.loadClass(name);
-                if (systemClass.getClassLoader() != loader) {
+            if (platformClassLoader != null) {
+                Class<?> systemClass = platformClassLoader.loadClass(name);
+                if (systemClass.getClassLoader() != platformClassLoader) {
+                    skippedPlatformCL = true;
                     throw new ClassNotFoundException("When loading the class with a platform classloader returned by a Java 9 " + (JavaInterop.isJava9() ? "capable " : "incapable") + " JavaInterop implementation, the class was loaded by a different classloader. Presuming the class to be on the boot module layer - ignoring it.");
                 } else {
                     MinestomRootClassLoader.LOGGER.trace("Loading system class: {}", systemClass);
@@ -150,7 +154,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                 }
             }
             throw new ClassNotFoundException("Java 9 " + (JavaInterop.isJava9() ? "capable " : "incapable") + " JavaInterop implementation refused to return the platform classloader.");
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException cnfe1) {
             try {
                 if (this.isProtected(name)) {
                     MinestomRootClassLoader.LOGGER.trace("Protected: {}", name);
@@ -158,15 +162,28 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
                 }
 
                 return this.define(name, resolve);
-            } catch (Throwable ex) {
-                MinestomRootClassLoader.LOGGER.trace("Failed to load class \""+ name + "\", resorting to parent loader. Code modifications forbidden. {}", ex);
+            } catch (Throwable ex1) {
+                if (ex1 instanceof ThreadDeath) {
+                    throw (ThreadDeath) ex1;
+                }
+                MinestomRootClassLoader.LOGGER.trace("Failed to load class \"{}\", resorting to parent loader. Code modifications forbidden.", name, ex1);
                 // fail to load class, let parent load
                 // this forbids code modification, but at least it will load
                 try {
                     return super.loadClass(name, resolve);
-                } catch (ClassNotFoundException cnfe) {
-                    cnfe.addSuppressed(ex);
-                    throw cnfe;
+                } catch (ClassNotFoundException cnfe2) {
+                    // let platform classloader load if not done so already
+                    if (skippedPlatformCL) {
+                        try {
+                            return Objects.requireNonNull(platformClassLoader).loadClass(name);
+                        } catch (ClassNotFoundException ex2) {
+                            cnfe2.addSuppressed(ex2);
+                        }
+                    }
+
+                    cnfe2.addSuppressed(cnfe1);
+                    cnfe2.addSuppressed(ex1);
+                    throw cnfe2;
                 }
             }
         }
@@ -193,11 +210,12 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
         return MinestomRootClassLoader.LOG_CLASSLOADING_FAILURES.get();
     }
 
+    @NotNull
     private Class<?> define(String name, boolean resolve) throws IOException, ClassNotFoundException {
         try {
             RawClassData rawClass;
             try {
-                rawClass = loadClassBytes(name, true);
+                rawClass = this.loadClassBytes(name, true);
             } catch (Throwable t) {
                 throw new ClassNotFoundException("Unable to load bytes", t);
             }
@@ -206,20 +224,22 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
 
             URL jarURL = rawClass.getSource();
             if (jarURL == null) {
-                defined = defineClass(name, bytes, 0, bytes.length);
+                defined = this.defineClass(name, bytes, 0, bytes.length);
             } else {
                 String path = jarURL.getPath();
                 int seperatorIndex = path.lastIndexOf('!');
                 if (seperatorIndex != -1) {
                     jarURL = new URL(path.substring(0, seperatorIndex));
                 }
-                defined = defineClass(name, bytes, 0, bytes.length, new CodeSource(jarURL, (CodeSigner[]) null));
+                defined = this.defineClass(name, bytes, 0, bytes.length, new CodeSource(jarURL, (CodeSigner[]) null));
             }
 
             MinestomRootClassLoader.LOGGER.trace("Loaded with code modifiers: {}", name);
+
             if (resolve) {
-                resolveClass(defined);
+                this.resolveClass(defined);
             }
+
             return defined;
         } catch (LinkageError e) {
             // Well we did hit the right classloader (so no need to check children), but it did not produce the right output
@@ -415,7 +435,7 @@ public class MinestomRootClassLoader extends HierarchyClassLoader implements Tra
     }
 
     @Internal
-    public void loadModifier(ClassLoader modifierLoader, String codeModifierClass) {
+    public void loadModifier(ClassLoader modifierLoader, @NotNull String codeModifierClass) {
         try {
             Class<?> modifierClass = modifierLoader.loadClass(codeModifierClass);
             if (ASMTransformer.class.isAssignableFrom(modifierClass)) {

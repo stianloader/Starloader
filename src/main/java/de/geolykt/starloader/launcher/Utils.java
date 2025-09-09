@@ -146,7 +146,7 @@ public final class Utils {
         }
     }
 
-    public static final void startMain(Class<?> className, String[] args) {
+    public static final void startMain(@NotNull Class<?> className, String[] args) {
         try {
             MethodHandles.publicLookup().findStatic(className, "main", MethodType.methodType(void.class, String[].class)).invokeExact(args);
         } catch (Throwable e) {

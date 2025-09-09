@@ -71,7 +71,7 @@ final class MixinBytecodeProvider extends ASMClassWrapperProvider implements Byt
             try {
                 String uriString = uri.toString();
                 uriString = this.smapURIAliases.getOrDefault(uriString, uriString);
-                return new URI(uriString);
+                return new URI(Objects.requireNonNull(uriString));
             } catch (URISyntaxException e) {
                 LoggerFactory.getLogger(MixinBytecodeProvider.class).warn("Cannot convert url to URI: {}", url, e);
                 return null;

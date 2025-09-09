@@ -93,7 +93,7 @@
         </dependency>
         <dependency>
             <groupId>org.stianloader</groupId>
-            <artifactId>micromixin-runtime</artifactId>
+            <artifactId>micromixin-annotations</artifactId>
             <version>${micromixin-version}</version>
             <scope>compile</scope>
         </dependency>

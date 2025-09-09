@@ -129,6 +129,9 @@ public class IDELauncher {
             }
 
             for (String key : jsonObject.keySet()) {
+                if (key == null) {
+                    continue;
+                }
                 try {
                     new URI(key);
                 } catch (URISyntaxException e) {
@@ -218,7 +221,7 @@ public class IDELauncher {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
             MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(void.class, List.class, Path.class)).invokeExact(prototypes, modDirectoryPath.toAbsolutePath());
         } catch (Throwable t) {
-            t.printStackTrace();
+            LoggerFactory.getLogger(IDELauncher.class).error("Unable to start up SLL. Quitting.", t);
             return;
         }
 

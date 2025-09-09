@@ -151,8 +151,7 @@ public class ExtensionManager {
             } catch (Exception e) {
                 discoveredExtension.setLoadStatus(DiscoveredExtension.LoadStatus.LOAD_FAILED);
                 e.printStackTrace();
-                LOGGER.error("Failed to load extension {}", discoveredExtension.getName());
-                LOGGER.error("Failed to load extension", e);
+                ExtensionManager.LOGGER.error("Failed to load extension {}", discoveredExtension.getName(), e);
             }
         }
     }
@@ -173,7 +172,7 @@ public class ExtensionManager {
         MinestomExtensionClassLoader loader = discoveredExtension.loader;
 
         if (this.extensions.containsKey(extensionName.toLowerCase(Locale.ROOT))) {
-            LOGGER.error("An extension called '{}' has already been registered.", extensionName);
+            ExtensionManager.LOGGER.error("An extension called '{}' has already been registered.", extensionName);
             return null;
         }
 
@@ -184,7 +183,7 @@ public class ExtensionManager {
                 throw new ClassNotFoundException("Class " + jarClass.getName() + " is loaded by classloader \"" + JavaInterop.getClassloaderName(jarClass.getClassLoader()) + "\", but expected it to be loaded by \"" + JavaInterop.getClassloaderName(loader) + "\"");
             }
         } catch (ClassNotFoundException e) {
-            LOGGER.error("Could not find main class '{}' in extension '{}' with associated URLs '{}'.", mainClass, extensionName, extensionDescription.getOrigin().files, e);
+            ExtensionManager.LOGGER.error("Could not find main class '{}' in extension '{}' with associated URLs '{}'.", mainClass, extensionName, extensionDescription.getOrigin().files, e);
             return null;
         }
 
@@ -192,7 +191,7 @@ public class ExtensionManager {
         try {
             extensionClass = jarClass.asSubclass(Extension.class);
         } catch (ClassCastException e) {
-            LOGGER.error("Main class '{}' in '{}' does not extend the 'Extension' superclass. Instead it directly extends '{}' from classloader '{}'", mainClass, extensionName, jarClass.getSuperclass().getName(), JavaInterop.getClassloaderName(jarClass.getSuperclass().getClassLoader()), e);
+            ExtensionManager.LOGGER.error("Main class '{}' in '{}' does not extend the 'Extension' superclass. Instead it directly extends '{}' from classloader '{}'", mainClass, extensionName, jarClass.getSuperclass().getName(), JavaInterop.getClassloaderName(jarClass.getSuperclass().getClassLoader()), e);
             return null;
         }
 
@@ -202,23 +201,23 @@ public class ExtensionManager {
             // Let's just make it accessible, plugin creators don't have to make this public.
             constructor.setAccessible(true);
         } catch (NoSuchMethodException e) {
-            LOGGER.error("Main class '{}' in '{}' does not define a no-args constructor.", mainClass, extensionName, e);
+            ExtensionManager.LOGGER.error("Main class '{}' in '{}' does not define a no-args constructor.", mainClass, extensionName, e);
             return null;
         }
         Extension extension = null;
         try {
-            CURRENTLY_LOADED_EXTENSION.set(extensionDescription);
+            ExtensionManager.CURRENTLY_LOADED_EXTENSION.set(extensionDescription);
             extension = constructor.newInstance();
         } catch (InstantiationException e) {
-            LOGGER.error("Main class '{}' in '{}' cannot be an abstract class.", mainClass, extensionName, e);
+            ExtensionManager.LOGGER.error("Main class '{}' in '{}' cannot be an abstract class.", mainClass, extensionName, e);
             return null;
         } catch (IllegalAccessException ignored) {
             // We made it accessible, should not occur
         } catch (InvocationTargetException e) {
-            LOGGER.error("While instantiating the main class '{}' in '{}' an exception was thrown.", mainClass, extensionName, e.getTargetException());
+            ExtensionManager.LOGGER.error("While instantiating the main class '{}' in '{}' an exception was thrown.", mainClass, extensionName, e.getTargetException());
             return null;
         } finally {
-            CURRENTLY_LOADED_EXTENSION.set(null);
+            ExtensionManager.CURRENTLY_LOADED_EXTENSION.set(null);
         }
 
         // add dependents to pre-existing extensions, so that they can easily be found during reloading
@@ -319,9 +318,9 @@ public class ExtensionManager {
                             if (this.extensions.containsKey(dependencyName.toLowerCase(Locale.ROOT))) {
                                 return this.extensions.get(dependencyName.toLowerCase(Locale.ROOT)).getDescription().getOrigin();
                             }
-                            LOGGER.error("Extension {} requires an extension called {}.", discoveredExtension.getName(), dependencyName);
-                            LOGGER.error("However the extension {} could not be found.", dependencyName);
-                            LOGGER.error("Therefore {} will not be loaded.", discoveredExtension.getName());
+                            ExtensionManager.LOGGER.error("Extension {} requires an extension called {}.", discoveredExtension.getName(), dependencyName);
+                            ExtensionManager.LOGGER.error("However the extension {} could not be found.", dependencyName);
+                            ExtensionManager.LOGGER.error("Therefore {} will not be loaded.", discoveredExtension.getName());
                             discoveredExtension.setLoadStatus(DiscoveredExtension.LoadStatus.MISSING_DEPENDENCIES);
                         }
                         // This will return null for an unknown-extension
@@ -512,17 +511,14 @@ public class ExtensionManager {
 
             URL entry = extension.loader.findResource(extension.getAccessWidener());
             if (entry == null) {
-                LOGGER.warn("Unable to find the access widener file for extension {}!", extension.getName());
+                ExtensionManager.LOGGER.warn("Unable to find the access widener file for extension {}!", extension.getName());
                 continue;
             }
             try (InputStream awFile = entry.openStream()) {
-                if (awFile == null) {
-                    throw new NullPointerException("entry.openStream() yielded null");
-                }
                 MinestomRootClassLoader.getInstance().readAccessWidener(awFile);
             } catch (IOException e) {
                 e.printStackTrace();
-                LOGGER.warn("Failed to set up an access widener for {}!", extension.getName());
+                ExtensionManager.LOGGER.warn("Failed to set up an access widener for {}!", extension.getName());
             }
         }
 
@@ -535,7 +531,7 @@ public class ExtensionManager {
         }
         if (transformer == null) {
             transformer = new ReversibleAccessSetterTransformer();
-            MinestomRootClassLoader.getInstance().addTransformer(transformer);
+            MinestomRootClassLoader.getInstance().addASMTransformer(transformer);
         }
 
         for (DiscoveredExtension extension : extensionsToLoad) {
@@ -545,33 +541,25 @@ public class ExtensionManager {
 
             URL entry = extension.loader.findResource(extension.getReversibleAccessSetter());
             if (entry == null) {
-                LOGGER.warn("Unable to find the reversible access setter file for extension {}!", extension.getName());
+                ExtensionManager.LOGGER.warn("Unable to find the reversible access setter file for extension {}!", extension.getName());
                 continue;
             }
-            try (InputStream rasFile = entry.openStream()) {
-                if (rasFile == null) {
-                    throw new NullPointerException("entry.openStream() yielded null");
-                }
-                try (InputStreamReader isr = new InputStreamReader(rasFile, StandardCharsets.UTF_8);
-                        BufferedReader br = new BufferedReader(isr)) {
-                    transformer.getReverseContext().read(extension.getName(), br, true);
-                }
+            try (InputStream rasFile = entry.openStream();
+                    InputStreamReader isr = new InputStreamReader(rasFile, StandardCharsets.UTF_8);
+                    BufferedReader br = new BufferedReader(isr)) {
+                transformer.getReverseContext().read(extension.getName(), br, true);
             } catch (IOException e) {
                 e.printStackTrace();
-                LOGGER.warn("Failed to set up the reversed reversible access setter for {}!", extension.getName());
+                ExtensionManager.LOGGER.warn("Failed to set up the reversed reversible access setter for {}!", extension.getName());
                 continue;
             }
-            try (InputStream rasFile = entry.openStream()) {
-                if (rasFile == null) {
-                    throw new NullPointerException("entry.openStream() yielded null");
-                }
-                try (InputStreamReader isr = new InputStreamReader(rasFile, StandardCharsets.UTF_8);
-                        BufferedReader br = new BufferedReader(isr)) {
-                    transformer.getMainContext().read(extension.getName(), br, false);
-                }
+            try (InputStream rasFile = entry.openStream();
+                    InputStreamReader isr = new InputStreamReader(rasFile, StandardCharsets.UTF_8);
+                    BufferedReader br = new BufferedReader(isr)) {
+                transformer.getMainContext().read(extension.getName(), br, false);
             } catch (IOException e) {
                 e.printStackTrace();
-                LOGGER.warn("Failed to set up the standard reversible access setter for {}!", extension.getName());
+                ExtensionManager.LOGGER.warn("Failed to set up the standard reversible access setter for {}!", extension.getName());
                 continue;
             }
         }
@@ -589,7 +577,7 @@ public class ExtensionManager {
         }
         @SuppressWarnings("resource")
         MinestomRootClassLoader modifiableClassLoader = (MinestomRootClassLoader) cl;
-        LOGGER.info("Start loading code modifiers...");
+        ExtensionManager.LOGGER.info("Start loading code modifiers...");
         for (DiscoveredExtension extension : extensions) {
             try {
                 for (String codeModifierClass : extension.getCodeModifiers()) {
@@ -612,23 +600,18 @@ public class ExtensionManager {
                             MixinConfig mixinConfig = MixinConfig.fromJson(mixinConfigJson);
                             ((ASMMixinTransformer) transformer).transformer.addMixin(extension.loader, mixinConfig);
                             added = true;
-                            LOGGER.info("Found mixin in extension {}: {}", extension.getName(), mixinConfigFile);
+                            ExtensionManager.LOGGER.info("Found mixin in extension {}: {}", extension.getName(), mixinConfigFile);
                         }
                     }
                     if (!added) {
-                        LOGGER.error("Unable to add mixin {} in extension {} as there is no classloader!");
+                        ExtensionManager.LOGGER.error("Unable to add mixin {} in extension {} as there is no classloader!");
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                LOGGER.error("Failed to load code modifier for extension in files: "
-                        + extension.files
-                                .stream()
-                                .map(URL::toExternalForm)
-                                .collect(Collectors.joining(", ")), e);
+                ExtensionManager.LOGGER.error("Failed to load code modifier for extension in files: {}", extension.files, e);
             }
         }
-        LOGGER.info("Done loading code modifiers.");
+        ExtensionManager.LOGGER.info("Done loading code modifiers.");
     }
 
     @SuppressWarnings({ "resource", "deprecation" })
@@ -640,14 +623,14 @@ public class ExtensionManager {
 
         // remove as dependent of other extensions
         // this avoids issues where a dependent extension fails to reload, and prevents the base extension to reload too
-        for (Extension e : extensionList) {
+        for (Extension e : this.extensionList) {
             e.getDescription().getDependents().remove(ext.getDescription().getName());
         }
 
         String id = ext.getDescription().getName().toLowerCase(Locale.ROOT);
         // remove from loaded extensions
-        extensions.remove(id);
-        extensionList.remove(ext);
+        this.extensions.remove(id);
+        this.extensionList.remove(ext);
 
         // remove class loader, required to reload the classes
         MinestomExtensionClassLoader classloader = this.extensionClassloaders.remove(id);
@@ -672,7 +655,7 @@ public class ExtensionManager {
     }
 
     public void reload(String extensionName) {
-        Extension ext = extensions.get(extensionName.toLowerCase());
+        Extension ext = this.extensions.get(extensionName.toLowerCase());
         if (ext == null) {
             throw new IllegalArgumentException("Extension " + extensionName + " is not currently loaded.");
         }
@@ -693,7 +676,7 @@ public class ExtensionManager {
         this.unload(ext);
         // Hint: 'ext' and its dependents should no longer be referenced from now on
 
-        // rediscover extension to reload. We allow dependency changes, so we need to fully reload it
+        // re-discover extension to reload. We allow dependency changes, so we need to fully reload it
         List<DiscoveredExtension> extensionsToReload = new LinkedList<>();
         ExtensionManager.LOGGER.info("Rediscovering extension {}", extensionName);
         DiscoveredExtension rediscoveredExtension = this.discoverFromPrototype(ext.getDescription().getOrigin().getSourcePrototype());
@@ -736,7 +719,7 @@ public class ExtensionManager {
         List<Extension> newExtensions = new LinkedList<>();
         for (DiscoveredExtension toReload : extensionsToLoad) {
             // reload extensions
-            LOGGER.info("Actually load extension {}", toReload.getName());
+            ExtensionManager.LOGGER.info("Actually load extension {}", toReload.getName());
             Extension loadedExtension = this.attemptSingleLoad(toReload);
             if (loadedExtension != null) {
                 newExtensions.add(loadedExtension);
@@ -744,11 +727,11 @@ public class ExtensionManager {
         }
 
         if (newExtensions.isEmpty()) {
-            LOGGER.error("No extensions to load, skipping callbacks");
+            ExtensionManager.LOGGER.error("No extensions to load, skipping callbacks");
             return false;
         }
 
-        LOGGER.info("Load complete, firing preinit, init and then postinit callbacks");
+        ExtensionManager.LOGGER.info("Load complete, firing preinit, init and then postinit callbacks");
         // retrigger preinit, init and postinit
         newExtensions.forEach(Extension::preInitialize);
         newExtensions.forEach(Extension::initialize);
@@ -764,13 +747,13 @@ public class ExtensionManager {
         List<String> dependents = new LinkedList<>(ext.getDescription().getDependents()); // copy dependents list
 
         for (String dependentID : dependents) {
-            Extension dependentExt = extensions.get(dependentID.toLowerCase());
-            LOGGER.info("Unloading dependent extension {} (because it depends on {})", dependentID, extensionName);
-            unload(dependentExt);
+            Extension dependentExt = this.extensions.get(dependentID.toLowerCase());
+            ExtensionManager.LOGGER.info("Unloading dependent extension {} (because it depends on {})", dependentID, extensionName);
+            this.unload(dependentExt);
         }
 
-        LOGGER.info("Unloading extension {}", extensionName);
-        unload(ext);
+        ExtensionManager.LOGGER.info("Unloading extension {}", extensionName);
+        this.unload(ext);
 
         // call GC to try to get rid of classes and classloader
         System.gc();
