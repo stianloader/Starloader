@@ -189,7 +189,7 @@ public class IDELauncher {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");
             MethodHandles.lookup().findStatic(slClass, "start", MethodType.methodType(void.class, List.class, Path.class)).invokeExact(prototypes, modDirectoryPath.toAbsolutePath());
         } catch (Throwable t) {
-            t.printStackTrace();
+            LoggerFactory.getLogger(IDELauncher.class).error("Unable to start up SLL. Quitting.", t);
             return;
         }
 

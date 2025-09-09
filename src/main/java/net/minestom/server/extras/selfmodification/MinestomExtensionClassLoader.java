@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
 import de.geolykt.starloader.launcher.Utils;
@@ -52,17 +53,19 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
     }
 
     @Override
-    public Class<?> loadClass(String name) throws ClassNotFoundException {
+    @NotNull
+    public Class<?> loadClass(@NotNull String name) throws ClassNotFoundException {
         return this.loadClass(name, false);
     }
 
     @Override
-    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    @NotNull
+    protected Class<?> loadClass(@NotNull String name, boolean resolve) throws ClassNotFoundException {
         try {
             return this.loadClassAsChild(name, resolve);
         } catch (ClassNotFoundException cnfe) {
             try {
-                return root.loadClass(name, resolve);
+                return this.root.loadClass(name, resolve);
             } catch (ClassNotFoundException e) {
                 e.addSuppressed(cnfe);
                 throw e;
@@ -77,6 +80,7 @@ public class MinestomExtensionClassLoader extends HierarchyClassLoader {
      * @return The loaded class
      * @throws ClassNotFoundException if the class is not found inside this classloader
      */
+    @NotNull
     public Class<?> loadClassAsChild(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> loadedClass = this.findLoadedClass(name);
         if (loadedClass != null) {
