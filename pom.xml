@@ -16,7 +16,8 @@
         <!-- https://mvnrepository.com/artifact/org.json/json -->
         <json-version>20250517</json-version>
         <mixin-version>0.8.7</mixin-version>
-        <micromixin-version>0.8.0-a20250906</micromixin-version>
+        <!-- https://stianloader.org/maven/org/stianloader/micromixin-backports/ -->
+        <micromixin-version>0.8.0-a20250909</micromixin-version>
         <!-- https://mvnrepository.com/artifact/io.github.llamalad7/mixinextras-common -->
         <mixinextras-version>0.5.0</mixinextras-version>
         <!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-core -->
@@ -28,6 +29,11 @@
         <logback-version>1.3.15</logback-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <gpg.skip>true</gpg.skip>
+
+        <environment-mixin-groupId>org.spongepowered</environment-mixin-groupId>
+        <environment-mixin-artifactId>mixin</environment-mixin-artifactId>
+        <environment-mixin-spongelike>true</environment-mixin-spongelike>
+        <environment-mixin-version>${mixin-version}</environment-mixin-version>
     </properties>
 
     <repositories>
@@ -86,8 +92,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.spongepowered</groupId>
-            <artifactId>mixin</artifactId>
+            <groupId>${environment-mixin-groupId}</groupId>
+            <artifactId>${environment-mixin-artifactId}</artifactId>
             <version>${mixin-version}</version>
             <scope>compile</scope>
         </dependency>
@@ -102,12 +108,6 @@
             <artifactId>micromixin-backports</artifactId>
             <version>${micromixin-version}</version>
             <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.stianloader</groupId>
-                    <artifactId>sponge-mixin</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
