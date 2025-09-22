@@ -1,0 +1,9 @@
+{
+    "mixin_groupid": "${environment-mixin-groupId}",
+    "mixin_artifact": "${environment-mixin-artifactId}",
+    "mixin_version": "${environment-mixin-version}",
+    "mixin_spongelike": "${environment-mixin-spongelike}",
+    "sll_groupid": "${groupId}",
+    "sll_artifactid": "${artifactId}",
+    "sll_version_fallback": "${version}"
+}
