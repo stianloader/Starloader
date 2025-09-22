@@ -21,6 +21,7 @@ open module de.geolykt.starloader.launcher {
     exports de.geolykt.starloader.launcher;
     exports de.geolykt.starloader.mod;
     exports de.geolykt.starloader.transformers;
+    exports org.stianloader.sll;
     exports org.stianloader.sll.transform;
     exports net.minestom.server.extras.selfmodification;
 
