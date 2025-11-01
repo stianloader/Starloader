@@ -12,9 +12,11 @@ open module de.geolykt.starloader.launcher {
     requires ch.qos.logback.core;
     requires de.geolykt.starloader.ras;
     requires org.json;
-    requires org.stianloader.micromixin.transform;
-    requires org.stianloader.micromixin.annotations;
     requires org.stianloader.picoresolve;
+
+    // Requires on non-module dependencies
+    requires static core;
+    //requires static mixintranslator;
 
     // Exports
     exports de.geolykt.starloader;

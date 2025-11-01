@@ -16,17 +16,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
-import org.stianloader.micromixin.transform.api.MixinTransformer;
-import org.stianloader.micromixin.transform.api.supertypes.ClassWrapperPool;
+import org.stianloader.sll.impl.classtransform.SLLCTMixinTransformer;
 
-import net.minestom.server.extras.selfmodification.HierarchyClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
 import de.geolykt.starloader.mod.DirectoryExtensionPrototypeList;
@@ -79,12 +76,8 @@ public class CLILauncher {
         });
 
         // Start mixins & load extensions
-        MixinBytecodeProvider provider = new MixinBytecodeProvider(new HashMap<>());
-        ClassWrapperPool cwPool = new ClassWrapperPool();
-        cwPool.addProvider(provider);
-        MixinTransformer<HierarchyClassLoader> transformer = new MixinTransformer<>(provider, cwPool);
-        transformer.setLogger(new SLF4JLoggingFacade());
-        cl.addASMTransformer(new ASMMixinTransformer(transformer));
+        cl.addASMTransformer(new SLLCTMixinTransformer());
+
         // ensure extensions are loaded when starting the server
         try {
             Class<?> slClass = cl.loadClass("de.geolykt.starloader.Starloader");

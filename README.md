@@ -1,3 +1,9 @@
+> [!NOTE]
+> This is a joke variant of Stianloader's Starloader-Launcher.
+> If you really are contemplating using it - then ask yourself what's wrong with you.
+> This variant is mainly intended to use for comparision reasons only.
+> There will be missing features, and dragons - maybe. So beware, you've been warned.
+
 # Starloader
 
 ## Starloader vs Starloader-API
@@ -46,6 +52,11 @@ correspond to the name of the starloader-launcher file you copied into the
 galimulator folder.
 
 Mods need to be added in a "mods" folder located in the galimulator directory.
+
+For JPMS, the `de.geolykt.starloader.launcher` and `core` (from classtransform)
+modules must be defined as root modules. You probably also want to include
+`org.fusesource.jansi` as a root module, though SLL will somewhat gracefully
+recover if that module is missing.
 
 ## Licensing and redistributing
 

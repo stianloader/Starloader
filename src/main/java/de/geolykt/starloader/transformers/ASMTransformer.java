@@ -1,9 +1,7 @@
 package de.geolykt.starloader.transformers;
 
 import org.objectweb.asm.tree.ClassNode;
-
-import de.geolykt.starloader.launcher.ASMMixinTransformer;
-
+import org.stianloader.sll.impl.classtransform.SLLCTMixinTransformer;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.Type;
 
@@ -54,7 +52,7 @@ public abstract class ASMTransformer implements Comparable<ASMTransformer> {
      * <ul>
      *  <li>-10_010: {@link ReversibleAccessSetterTransformer}</li>
      *  <li>-10_010: {@link StarplaneAnnotationsInlineTransformer}</li>
-     *  <li>-10_000: {@link ASMMixinTransformer}</li>
+     *  <li>-10_000: {@link SLLCTMixinTransformer}</li>
      *  <li>-9_900: Most SLAPI transformers</li>
      *  <li>100: SLAPI GL transformer (intercepts GL11#glScissor calls)</li>
      * </ul>

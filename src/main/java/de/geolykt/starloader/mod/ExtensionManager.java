@@ -43,7 +43,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stianloader.micromixin.transform.api.MixinConfig;
 import org.stianloader.picoresolve.DependencyLayer;
 import org.stianloader.picoresolve.DependencyLayer.DependencyEdge;
 import org.stianloader.picoresolve.DependencyLayer.DependencyLayerElement;
@@ -54,11 +53,11 @@ import org.stianloader.picoresolve.exclusion.ExclusionContainer;
 import org.stianloader.picoresolve.repo.MavenRepository;
 import org.stianloader.picoresolve.repo.RepositoryAttachedValue;
 import org.stianloader.picoresolve.version.MavenVersion;
+import org.stianloader.sll.impl.classtransform.SLLCTMixinTransformer;
 
 import net.minestom.server.extras.selfmodification.MinestomExtensionClassLoader;
 import net.minestom.server.extras.selfmodification.MinestomRootClassLoader;
 
-import de.geolykt.starloader.launcher.ASMMixinTransformer;
 import de.geolykt.starloader.mod.DiscoveredExtension.ExternalDependencies;
 import de.geolykt.starloader.mod.DiscoveredExtension.ExternalDependencyArtifact;
 import de.geolykt.starloader.mod.DiscoveredExtension.ExternalRepository;
@@ -587,7 +586,7 @@ public class ExtensionManager {
                     final String mixinConfigFile = extension.getMixinConfig();
                     boolean added = false;
                     for (ASMTransformer transformer : modifiableClassLoader.getASMTransformers()) {
-                        if (transformer instanceof ASMMixinTransformer) {
+                        if (transformer instanceof SLLCTMixinTransformer) {
                             JSONObject mixinConfigJson;
                             try (InputStream is = extension.loader.getResourceAsStreamWithChildren(mixinConfigFile)) {
                                 if (is == null) {
@@ -597,8 +596,8 @@ public class ExtensionManager {
                             } catch (IOException e) {
                                 throw new IOException("Cannot find mixin config " + mixinConfigFile + " in extension " + extension.getName(), e);
                             }
-                            MixinConfig mixinConfig = MixinConfig.fromJson(mixinConfigJson);
-                            ((ASMMixinTransformer) transformer).transformer.addMixin(extension.loader, mixinConfig);
+
+                            ((SLLCTMixinTransformer) transformer).addMixins(Objects.requireNonNull(extension.loader, "loader without extension"), mixinConfigJson);
                             added = true;
                             ExtensionManager.LOGGER.info("Found mixin in extension {}: {}", extension.getName(), mixinConfigFile);
                         }
