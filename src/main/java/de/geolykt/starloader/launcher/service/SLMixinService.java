@@ -20,9 +20,11 @@ import org.spongepowered.asm.launch.platform.container.ContainerHandleVirtual;
 import org.spongepowered.asm.launch.platform.container.IContainerHandle;
 import org.spongepowered.asm.logging.ILogger;
 import org.spongepowered.asm.mixin.MixinEnvironment.Phase;
+import org.spongepowered.asm.service.IAdviceProvider;
 import org.spongepowered.asm.service.IClassBytecodeProvider;
 import org.spongepowered.asm.service.IClassProvider;
 import org.spongepowered.asm.service.IClassTracker;
+import org.spongepowered.asm.service.IFeatureValidator;
 import org.spongepowered.asm.service.IMixinAuditTrail;
 import org.spongepowered.asm.service.IMixinInternal;
 import org.spongepowered.asm.service.ITransformerProvider;
@@ -175,6 +177,11 @@ public class SLMixinService extends MixinServiceAbstract {
     }
 
     @Override
+    public IAdviceProvider getAdviceProvider() {
+        return IAdviceProvider.GENERIC;
+    }
+
+    @Override
     public IMixinAuditTrail getAuditTrail() {
         return null; // unsupported
     }
@@ -192,6 +199,11 @@ public class SLMixinService extends MixinServiceAbstract {
     @Override
     public IClassTracker getClassTracker() {
         return null; // unsupported
+    }
+
+    @Override
+    public IFeatureValidator getFeatureValidator() {
+        return IFeatureValidator.ALLOW_ALL;
     }
 
     @Nullable
